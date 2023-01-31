@@ -227,6 +227,7 @@ struct sd_obj_stats stats[STAT_SIZE] = {
   {
     .stat = {
       .formal_name = "Proficiency",
+      .file_path = "stats/proficiency.png",
       .description = "*Multiplies acorn "ACORNS" earnings*",
 
       .emoji_name = "proficiency",
@@ -240,6 +241,7 @@ struct sd_obj_stats stats[STAT_SIZE] = {
   {
     .stat = {
       .formal_name = "Luck",
+      .file_path = "stats/luck.png",
       .description = "*Multiplies golden acorn "GOLDEN_ACORNS" earnings*",
 
       .emoji_name = "luck",
@@ -253,6 +255,7 @@ struct sd_obj_stats stats[STAT_SIZE] = {
   {
     .stat = {
       .formal_name = "Strength",
+      .file_path = "stats/strength.png",
       .description = "*Adds 50 max "HEALTH" HP*",
 
       .emoji_name = "strength",

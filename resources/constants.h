@@ -1,18 +1,4 @@
 
-// switch beta on and off
-#define BETA
-
-#ifdef BETA
-  #undef BETA
-  #define BETA "beta_"
-  #define APPLICATION_ID 1048439491607674930
-  #define MAIN_CHANNEL_ID 1017203573890752522
-#else
-  #define BETA
-  #define APPLICATION_ID 905163158149287936
-  #define MAIN_CHANNEL_ID 1046635264883294259
-#endif
-
 #define genrand(base, range) ( (rand() % (range +1)) + base ) // range +1 since rand is [base, range)
 
 #define ADD_TO_BUFFER(buffer, size, format, ...) \

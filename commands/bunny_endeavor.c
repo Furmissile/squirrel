@@ -1,39 +1,5 @@
 struct sd_store *bunny_store;
 
-struct discord_component bunny_purchase(
-  const struct discord_interaction *event, 
-  struct discord_component current_button,
-  int current_item)
-{
-  int cost = bunny_store[current_item].cost;
-  int* stat_ptr = bunny_store[current_item].stat_ptr;
-
-  if (event->data->custom_id
-    && event->data->custom_id[1] -48 == current_item
-    && player.events.catnip >= cost)
-  {
-    player.events.catnip -= cost;
-    rewards.item_type = current_item;
-    (*stat_ptr) += bunny_store[current_item].quantity;
-  }
-
-  if (event->data->custom_id
-    && player.golden_acorns < cost)
-      rewards.item_type = ERROR_STATUS;
-
-  //build the button regardless to account for updated price
-  if (player.events.catnip >= cost )
-  {
-    current_button.style = DISCORD_BUTTON_PRIMARY;
-  } 
-  else {
-    current_button.style = DISCORD_BUTTON_SECONDARY;
-    current_button.disabled = true;
-  }
-
-  return current_button;
-}
-
 struct discord_components* build_bunny_buttons(const struct discord_interaction *event)
 {
   struct discord_components *buttons = calloc(1, sizeof(struct discord_components));
@@ -41,22 +7,37 @@ struct discord_components* build_bunny_buttons(const struct discord_interaction 
   buttons->size = BUNNY_STORE_SIZE;
   buttons->array = calloc(buttons->size, sizeof(struct discord_component));
 
+  if (event->data->custom_id)
+  {
+    int button_idx = event->data->custom_id[1] -48;
+    int* stat_ptr = bunny_store[button_idx].stat_ptr;
+
+    if (player.events.catnip >= bunny_store[button_idx].cost)
+    {
+      player.events.catnip -= bunny_store[button_idx].cost;
+      rewards.item_type = button_idx;
+      (*stat_ptr) += bunny_store[button_idx].quantity;
+    }
+    else
+      rewards.item_type = ERROR_STATUS;
+  }
+
   for (int i = 0; i < buttons->size; i++)
   {
-    buttons->array[i] = bunny_purchase(event, buttons->array[i], i);
-
     struct discord_emoji *emoji = calloc(1, sizeof(struct discord_emoji));
 
     emoji->name = bunny_store[i].item->emoji_name;
     emoji->id = bunny_store[i].item->emoji_id;
 
-    char* set_custom_id = calloc(SIZEOF_CUSTOM_ID, sizeof(char));
-    snprintf(set_custom_id, SIZEOF_CUSTOM_ID, "%c%d_%ld", TYPE_BUNNY, i, event->member->user->id);
-
-    buttons->array[i].custom_id = set_custom_id;
-    buttons->array[i].type = DISCORD_COMPONENT_BUTTON;
-    buttons->array[i].label = bunny_store[i].item->formal_name;
-    buttons->array[i].emoji = emoji;
+    buttons->array[i] = (struct discord_component)
+    {
+      .type = DISCORD_COMPONENT_BUTTON,
+      .style = (player.events.catnip >= bunny_store[i].cost) 
+          ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
+      .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%d_%ld", TYPE_E_ACORN, i, event->member->user->id),
+      .label = bunny_store[i].item->formal_name,
+      .emoji = emoji
+    };
   }
 
   return buttons;
@@ -77,7 +58,7 @@ void bunny_shop(
 
   discord_msg->buttons = build_bunny_buttons(event);
 
-  embed->title = format_str(SIZEOF_TITLE, "Bunny's Shop");
+  embed->title = format_str(SIZEOF_TITLE, "Bunny's Wares");
 
   embed->description = format_str(SIZEOF_DESCRIPTION,
       ""OFF_ARROW" Purchase a resource with Catnip ("CATNIP")! \n"
@@ -118,22 +99,26 @@ void bunny_shop(
 
   embed->footer = calloc(1, sizeof(struct discord_embed_footer));
 
-  struct sd_file_data *item_index = bunny_store[rewards.item_type].item;
-
   if (event->data->custom_id)
   { // button index is rewards.item_type
-    embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You received %d %s!", 
-        bunny_store[rewards.item_type].quantity, item_index->formal_name);
-    embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_index->file_path);
-  }
-  else {
     if (rewards.item_type == ERROR_STATUS)
-      embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You need more acorn!");
+    {
+      embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You need more acorns!");
+      embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_types[TYPE_NO_ACORNS].file_path);
+    }
     else
-      embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "/help | Details on how enchanted acorns work!");
-
-    embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_types[TYPE_NO_ACORNS].file_path);
+    {
+      struct sd_file_data *item_index = bunny_store[rewards.item_type].item;
+      embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You received %d %s!", 
+          bunny_store[rewards.item_type].quantity, item_index->formal_name);
+      embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_index->file_path);
+    }
+  } // error status can only be the case with a custom id
+  else {
+    embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "Welcome to the Bunny's Wares!");
+    embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_types[TYPE_ENCOUNTER].file_path);
   }
+
 }
 
 

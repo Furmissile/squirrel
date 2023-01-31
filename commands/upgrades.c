@@ -1,40 +1,5 @@
 struct sd_store *upgrades;
 
-/* Handles upgrading a stat */
-struct discord_component upgrade_stat(
-  const struct discord_interaction *event, 
-  struct discord_component current_button,
-  int current_stat)
-{
-  int* stat_lv_ptr = upgrades[current_stat].stat_ptr;
-  int stat_cost = upgrades[current_stat].cost;
-
-  //if there's a custom id, this is a response
-  if (event->data->custom_id
-    && event->data->custom_id[1] -48 == current_stat // compares button index at [1] to button index of button pressed
-    && player.acorns >= stat_cost )
-  {
-    player.acorns -= stat_cost;
-
-    (*stat_lv_ptr)++;
-
-    if (current_stat == STAT_STRENGTH)
-      player.health += STRENGTH_VALUE;
-  }
-
-  //build the button regardless to account for updated price
-  if (player.acorns >= stat_cost)
-  {
-    current_button.style = DISCORD_BUTTON_PRIMARY;
-  } 
-  else {
-    current_button.style = DISCORD_BUTTON_SECONDARY;
-    current_button.disabled = true;
-  }
-
-  return current_button;
-}
-
 struct discord_components* build_upgrade_buttons(
   const struct discord_interaction *event,
   int button_size)
@@ -44,15 +9,29 @@ struct discord_components* build_upgrade_buttons(
   buttons->size = button_size;
   buttons->array = calloc(button_size, sizeof(struct discord_component));
 
+  if (event->data->custom_id)
+  {
+    int current_stat = event->data->custom_id[1] - 48;
+    int* stat_lv_ptr = upgrades[current_stat].stat_ptr;
+
+    if (player.acorns >= upgrades[current_stat].cost)
+    {
+      player.acorns -= upgrades[current_stat].cost;
+      rewards.item_type = current_stat;
+      (*stat_lv_ptr)++;
+
+      if (current_stat == STAT_STRENGTH)
+        player.health += STRENGTH_VALUE;
+    }
+    else
+      rewards.item_type = ERROR_STATUS;
+  }
+
   for (int i = 0; i < buttons->size; i++)
   {
-    buttons->array[i] = upgrade_stat(event, buttons->array[i], i);
+    struct discord_emoji *emoji = calloc(1, sizeof(struct discord_emoji));
 
     int is_evolution = ((*upgrades[i].stat_ptr +1) % STAT_EVOLUTION == 0) ? 1 : 0;
-
-    buttons->array[i].label = upgrades[i].item->formal_name;
-
-    struct discord_emoji *emoji = calloc(1, sizeof(struct discord_emoji));
 
     if (is_evolution) {
       emoji->name = evo_squirrels[player.squirrel].emoji_name;
@@ -62,13 +41,15 @@ struct discord_components* build_upgrade_buttons(
       emoji->id = squirrels[player.squirrel].emoji_id;
     }
 
-    char* set_custom_id = calloc(SIZEOF_CUSTOM_ID, sizeof(char));
-    snprintf(set_custom_id, SIZEOF_CUSTOM_ID, "%c%d_%ld", TYPE_UPGRADE, i, event->member->user->id);
-    // i is used instead of a char!!! Match i with biome type to get squirrel!
-
-    buttons->array[i].custom_id = set_custom_id;
-    buttons->array[i].type = DISCORD_COMPONENT_BUTTON;
-    buttons->array[i].emoji = emoji;
+    buttons->array[i] = (struct discord_component)
+    {
+      .type = DISCORD_COMPONENT_BUTTON,
+      .style = (player.acorns >= upgrades[i].cost) 
+                ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
+      .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%d_%ld", TYPE_UPGRADE, i, event->member->user->id),
+      .label = upgrades[i].item->formal_name,
+      .emoji = emoji
+    };
   }
 
   return buttons;
@@ -130,6 +111,27 @@ void player_shop(
         num_str( upgrades[stat_idx].cost ) );
   }
 
+  embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
+  embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, squirrels[player.squirrel].file_path);
+  embed->footer = calloc(1, sizeof(struct discord_embed_footer));
+
+  if (event->data->custom_id)
+  { // button index is rewards.item_type
+    if (rewards.item_type == ERROR_STATUS)
+    {
+      embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You need more acorns!");
+      embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_types[TYPE_NO_ACORNS].file_path);
+    }
+    else {
+      struct sd_file_data *stat_index = &stats[rewards.item_type].stat;
+      embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You received the stat of %s!", stat_index->formal_name);
+      embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, stat_index->file_path);
+    }
+  } // error status can only be the case with a custom id
+  else {
+    embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "Welcome to the Upgrades Shop!");
+    embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_types[TYPE_ENCOUNTER].file_path);
+  }
 }
 
 /* Listens for slash command interactions */
@@ -188,6 +190,7 @@ int store_interaction(
   free(discord_msg);
 
   update_player_row(player);
+  rewards = (struct sd_rewards) { 0 };
 
   return 0;
 }
