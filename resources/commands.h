@@ -40,7 +40,7 @@ enum CMD_TYPE
   CMD_UTIL_DELETE_SCURRY,
   CMD_UTIL_RULES,
   CMD_UTIL_VERIFY,
-  CMD_UTIL_CREATE_BETA,
+  // CMD_UTIL_CREATE_BETA,
   CMD_SIZE
 };
 
@@ -181,10 +181,10 @@ static struct sd_command *cmds = (struct sd_command[])
     .name = "util_verify",
     .func_cb = &create_verify_interaction
   },
-  { // CMD_UTIL_CREATE_BETA
-    .name = "util_create_beta",
-    .func_cb = &beta_interaction
-  }
+  // { // CMD_UTIL_CREATE_BETA
+  //   .name = "util_create_beta",
+  //   .func_cb = &beta_interaction
+  // }
 };
 
 void create_util_commands(struct discord *client, const struct discord_guild *guild)
@@ -648,6 +648,6 @@ void create_commands(struct discord *client, const struct discord_guild *guild)
     discord_create_guild_application_command(client, APPLICATION_ID, guild->id, &commands[i], NULL);
 
   // must be parent server and be Future Squirrel to initialize util commands!!!
-  if (guild->id == GUILD_ID && APPLICATION_ID == 1048439491607674930)
+  if (guild->id == GUILD_ID)
     create_util_commands(client, guild);
 }

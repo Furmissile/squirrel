@@ -73,7 +73,7 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
       num_str(player.health), num_str(player.max_health),
       num_str(player.acorns), num_str(player.acorn_count), num_str(BIOME_INTERVAL * (player.biome_num +1) ),
       biome_icon.emoji_name, biome_icon.emoji_id, biome_icon.formal_name,
-      (player.high_acorn_count > player.acorn_count) ? num_str(player.high_acorn_count) : num_str(player.acorn_count),
+      (player.high_acorn_count > 0) ? num_str(player.high_acorn_count) : num_str(player.acorn_count),
       num_str(player.golden_acorns) );
 
   struct tm *info = get_UTC();

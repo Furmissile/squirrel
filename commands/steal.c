@@ -12,7 +12,7 @@
 
 struct Steal_Info {
   unsigned long t_user_id;
-  int t_acorns;
+  int steal_amt;
 
   struct sd_message *discord_msg;
   char* username;
@@ -51,7 +51,6 @@ void create_steal_interaction(
   free(discord_msg);
 
   update_player_row(player);
-  rewards = (struct sd_rewards) { 0 };
 }
 
 void steal_acorns(
@@ -68,10 +67,6 @@ void steal_acorns(
     format_str(SIZEOF_URL, "https://cdn.discordapp.com/avatars/%lu/%s.png", 
         event->member->user->id, event->member->user->avatar) );
 
-  // players can steal anywhere between 25 and 50% of their said value
-  float random_percent = (float)genrand(25, 25) /100;
-  rewards.stolen_acorns = steal_info->t_acorns * random_percent;
-
   if (rand() % MAX_CHANCE > STEAL_CHANCE)
   {
     embed->color = (int)ACTION_FAILED;
@@ -81,24 +76,24 @@ void steal_acorns(
 
     embed->description = format_str(SIZEOF_DESCRIPTION, 
         "<@%ld> failed to steal **%s** "ACORNS" acorns! \n", 
-        event->member->user->id, num_str(rewards.stolen_acorns));
+        event->member->user->id, num_str(steal_info->steal_amt));
   }
   else {
-    SQL_query(conn, "update public.player set acorns = %d where user_id = %ld", 
-        steal_info->t_acorns - rewards.stolen_acorns, steal_info->t_user_id);
+    SQL_query(conn, "update public.player set acorns = acorns - %d where user_id = %ld", 
+        steal_info->steal_amt, steal_info->t_user_id);
 
-    rewards.golden_acorns = genrand(25, 25) * generate_factor(player.stats.luck_lv, LUCK_VALUE);
+    int golden_acorns = genrand(25, 25) * generate_factor(player.stats.luck_lv, LUCK_VALUE);
 
-    player.acorns += rewards.stolen_acorns;
-    player.acorn_count += rewards.stolen_acorns * 0.1;
-    player.golden_acorns += rewards.golden_acorns;
+    player.acorns += steal_info->steal_amt;
+    player.acorn_count += steal_info->steal_amt * 0.1;
+    player.golden_acorns += golden_acorns;
 
     embed->color = (int)ACTION_SUCCESS;
     embed->title = format_str(SIZEOF_TITLE, "Steal Successful!");
     embed->description = format_str(SIZEOF_DESCRIPTION,
         "You anonymously stole **%s** "ACORNS" acorns! \n"
         "+**%s** "GOLDEN_ACORNS" Golden Acorns \n",
-        num_str(rewards.stolen_acorns), num_str(rewards.golden_acorns));
+        num_str(steal_info->steal_amt), num_str(golden_acorns));
   }
 
   free(steal_info);
@@ -161,7 +156,10 @@ int steal_interaction(
   ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready!");
   ERROR_INTERACTION((player.energy < STEAL_ENERGY_COST), "You need more energy!");
 
-  int steal_max = UNIT_ACORN * (*stats[STAT_PROFICIENCY].stat_ptr +1);
+  int steal_min = STEAL_MINIMUM * (*stats[STAT_PROFICIENCY].stat_ptr +1);
+  float random_percent = (float)genrand(50, 25) /100;
+
+  printf("\nSearching for players who have more than %d acorns... \n", steal_min);
 
   // select all players that isnt the player, game owner, within a range of acorns, or is the same scurry
   PGresult* t_user = SQL_query(conn, "select user_id, acorns from public.player \
@@ -169,11 +167,10 @@ int steal_interaction(
       and user_id != %ld \
       %s \
       and acorns > %d \
-      and acorns < %d \
       order by random() LIMIT 1", 
       event->member->user->id, OWNER_ID,
       (player.scurry_id > 0) ? format_str(SIZEOF_URL, "and scurry_id != %ld", player.scurry_id) : "",
-      steal_max, steal_max *2 );
+      steal_min );
 
   ERROR_DATABASE_RET((PQntuples(t_user) == 0), "No target users are available right now!", t_user);
 
@@ -181,7 +178,8 @@ int steal_interaction(
   steal_info->discord_msg = discord_msg;
 
   steal_info->t_user_id = strtobigint( PQgetvalue(t_user, 0, TARGET_USER_ID));
-  steal_info->t_acorns = strtoint( PQgetvalue(t_user, 0, TARGET_USER_ACORNS) );
+  // take a random percent of steal min
+  steal_info->steal_amt = steal_min * random_percent;
 
   struct discord_ret_guild_member ret_member = {
     .done = &steal_from_member,
