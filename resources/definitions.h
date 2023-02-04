@@ -419,7 +419,7 @@ enum BIOME
   NATURE_END,
   DEATH_GRIP,
   NECROPOLIS,
-  BIOME_SIZE = 2 // is last available biome (temporary)
+  BIOME_SIZE = 3 // is last available biome (temporary)
 };
 
 struct sd_biome biomes[BIOME_SIZE] = {
@@ -630,5 +630,104 @@ struct sd_biome biomes[BIOME_SIZE] = {
     },
 
     .encounter_size = 13
-  }
+  },
+  { // NATURE'S END
+    .biome_scene_path = "ne_content/nature_end_scene.gif",
+
+    .biome_icon = {
+      .formal_name = "Nature's End",
+      .file_path = "ne_content/ne_icon.png",
+      .emoji_name = "ne_icon",
+      .emoji_id = 1071474392783142932
+    },
+
+    .encounters = (struct sd_encounter[]) {
+      {
+        .name = "Breached Woods: Collapsed Caves",
+        .conflict = "This bear doesn't seem too happy his home was destroyed...",
+        .file_path = "ne_content/encounters/angry_bear.png",
+
+        .solutions = {"Offer an acorn", "Boop his snoot", "Give him a hug"}
+      },
+      {
+        .name = "Light's Refuge: The Kind Beast",
+        .conflict = "This bear doesn't seem one bit intmidated! Perhaps he's friendly?",
+        .file_path = "ne_content/encounters/bear.png",
+
+        .solutions = {"Give him head pats", "Offer an acorn", "Don't take your chances"}
+      },
+      {
+        .name = "Ruins of Lamour: Sewage Rats",
+        .conflict = "[dry heaves] Those rats STINK! Where have they been, the sewers?",
+        .file_path = "ne_content/encounters/city_rat.png",
+
+        .solutions = {"Flee their stench", "Hold your breath", "Throw them in water"}
+      },
+      {
+        .name = "Breached Woods: Consumed Elk",
+        .conflict = "Taken by the growing corruption, his mind isn't his own!",
+        .file_path = "ne_content/encounters/consumed_elk.png",
+
+        .solutions = {"Aim for the throat!", "Squeal!", "Flee into a tree"}
+      },
+      {
+        .name = "Breached Woods: Corrupt Squirrel",
+        .conflict = "This one doesn't want to shake your paw... You're his snack!",
+        .file_path = "ne_content/encounters/corrupt_squirrel.png",
+
+        .solutions = {"Outrun him", "Force his paw out", "Offer an acorn"}
+      },
+      {
+        .name = "Nature's Dying Light: Desparate Elk",
+        .conflict = "This elk doesn't appear to be aggressive. Perhaps he's just hungry?",
+        .file_path = "ne_content/encounters/elk.png",
+
+        .solutions = {"Offer an acorn", "Lead him to a food source", "Give him head pats"}
+      },
+      {
+        .name = "Light's Refuge: Curious Fox",
+        .conflict = "The fox looks at you and sits expectantly.",
+        .file_path = "ne_content/encounters/fox.png",
+
+        .solutions = {"Say \"roll over\" in squirrel", "Give him head pats", "Throw an acorn"}
+      },
+      {
+        .name = "Nature's Dying Light: Threatened Moose",
+        .conflict = "A defensive moose detects you and charges at you!",
+        .file_path = "ne_content/encounters/moose.png",
+
+        .solutions = {"Run under him", "Climb up a tree", "Aim for the throat!"}
+      },
+      {
+        .name = "Ruins of Lamour: Aggressive Trash Pandas",
+        .conflict = "Is it growling? Is it smiling? Does it want your acorns?",
+        .file_path = "ne_content/encounters/raccoon.png",
+
+        .solutions = {"Bonk his head with an acorn", "Throw an acorn and run", "Climb up a building"}
+      },
+      {
+        .name = "Light's Refuge: Santa's Good Boi",
+        .conflict = "Looks like Santa may have lost one! He seems nice...",
+        .file_path = "ne_content/encounters/reindeer.png",
+
+        .solutions = {"Give him a random carrot", "Give him chin rubs", "Take him with you"}
+      },
+      {
+        .name = "Ruins of Lamour: Ancient Squirrel",
+        .conflict = "This squirrel has seen a bit... Can he see?",
+        .file_path = "ne_content/encounters/skeletal_squirrel.png",
+
+        .solutions = {"Hope he can see your acorn offer", "Shake his paw if he can feel it", "Tame him if he know who you are"}
+      },
+      {
+        .name = "Nature's Dying Light: Spooked Wolf",
+        .conflict = "A twig you stepped on startled the wolf! He's approaching...",
+        .file_path = "ne_content/encounters/wolf.png",
+
+        .solutions = {"Run up a tree", "Hide in a bush", "Aim for throat!"}
+      },
+    },
+
+    .encounter_size = 12
+  },
 };
