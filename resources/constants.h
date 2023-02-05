@@ -110,9 +110,6 @@
 /* @@@ STAT CONSTANTS @@@ */
 #define STAT_EVOLUTION 5
 
-//Unit per upgrade values
-#define UNIT_ACORN 1000
-
 #define GOLDEN_ACORN_BUFF_COST 1000
 
 #define COLOR_COST 1500
@@ -125,9 +122,9 @@
 */
 
 /* Price multiplier factors */
-#define PROFICIENCY_UNIT 1
-#define LUCK_UNIT 2.5f
-#define STRENGTH_UNIT 5
+#define PROFICIENCY_UNIT 1000
+#define LUCK_UNIT 2500
+#define STRENGTH_UNIT 5000
 
 /* @@@ The following stats are to increase resource earning, NOT to collect them @@@*/
 

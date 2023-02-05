@@ -137,13 +137,13 @@ int bunny_interaction(
     {
       .item = &items[ITEM_ACORNS].item,
       .cost = 500,
-      .quantity = UNIT_ACORN * (*stats[STAT_PROFICIENCY].stat_ptr +1),
+      .quantity = PROFICIENCY_UNIT * (*stats[STAT_PROFICIENCY].stat_ptr +1),
       .stat_ptr = &player.acorns
     },
     {
       .item = &items[ITEM_GOLDEN_ACORN].item,
       .cost = 500,
-      .quantity = UNIT_ACORN/2 * (*stats[STAT_LUCK].stat_ptr +1),
+      .quantity = PROFICIENCY_UNIT/2 * (*stats[STAT_LUCK].stat_ptr +1),
       .stat_ptr = &player.golden_acorns
     },
     {
