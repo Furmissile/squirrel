@@ -16,12 +16,22 @@ void get_rewards(char msg_id)
       rewards.golden_acorns = genrand(25, 25);
       break;
     case TYPE_HEALTH_LOSS:
-      rewards.health_loss = genrand(10, 5);
+      rewards.health_loss = genrand(10, 5) + (player.biome_num *5);
       break;
     case TYPE_ACORN_SACK:
       rewards.acorns = genrand(100, 25);
       if (msg_id == TYPE_ENCOUNTER_MSG)
         rewards.golden_acorns = genrand(25, 25);
+  }
+
+  // TODO: Factor health regen stat
+  // 5 is the max with base stat
+  if (player.health <= player.max_health - BASE_HEALTH_REGEN
+    && rewards.item_type != TYPE_HEALTH_LOSS
+    && rand() % MAX_CHANCE > 80)
+  {
+    rewards.health_regen = BASE_HEALTH_REGEN;
+    player.health += rewards.health_regen;
   }
   
   if (rewards.acorns)
@@ -48,7 +58,10 @@ void get_rewards(char msg_id)
 
     // only acorns gets multiplied -- the rest are added making the func call here no different
     factor_season();
+
+    player.acorns += rewards.acorns;
   }
+
   if (rewards.golden_acorns)
   { // apply stat then buff
     rewards.golden_acorns *= generate_factor(player.stats.luck_lv, LUCK_VALUE);
@@ -57,6 +70,8 @@ void get_rewards(char msg_id)
       rewards.golden_acorns *= 2;
       player.buffs.luck_acorn--;
     }
+
+    player.golden_acorns += rewards.golden_acorns;
   }
 
   if (rewards.health_loss)
@@ -75,8 +90,6 @@ void get_rewards(char msg_id)
       player.golden_acorns += (player.biome +1) * DIVIDEND_VALUE * player.acorn_count;
   }
 
-  player.acorns += rewards.acorns;
-  player.golden_acorns += rewards.golden_acorns;
   player.events.catnip += rewards.catnip;
 }
 
@@ -109,6 +122,11 @@ void generate_rewards(
       num_str(rewards.health_loss), 
       num_str(player.health), 
       (player.buffs.defense_acorn > 0) ? "-**1** "DEFENSE_ACORN" Acorn of Defense \n" : " " );
+  
+  if (rewards.health_regen)
+    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n+**%s** "HEALTH" HP (**%s** "HEALTH" HP Left) \n", 
+      num_str(rewards.health_regen),
+      num_str(player.health) );
 
   if (player.health == 0)
   {
@@ -127,7 +145,7 @@ void generate_rewards(
   }
 
   if (rewards.stolen_acorns)
-    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\nYou successfully stole **%s** "STOLEN_ACORNS" War Acorns! \n+**%s** "COURAGE" Courage\n", 
+    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\nYou successfully stole **%s** "STOLEN_ACORNS" War Acorns! \n+**%s** "COURAGE" Courage \n", 
         num_str(rewards.stolen_acorns), num_str(rewards.courage) );
 
   energy_status(discord_msg, MAIN_ENERGY_COST);
