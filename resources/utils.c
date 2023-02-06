@@ -58,7 +58,6 @@ float generate_factor(int stat_lv, double base_value)
 int generate_price(int stat_lv, double value_mult)
 {
   return (value_mult * (stat_lv +1)) + (value_mult * (stat_lv/STAT_EVOLUTION));
-  // return (UNIT_ACORN * stat_lv * value_mult) + (stat_lv/STAT_EVOLUTION * UNIT_ACORN);
 }
 
 /* Checks for matching ids to make sure the player that sent the embed is the one pressing a button */

@@ -194,7 +194,7 @@
 #define OPPOSING_SCURRY "<:opposing_scurry:1037000813291241524>"
 #define LEADER "<:leader:1035976066965196861>"
 #define COURAGE "<:courage:1045555306832347147>"
-#define STOLEN_ACORNS "<:stolen_acorn:1055143210839720067>"
+#define STOLEN_ACORNS "<:stolen_acorns:1072162449815502868>"
 
 // Health
 #define HEALTH "<:health:1064579080281923655>"
