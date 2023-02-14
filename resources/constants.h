@@ -51,7 +51,7 @@
 // Multiply into rank
 #define BASE_COURAGE_MULT 0.05f
 
-#define MAX_ENERGY 100
+#define MAX_ENERGY 50
 #define MAX_HEALTH 100
 
 /* @@@ COOLDOWNS @@@ */
@@ -85,6 +85,7 @@
 #define TYPE_ENCOUNTER_MSG 'e'
 
 #define TYPE_UPGRADE 's'
+#define TYPE_SQUIRREL 'q'
 #define TYPE_BUNNY 'y'
 #define TYPE_E_ACORN 'a'
 #define TYPE_INVITE 'i'
@@ -116,13 +117,6 @@
 
 #define COLOR_COST 1500
 
-/*
-* Stats include:
-	i. Proficiency -> Multiplies acorn earnings
-	ii. Luck -> Increases golden acorn findings
-	iii. Strength -> Increase HP
-*/
-
 /* Price multiplier factors */
 #define PROFICIENCY_UNIT 1000
 #define LUCK_UNIT 2500
@@ -145,6 +139,10 @@
 #define SUMMER_MULT 1.1f
 #define FALL_MULT 1.05f
 #define WINTER_MULT 1 // Explicit for definition
+
+#define SKELETAL_SQUIRREL_COUNT 25000
+#define BOOKIE_SQUIRREL_COUNT 75000
+#define KING_SQUIRREL_COUNT 150000
 
 #define ERROR_STATUS -1
 
@@ -173,6 +171,11 @@
 #define ACORNS "<:acorns:1045028765392187402>"
 #define ACORN_COUNT "<:passive_acorns:1050407923823677502>"
 #define GOLDEN_ACORNS "<:golden_acorn:1045032005420728430>"
+
+// Stats
+#define IMMORTALITY_STAT "<:immortality:1072161685844021388>"
+#define ARCANE_STAT "<:arcane:1072161681737793536>"
+#define FINESSE_STAT "<:finesse:1072162409642463263>"
 
 // Events
 #define CATNIP "<:catnip:1052250368039452732>"

@@ -24,16 +24,24 @@ void get_rewards(char msg_id)
         rewards.golden_acorns = genrand(25, 25);
   }
 
-  // TODO: Factor health regen stat
-  // 5 is the max with base stat
-  if (player.health <= player.max_health - BASE_HEALTH_REGEN
+  // health regen
+  if (player.health < player.max_health
     && rewards.item_type != TYPE_HEALTH_LOSS
+    && msg_id != TYPE_ENCOUNTER_MSG
     && rand() % MAX_CHANCE > 80)
   {
-    rewards.health_regen = BASE_HEALTH_REGEN;
+    int hp_difference = player.max_health - player.health;
+    // scales per strength evolution!
+    int health_regen = BASE_HEALTH_REGEN * (player.stats.strength_lv/STAT_EVOLUTION +1);
+    if (player.squirrel == SKELETAL_SQUIRREL)
+      health_regen *= 2;
+
+    // if difference of player health and max health is less than the health regen ? give the difference : apply regen
+    // so players can regen their health completely
+    rewards.health_regen = (hp_difference < health_regen) ? hp_difference : health_regen;
     player.health += rewards.health_regen;
   }
-  
+  // acorns
   if (rewards.acorns)
   {
     // base amount goes to war stash and acorn count
@@ -43,7 +51,8 @@ void get_rewards(char msg_id)
       scurry.war_acorns = (scurry.war_acorns + rewards.acorns >= scurry.war_acorn_cap) 
           ? scurry.war_acorn_cap : scurry.war_acorns + rewards.acorns;
 
-    player.acorn_count += rewards.acorns;
+    // if KING_SQUIRREL is active, double normal acorn count
+    player.acorn_count += (player.squirrel == KING_SQUIRREL) ? rewards.acorns * 2 : rewards.acorns;
 
     // apply stat and buff
     rewards.acorns *= generate_factor(player.stats.proficiency_lv, PROFICIENCY_VALUE);
@@ -56,12 +65,15 @@ void get_rewards(char msg_id)
     // passive scurry buff
     rewards.acorns *= (scurry.rank > SEED_NOT) ? ((BASE_COURAGE_MULT * (scurry.rank +1)) +1) : 1;
 
+    // if SQUIRREL_BOOKIE is active, double acorn earning
+    rewards.acorns *= (player.squirrel == SQUIRREL_BOOKIE) ? 2 : 1;
+
     // only acorns gets multiplied -- the rest are added making the func call here no different
     factor_season();
 
     player.acorns += rewards.acorns;
   }
-
+  // golden acorns
   if (rewards.golden_acorns)
   { // apply stat then buff
     rewards.golden_acorns *= generate_factor(player.stats.luck_lv, LUCK_VALUE);
@@ -73,9 +85,11 @@ void get_rewards(char msg_id)
 
     player.golden_acorns += rewards.golden_acorns;
   }
-
+  // health loss
   if (rewards.health_loss)
   {
+    // if SQUIRREL_BOOKIE is active apply defect
+    rewards.health_loss *= (player.squirrel == SQUIRREL_BOOKIE) ? 1.2f : 1;
     if (player.buffs.defense_acorn > 0)
     {
       rewards.health_loss /= 2;
@@ -134,10 +148,11 @@ void generate_rewards(
 
     ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION,
         "\n No more health! \n"
-        ""QUEST_MARKER" Your highest acorn count was **%s** "ACORNS" Acorns! \n"
+        ""QUEST_MARKER" Your acorn count was **%s** "ACORNS" Acorns! \n"
         "+**%s** "GOLDEN_ACORNS" Golden Acorns \n"
         "Your score was reset. \n", 
-        num_str(player.high_acorn_count), num_str((player.biome +1) * DIVIDEND_VALUE * player.acorn_count) );
+        num_str(player.acorn_count),
+        num_str((player.biome +1) * DIVIDEND_VALUE * player.acorn_count) );
     // final acorns are added and then high score is set
     // high score is overwritten regardless of acorn count being higher
     player.high_acorn_count = player.acorn_count;
@@ -149,6 +164,7 @@ void generate_rewards(
         num_str(rewards.stolen_acorns), num_str(rewards.courage) );
 
   energy_status(discord_msg, MAIN_ENERGY_COST);
+  player.encounter = ERROR_STATUS; // this encounter has been responded to
 }
 
 /* Build components after button press */
@@ -179,23 +195,27 @@ struct discord_components* main_button_response(
           (chance < NORMAL_CHANCE) ? TYPE_ACORN_MOUTHFUL
         : (chance < HEALTH_LOSS_CHANCE) ? TYPE_HEALTH_LOSS : TYPE_ACORN_SACK;
 
-    char* set_custom_id = calloc(SIZEOF_CUSTOM_ID, sizeof(char));
-    snprintf(set_custom_id, SIZEOF_CUSTOM_ID, "%c%d_%ld", msg_type, i, event->member->user->id);
-
     struct discord_emoji *emoji = calloc(1, sizeof(struct discord_emoji));
-    emoji->name = item_types[button_item].file_path;
-    emoji->id = item_types[button_item].emoji_id;
+    if (rewards.has_responded)
+    {
+      emoji->name = item_types[TYPE_ENCOUNTER].file_path;
+      emoji->id = item_types[TYPE_ENCOUNTER].emoji_id;
+    }
+    else {
+      emoji->name = item_types[button_item].file_path;
+      emoji->id = item_types[button_item].emoji_id;
+    }
     
     buttons->array[i] = (struct discord_component)
     {
       .type = DISCORD_COMPONENT_BUTTON,
       .emoji = emoji,
-      .custom_id = set_custom_id,
+      .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%d_%ld", msg_type, i, event->member->user->id),
       .label = (msg_type == TYPE_ENCOUNTER_MSG) ? encounter.solutions[i] : NULL,
       .disabled = true
     };
 
-    if (event->data->custom_id[1] == set_custom_id[1])
+    if (event->data->custom_id[1] == buttons->array[i].custom_id[1])
     {
       rewards.item_type = button_item;
       buttons->array[i].style = DISCORD_BUTTON_PRIMARY;
@@ -225,17 +245,17 @@ struct discord_components* build_buttons(
   struct sd_encounter encounter = biomes[player.biome].encounters[player.encounter];
 
   for (int i = 0; i < buttons->size; i++) {
-    char* set_custom_id = calloc(SIZEOF_CUSTOM_ID, sizeof(char));
-    // 3rd letter to distinguish between encounters and normal messsages
-    snprintf(set_custom_id, SIZEOF_CUSTOM_ID, "%c%d_%ld", msg_type, i, event->member->user->id);
-
     buttons->array[i] = (struct discord_component) {
       .type = DISCORD_COMPONENT_BUTTON,
       .style = DISCORD_BUTTON_PRIMARY,
-      .custom_id = set_custom_id,
+      // 3rd letter to distinguish between encounters and normal messsages
+      .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%d _%ld", msg_type, i, event->member->user->id),
       .emoji = emoji,
       .label = (msg_type == TYPE_ENCOUNTER_MSG) ? encounter.solutions[i] : NULL
     };
+
+    if (msg_type == TYPE_ENCOUNTER_MSG)
+      buttons->array[i].custom_id[2] = (char)(player.encounter) +48;
   }
 
   return buttons;
@@ -260,6 +280,13 @@ void encounter_embed(
   { //this is an encounter response
     discord_msg->buttons = main_button_response(event, TYPE_ENCOUNTER_MSG);
 
+    if (rewards.has_responded) // has_responded is used at this point because encounter is no longer ERROR_STATUS
+    {
+      ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\nYou have already responded to this encounter! \n");
+      player.encounter = ERROR_STATUS;
+      return;
+    }
+
     generate_rewards(event, discord_msg);
     player.main_cd = time(NULL) + COOLDOWN;
   }
@@ -280,11 +307,19 @@ void main_embed(
 
   if (event->data->custom_id)
   { // this is a response
-    if (event->data->custom_id[0] == TYPE_ENCOUNTER_MSG) 
+    if (event->data->custom_id[0] == TYPE_ENCOUNTER_MSG
+      || player.encounter != ERROR_STATUS) 
     { // this is an encounter response
+      if (player.encounter == ERROR_STATUS)
+      {
+        rewards.has_responded = 1;
+        // temorarily recall the encounter index through the custom id
+        player.encounter = event->data->custom_id[2] - 48;
+      }
       encounter_embed(event, discord_msg);
     } 
-    else if ((rand() % MAX_CHANCE) < ENCOUNTER_CHANCE && scurry.war_flag == 0)
+    else if ((rand() % MAX_CHANCE) < ENCOUNTER_CHANCE
+      && scurry.war_flag == 0)
     { // otherwise, can the player get an encounter? (scurry cannot be at war)
       player.encounter = rand() % biomes[player.biome].encounter_size;
       encounter_embed(event, discord_msg);

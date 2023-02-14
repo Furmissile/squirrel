@@ -54,10 +54,10 @@ float generate_factor(int stat_lv, double base_value)
     return (base_value * (stat_lv -1)) + (base_value * (stat_lv/STAT_EVOLUTION)) +1;
 }
 
-/* Returns a total price based on stat level, currency unit, and aa value multiplier */
+/* Returns a total price based on stat level, currency unit, and a value multiplier */
 int generate_price(int stat_lv, double value_mult)
 {
-  return (value_mult * (stat_lv +1)) + (value_mult * (stat_lv/STAT_EVOLUTION));
+  return (value_mult * stat_lv) + (value_mult * (stat_lv/STAT_EVOLUTION));
 }
 
 /* Checks for matching ids to make sure the player that sent the embed is the one pressing a button */
@@ -114,14 +114,20 @@ int strtoint(const char* str)
   int num = 0;
   size_t max_len = strlen(str);
 
-  for (size_t i = 1; i < max_len +1; i++)
+  size_t is_negative = (str[0] == '-') ? 1 : 0;
+
+  for (size_t str_idx = is_negative; str_idx < max_len; str_idx++)
   {
+    size_t pos = max_len - str_idx - 1;
     int base_multiplier = 1;
-    for (size_t x = 1; x < i; x++)
+    for (size_t x = 0; x < pos; x++)
       base_multiplier *= 10;
 
-    num += (str[max_len - i] - 48) * base_multiplier;
+    num += ((str[str_idx] - 48) * base_multiplier);
   }
+
+  if (is_negative)
+    num *= -1;
 
   return num;
 }
@@ -174,26 +180,26 @@ void energy_status(struct sd_message *discord_msg, int energy_loss)
 {
   struct discord_embed *embed = discord_msg->embed;
 
+  int energy_chance = (player.squirrel == GRAY_SQUIRREL) ? 40 : 70;
+
+  // if KING_SQUIRREL is active apply defect
+  int final_energy_loss = (energy_loss == MAIN_ENERGY_COST && player.squirrel == KING_SQUIRREL) 
+    ? energy_loss *2 : energy_loss;
+
   if (energy_loss == STEAL_ENERGY_COST
-    || (rand() % MAX_CHANCE < 80 && energy_loss == MAIN_ENERGY_COST) )
+    || (rand() % MAX_CHANCE < energy_chance) )
   {
-    player.energy -= energy_loss;
+    player.energy -= final_energy_loss;
 
     embed->footer = calloc(1, sizeof(struct discord_embed_footer));
     embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You have %d energy left!", player.energy),
     embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, items[ITEM_ENERGY].item.file_path);
     
     ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION,
-        "\n-**%d** "ENERGY" Energy \n", energy_loss);
+        "\n-**%d** "ENERGY" Energy \n", final_energy_loss);
   }
-  else if (energy_loss == MAIN_ENERGY_COST) 
-  {
-    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION,
-        "\n"ENERGY" No energy was lost! \n");
-  }
-  else {
-    printf("An invalid energy value was passed! \n");
-  }
+  else
+    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n"ENERGY" No energy was lost! \n");
 }
 
 struct tm* get_UTC()

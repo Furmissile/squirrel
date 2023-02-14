@@ -16,6 +16,7 @@ enum CMD_TYPE
   CMD_INFO,
   CMD_COLOR,
   CMD_STEAL,
+  CMD_SQUIRREL,
 
   CMD_PLAYER_HELP,
   CMD_EVENT_HELP,
@@ -86,6 +87,13 @@ static struct sd_command *cmds = (struct sd_command[])
   { // CMD_STEAL
     .name = "steal",
     .func_cb = &steal_interaction
+  },
+  {
+    .name = "squirrels",
+    .command_id = TYPE_SQUIRREL,
+    .error_msg = "You cannot swap squirrels with this embed! Please send `/squirrels` to change your current squirrel.",
+
+    .func_cb = &squirrels_interaction
   },
 
   // HELP COMMANDS
@@ -481,6 +489,12 @@ void create_commands(struct discord *client, const struct discord_guild *guild)
       .description = format_str(SIZEOF_DESCRIPTION, 
           "Steal someone's acorns. (Costs %s energy)", 
           num_str(STEAL_ENERGY_COST)),
+      .type = DISCORD_APPLICATION_CHAT_INPUT
+    },
+    { // squirrels
+      .name = "squirrels",
+      .description = format_str(SIZEOF_DESCRIPTION,
+          "Swap to a different squirrel!"),
       .type = DISCORD_APPLICATION_CHAT_INPUT
     },
 

@@ -78,9 +78,9 @@ struct sd_obj_items items[ITEM_SIZE] = {
   {
     .item = {
       .formal_name = "Acorn Count",
-      .emoji_name = "acorn_count",
-
       .file_path = "items/acorn_count.png",
+
+      .emoji_name = "acorn_count",
       .emoji_id = 1050407923823677502
     },
 
@@ -388,26 +388,96 @@ enum BUNNY_STORE
 enum SQUIRREL 
 {
   GRAY_SQUIRREL,
+  SKELETAL_SQUIRREL,
+  SQUIRREL_BOOKIE,
+  KING_SQUIRREL,
   SQUIRREL_SIZE
 };
 
-struct sd_file_data squirrels[SQUIRREL_SIZE] = {
+struct sd_squirrel squirrels[SQUIRREL_SIZE] = {
   {
-    .formal_name = "Gray Squirrel",
-    .file_path = "squirrels/gl_squirrel.png",
+    .acorn_count_req = 0, // base squirrel
+    
+    .squirrel = {
+      .formal_name = "Gray Squirrel",
+      .file_path = "squirrels/gl_squirrel.png",
 
-    .emoji_name = "gl_squirrel",
-    .emoji_id = 1014655900373504130
-  }
-};
+      .description = "*Increased chance to not consume energy*",
 
-struct sd_file_data evo_squirrels[SQUIRREL_SIZE] = {
+      .emoji_name = "gl_squirrel",
+      .emoji_id = 1014655900373504130
+    },
+
+    .evo_squirrel  = {
+      .formal_name = "Gray Squirrel Evolve",
+      .file_path = "evo_squirrels/gl_squirrel_evolve.png",
+
+      .emoji_name = "gl_squirrel_evolve",
+      .emoji_id = 1006206208333586493
+    }
+  },
   {
-    .formal_name = "Evolutions",
-    .file_path = "evo_squirrels/gl_squirrel_evolve.png",
+    .acorn_count_req = SKELETAL_SQUIRREL_COUNT,
+    
+    .squirrel = {
+      .formal_name = "Skeletal Squirrel",
+      .file_path = "squirrels/skeletal_squirrel.png",
 
-    .emoji_name = "gl_squirrel_evolve",
-    .emoji_id = 1006206208333586493
+      .description = "*Doubles health regen*",
+
+      .emoji_name = "skeletal_squirrel",
+      .emoji_id = 1072150369599234058
+    },
+
+    .evo_squirrel  = {
+      .formal_name = "Skeletal Squirrel Evolve",
+      .file_path = "evo_squirrel/skeletal_squirrel_evolve.png",
+
+      .emoji_name = "skeletal_squirrel_evolve",
+      .emoji_id = 1072150653671047219
+    }
+  },
+  {
+    .acorn_count_req = BOOKIE_SQUIRREL_COUNT, // base squirrel
+    
+    .squirrel = {
+      .formal_name = "Squirrel Bookie",
+      .file_path = "squirrels/squirrel_bookie.png",
+
+      .description = "*Doubles acorn earning but encounters deal increased damage*",
+
+      .emoji_name = "squirrel_bookie",
+      .emoji_id = 1050175322286469250
+    },
+
+    .evo_squirrel  = {
+      .formal_name = "Squirrel Bookie Evolve",
+      .file_path = "evo_squirrel/squirrel_bookie_evolve.png",
+
+      .emoji_name = "squirrel_bookie_evolve",
+      .emoji_id = 1072150655281659954
+    }
+  },
+  {
+    .acorn_count_req = KING_SQUIRREL_COUNT, // base squirrel
+    
+    .squirrel = {
+      .formal_name = "King Squirrel",
+      .file_path = "squirrels/king_squirrel.png",
+
+      .description = "*Doubles acorn count but doubles energy cost*",
+
+      .emoji_name = "king_squirrel",
+      .emoji_id = 1073298108508803113
+    },
+
+    .evo_squirrel  = {
+      .formal_name = "King Squirrel Evolve",
+      .file_path = "evo_squirrel/king_squirrel_evolve.png",
+
+      .emoji_name = "king_squirrel_evolve",
+      .emoji_id = 1073298727017648219
+    }
   }
 };
 
@@ -418,7 +488,7 @@ enum BIOME
   SEEPING_SANDS,
   NATURE_END,
   DEATH_GRIP,
-  NECROPOLIS,
+  LAST_ACORN,
   BIOME_SIZE = 3 // is last available biome (temporary)
 };
 
@@ -729,5 +799,5 @@ struct sd_biome biomes[BIOME_SIZE] = {
     },
 
     .encounter_size = 12
-  },
+  }
 };

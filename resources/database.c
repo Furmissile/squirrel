@@ -23,12 +23,13 @@ struct sd_player load_player_struct(unsigned long user_id)
   if (PQntuples(search_player) == 0)
   {
     SQL_query(conn, "BEGIN; \
-      insert into public.player values(%ld, 0, 0, 0, 100, 100, 0, 0, 0, 0, 0, 0, 0); \
+      insert into public.player values(%ld, 0, 0, 0, 50, 100, 0, 0, 0, 0, 0, %d, 0); \
       insert into public.stats values(%ld, 1, 1, 1); \
       insert into public.buffs values(%ld, 0, 0, 0, 0, 0); \
       insert into public.events values (%ld, 0); \
       COMMIT;", 
-      user_id, user_id, user_id, user_id);
+      user_id, ERROR_STATUS, // ERROR_STATUS so an encounter doesnt trigger
+      user_id, user_id, user_id);
   }
 
   PQclear(search_player);
@@ -177,7 +178,7 @@ void update_player_row(struct sd_player player_res)
       strength_lv = %d, \
       luck_lv = %d \
     where user_id = %ld;",
-      player_res.stats.proficiency_lv, player_res.stats.strength_lv, player_res.stats.luck_lv, 
+      player_res.stats.proficiency_lv, player_res.stats.strength_lv, player_res.stats.luck_lv,
       player_res.user_id);
   
   ADD_TO_BUFFER(sql_str, SIZEOF_SQL_COMMAND,

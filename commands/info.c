@@ -58,8 +58,6 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
 
   struct sd_file_data biome_icon = biomes[player.biome].biome_icon;
 
-  printf("%d \n", player.biome);
-
   embed->fields->array[INFO_GENERAL].name = format_str(SIZEOF_TITLE, "General Stats");
   embed->fields->array[INFO_GENERAL].value = format_str(SIZEOF_FIELD_VALUE,
       " "INDENT" "ENERGY" Energy: **%d**/%d \n"
@@ -120,6 +118,9 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
 
   embed->fields->array[INFO_BUFFS].name = format_str(SIZEOF_TITLE, "Squirrel Buffs");
   embed->fields->array[INFO_BUFFS].value = format_str(SIZEOF_FIELD_VALUE, player_buffs_field);
+
+  embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
+  embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, squirrels[player.squirrel].squirrel.file_path);
 
   create_info_interaction(event, discord_msg);
 }

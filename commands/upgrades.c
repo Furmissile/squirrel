@@ -34,11 +34,11 @@ struct discord_components* build_upgrade_buttons(
     int is_evolution = ((*upgrades[i].stat_ptr +1) % STAT_EVOLUTION == 0) ? 1 : 0;
 
     if (is_evolution) {
-      emoji->name = evo_squirrels[player.squirrel].emoji_name;
-      emoji->id = evo_squirrels[player.squirrel].emoji_id;
+      emoji->name = squirrels[player.squirrel].evo_squirrel.emoji_name;
+      emoji->id = squirrels[player.squirrel].evo_squirrel.emoji_id;
     } else {
-      emoji->name = squirrels[player.squirrel].emoji_name;
-      emoji->id = squirrels[player.squirrel].emoji_id;
+      emoji->name = squirrels[player.squirrel].squirrel.emoji_name;
+      emoji->id = squirrels[player.squirrel].squirrel.emoji_id;
     }
 
     buttons->array[i] = (struct discord_component)
@@ -48,7 +48,8 @@ struct discord_components* build_upgrade_buttons(
                 ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
       .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%d_%ld", TYPE_UPGRADE, i, event->member->user->id),
       .label = upgrades[i].item->formal_name,
-      .emoji = emoji
+      .emoji = emoji,
+      .disabled = (player.acorns < upgrades[i].cost) ? true : false
     };
   }
 
@@ -112,7 +113,7 @@ void player_shop(
   }
 
   embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
-  embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, squirrels[player.squirrel].file_path);
+  embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, squirrels[player.squirrel].squirrel.file_path);
   embed->footer = calloc(1, sizeof(struct discord_embed_footer));
 
   if (event->data->custom_id)

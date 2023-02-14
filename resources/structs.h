@@ -17,6 +17,13 @@ struct sd_obj_items
   int *stat_ptr;
 };
 
+struct sd_squirrel
+{
+  int acorn_count_req;
+  struct sd_file_data squirrel;
+  struct sd_file_data evo_squirrel;
+};
+
 struct sd_obj_stats
 {
   struct sd_file_data stat;
@@ -25,7 +32,6 @@ struct sd_obj_stats
   float price_mult;
   float value_mult;
 };
-
 
 struct sd_encounter
 {
@@ -112,8 +118,10 @@ struct sd_player
 struct sd_rewards
 {
   int item_type;
+  int has_responded;
   int acorns;
   int health_loss;
+  int health_regen;
 
   int courage;
   int stolen_acorns;
