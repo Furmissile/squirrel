@@ -9,6 +9,7 @@
 enum P_TOPIC {
   TOPIC_INTRO,
   TOPIC_PROGRESSION,
+  TOPIC_SQUIRREL,
   TOPIC_CHANGE_COLOR,
   TOPIC_STEAL,
   TOPIC_SCURRY,
@@ -42,7 +43,12 @@ void p_help(struct sd_message *discord_msg)
   embed->fields->array[TOPIC_PROGRESSION].value = format_str(SIZEOF_FIELD_VALUE,
       " "OFF_ARROW" You must reach the next designated value of acorn count to proceed to the next biome. \n"
       " "OFF_ARROW" With each biome, the damage in encounters and reward increases. Send `/info` to check it out! \n"
-      " "OFF_ARROW" Upon losing all your "HEALTH" health, your acorn count is reset! \n");
+      " "OFF_ARROW" Upon losing all your "HEALTH" health, your acorn count is reset!");
+
+  embed->fields->array[TOPIC_PROGRESSION].name = format_str(SIZEOF_TITLE, ""ACORNS" Squirrels");
+  embed->fields->array[TOPIC_PROGRESSION].value = format_str(SIZEOF_FIELD_VALUE,
+      " "OFF_ARROW" With certain acorn count milestones, you can unlock new squirrels! \n"
+      " "OFF_ARROW" Each squirrel has its own benefit based on player needs. Send `/squirrels` to check it out! \n");
 
   embed->fields->array[TOPIC_CHANGE_COLOR].name = format_str(SIZEOF_TITLE, ""ACORNS" Changing Message Color");
   embed->fields->array[TOPIC_CHANGE_COLOR].value = format_str(SIZEOF_FIELD_VALUE,
