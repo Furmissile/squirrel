@@ -101,7 +101,10 @@ void get_rewards(char msg_id)
       player.health -= rewards.health_loss;
     
     if (player.health == 0)
+    {
       player.golden_acorns += (player.biome +1) * DIVIDEND_VALUE * player.acorn_count;
+      player.squirrel = 0;
+    }
   }
 
   player.events.catnip += rewards.catnip;
