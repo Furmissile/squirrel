@@ -34,7 +34,7 @@ struct discord_components* build_bunny_buttons(const struct discord_interaction 
       .type = DISCORD_COMPONENT_BUTTON,
       .style = (player.events.catnip >= bunny_store[i].cost) 
           ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
-      .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%d_%ld", TYPE_E_ACORN, i, event->member->user->id),
+      .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%d_%ld", TYPE_BUNNY, i, event->member->user->id),
       .label = bunny_store[i].item->formal_name,
       .emoji = emoji,
       .disabled = (player.events.catnip < bunny_store[i].cost) ? true : false

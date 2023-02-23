@@ -18,6 +18,9 @@ enum CMD_TYPE
   CMD_STEAL,
   CMD_SQUIRREL,
 
+  CMD_SEASON_INFO,
+  CMD_BUNNY_ENDEAVOR,
+
   CMD_PLAYER_HELP,
   CMD_EVENT_HELP,
   CMD_SCURRY_HELP,
@@ -29,9 +32,6 @@ enum CMD_TYPE
   CMD_SCURRY_KICK,
   CMD_SCURRY_LEAVE,
   CMD_SCURRY_CREATE,
-
-  CMD_SEASON_INFO,
-  CMD_BUNNY_ENDEAVOR,
 
   CMD_UTIL_RESOURCES,
   CMD_UTIL_STATS,
@@ -115,6 +115,19 @@ static struct sd_command *cmds = (struct sd_command[])
     .func_cb = &get_leaderboard
   },
 
+  // EVENT COMMANDS
+  { // CMD_SEASON_INFO
+    .name = "season_info",
+    .func_cb = &get_season_event
+  },
+  { // CMD_BUNNY_ENDEAVOR
+    .name = "bunny_endeavor",
+    .command_id = TYPE_BUNNY,
+    .error_msg = "You cannot purchase an item off this embed! Please send `/bunny_endeavor` to make a purchase.",
+
+    .func_cb = &bunny_interaction
+  },
+
   // SCURRY COMMANDS
   { // CMD_SCURRY_INFO
     .name = "scurry_info",
@@ -141,19 +154,6 @@ static struct sd_command *cmds = (struct sd_command[])
   { // CMD_SCURRY_CREATE
     .name = "scurry_create",
     .func_cb = &create_interaction
-  },
-
-  // EVENT COMMANDS
-  { // CMD_SEASON_INFO
-    .name = "season_info",
-    .func_cb = &get_season_event
-  },
-  { // CMD_BUNNY_ENDEAVOR
-    .name = "bunny_endeavor",
-    .command_id = TYPE_BUNNY,
-    .error_msg = "You cannot purchase an item off this embed! Please send `/bunny_endeavor` to make a purchase.",
-
-    .func_cb = &bunny_interaction
   },
 
   // UTIL COMMANDS...
