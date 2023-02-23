@@ -149,7 +149,7 @@ int bunny_interaction(
     },
     {
       .item = &items[ITEM_ENERGY].item,
-      .cost = 750,
+      .cost = 1000,
       .quantity = 50,
       .stat_ptr = &player.energy
     }
