@@ -420,10 +420,3 @@ void create_commands(struct discord *client, const struct discord_guild *guild)
   if (APPLICATION_ID == 1048439491607674930)
     create_util_commands(client, guild);
 }
-
-// CCORDcode discord_create_global_application_command	(	
-// struct discord * 	client,
-// u64snowflake 	application_id,
-// struct discord_create_global_application_command * 	params,
-// struct discord_ret_application_command * 	ret 
-// )	
