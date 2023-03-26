@@ -18,7 +18,8 @@
 * Evolve your squirrel to master the art of acorn foraging!
 
 ## Support
-Squirrel Dash is currently undergoing a lot of revisioning and rebalancing. The bot is also not available to invite to any server -- yet. It is preferred that anyone interested use the bot via the support server for use.
+Squirrel Dash is currently undergoing a lot of revisioning and rebalancing.
+With the green badge labeled "Squirrel Dash Invite," you can now invite the bot to a server!
 
 To join, you can use the badge above or click [here](https://discord.gg/Dd8Te3HmPW)!
 
@@ -31,8 +32,6 @@ Much appreciation to the [Cogmasters](https://discord.gg/Q6GcH6r5Gt) team who an
 
 ## Disclaimer on Open Source
 This project is not designed to be edited or forked by other users. That being said, there are a few crucial files that are missing from this project such as a `main.c`, how the project gets compiled, and the utilities and dev tools used for the support server. The only code that is maintained and posted are the mechanics relevant to the player as pertains to the license. Here you will find how all the features work, how the scales work, and even be able to locate outlines on how the mechanic is intended to work.
-
-Please note that the code is not yet available.
 
 All questions, comments, and concerns should be brought to the support server so that they may be more adequately addressed.
 
