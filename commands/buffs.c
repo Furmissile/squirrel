@@ -5,14 +5,16 @@ struct discord_components* build_buff_buttons(const struct discord_interaction *
   buttons->size = BUFFS_SIZE;
   buttons->array = calloc(buttons->size, sizeof(struct discord_component));
 
+  int golden_acorn_cost = GOLDEN_ACORN_BUFF_COST * generate_factor(player.stats.luck_lv, LUCK_VALUE);
+
   if (event->data->custom_id)
   {
-    if (player.golden_acorns >= GOLDEN_ACORN_BUFF_COST)
+    if (player.golden_acorns >= golden_acorn_cost)
     {
       int button_idx = event->data->custom_id[1] -48;
       (*enchanted_acorns[button_idx].stat_ptr) += genrand(15, 5);
       rewards.item_type = button_idx;
-      player.golden_acorns -= GOLDEN_ACORN_BUFF_COST;
+      player.golden_acorns -= golden_acorn_cost;
     }
     else
       rewards.item_type = ERROR_STATUS;
@@ -20,7 +22,7 @@ struct discord_components* build_buff_buttons(const struct discord_interaction *
 
   int is_disabled = false;
   int button_style;
-  if (player.golden_acorns >= GOLDEN_ACORN_BUFF_COST)
+  if (player.golden_acorns >= golden_acorn_cost)
   {
     button_style = DISCORD_BUTTON_PRIMARY;
   }
@@ -83,7 +85,7 @@ void power_shop(
   embed->fields->array[POWER_PRICES].name = format_str(SIZEOF_TITLE, "Enchanted Acorn Cost");
   embed->fields->array[POWER_PRICES].value = format_str(SIZEOF_FIELD_VALUE, 
       "> **%s** "GOLDEN_ACORNS" Golden Acorns \n", 
-      num_str(GOLDEN_ACORN_BUFF_COST) );
+      num_str(GOLDEN_ACORN_BUFF_COST * generate_factor(player.stats.luck_lv, LUCK_VALUE)) );
 
   for (int i = POWER_SIZE; i < POWER_SIZE + BUFFS_SIZE; i++)
   {

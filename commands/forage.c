@@ -16,7 +16,7 @@ void get_rewards(char msg_id)
       rewards.golden_acorns = genrand(25, 25);
       break;
     case TYPE_HEALTH_LOSS:
-      rewards.health_loss = genrand(10, 5) + (player.biome_num *5);
+      rewards.health_loss = genrand(10, 5) + (player.biome_num * BIOME_DAMAGE);
       break;
     case TYPE_ACORN_SACK:
       rewards.acorns = genrand(100, 25);

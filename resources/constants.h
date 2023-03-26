@@ -71,13 +71,14 @@
 #define CONTAINER_CHANCE 95  // 15 % -- Lost Stash
 #define MAX_CHANCE       100 // 5  % -- Sack of acorns
 
-#define ENCOUNTER_CHANCE 20 // 20 % -- checked separately
+#define ENCOUNTER_CHANCE 100 // 20 % -- checked separately
 
 #define NORMAL_CHANCE 50      // 50 % -- Normal Reward
 #define HEALTH_LOSS_CHANCE 90 // 40 % -- Health Loss
 #define DOUBLE_REWARD 100     // 10 % -- Double Reward
 
 #define BIOME_INTERVAL 5000
+#define BIOME_DAMAGE 10
 #define DIVIDEND_VALUE 0.05f
 
 /* @@@ INTERACTION TYPES  @@@ */
