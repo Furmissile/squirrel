@@ -33,15 +33,8 @@ enum CMD_TYPE
   CMD_SCURRY_LEAVE,
   CMD_SCURRY_CREATE,
 
-  CMD_UTIL_RESOURCES,
-  CMD_UTIL_STATS,
-  CMD_UTIL_BUFFS,
-  CMD_UTIL_SCURRY_RES,
-  CMD_UTIL_DELETE_PLAYER,
-  CMD_UTIL_DELETE_SCURRY,
-  CMD_UTIL_RULES,
-  CMD_UTIL_VERIFY,
-  // CMD_UTIL_CREATE_BETA,
+  CMD_RULES,
+  CMD_VERIFY,
   CMD_SIZE
 };
 
@@ -157,267 +150,28 @@ static struct sd_command *cmds = (struct sd_command[])
   },
 
   // UTIL COMMANDS...
-  { // CMD_UTIL_RESOURCES
-    .name = "util_set_resources",
-    .func_cb = &set_resources_interaction,
-  },
-  { // CMD_UTIL_STATS
-    .name = "util_set_stats",
-    .func_cb = &set_stats_interaction,
-  },
-  { // CMD_UTIL_BUFFS
-    .name = "util_set_buffs",
-    .func_cb = &set_buffs_interaction
-  },
-  { // CMD_UTIL_SCURRY_RES
-    .name = "util_set_scurry_res",
-    .func_cb = &set_scurry_res_interaction
-  },
-  { // CMD_UTIL_DELETE_PLAYER
-    .name = "util_delete_player",
-    .func_cb = &delete_player_interaction
-  },
-  { // CMD_UTIL_DELETE_SCURRY
-    .name = "util_delete_scurry",
-    .func_cb = &delete_scurry_interaction
-  },
-  { // CMD_UTIL_RULES
-    .name = "util_rules",
+  { // CMD_RULES
+    .name = "rules",
     .func_cb = &rules_interaction
   },
-  { // CMD_UTIL_VERIFY
-    .name = "util_verify",
+  { // CMD_VERIFY
+    .name = "verify",
     .func_cb = &create_verify_interaction
-  },
-  // { // CMD_UTIL_CREATE_BETA
-  //   .name = "util_create_beta",
-  //   .func_cb = &beta_interaction
-  // }
+  }
 };
 
 void create_util_commands(struct discord *client, const struct discord_guild *guild)
 {
   struct discord_create_guild_application_command commands[] =
   {
-    // UTIL COMMANDS
-    { //set_resources
-      .name = "util_set_resources",
-      .description = "Set a player resources",
-      .type = DISCORD_APPLICATION_CHAT_INPUT,
-
-      .options = &(struct discord_application_command_options)
-      {
-        .array = (struct discord_application_command_option[])
-        {
-          {
-            .type = DISCORD_APPLICATION_OPTION_STRING,
-            .name = "target_user",
-            .description = "User mention or id that will receive the resources",
-            .required = true
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = items[ITEM_ACORNS].item.emoji_name,
-            .description = "Set player acorns"
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = items[ITEM_ACORN_COUNT].item.emoji_name,
-            .description = "Set player passive acorns"
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = items[ITEM_GOLDEN_ACORN].item.emoji_name,
-            .description = "Set player golden acorns"
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = items[ITEM_STOLEN_ACORNS].item.emoji_name,
-            .description = "Set player stolen acorns"
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = items[ITEM_ENERGY].item.emoji_name,
-            .description = "Set player energy"
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = items[ITEM_HEALTH].item.emoji_name,
-            .description = "Set player health"
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = items[ITEM_CATNIP].item.emoji_name,
-            .description = "Set player catnip"
-          }
-        },
-
-        .size = ITEM_SIZE +1
-      }
-    },
-    { // util_set_stats
-      .name = "util_set_stats",
-      .description = "Set a player stat",
-      .type = DISCORD_APPLICATION_CHAT_INPUT,
-
-      .options = &(struct discord_application_command_options)
-      {
-        .array = (struct discord_application_command_option[])
-        {
-          {
-            .type = DISCORD_APPLICATION_OPTION_STRING,
-            .name = "target_user",
-            .description = "User mention or id that will receive the resources",
-            .required = true
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = stats[STAT_PROFICIENCY].stat.emoji_name,
-            .description = "Set player proficiency"
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = stats[STAT_LUCK].stat.emoji_name,
-            .description = "Set player luck"
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = stats[STAT_STRENGTH].stat.emoji_name,
-            .description = "Set player strength"
-          }
-        },
-
-        .size = STAT_SIZE +1
-      }
-    },
-    { // util_set_buffs
-      .name = "util_set_buffs",
-      .description = "Set a player buffs",
-      .type = DISCORD_APPLICATION_CHAT_INPUT,
-
-      .options = &(struct discord_application_command_options)
-      {
-        .array = (struct discord_application_command_option[])
-        {
-          {
-            .type = DISCORD_APPLICATION_OPTION_STRING,
-            .name = "target_user",
-            .description = "User mention or id that will receive the resources",
-            .required = true
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = enchanted_acorns[BUFF_PROFICIENCY_ACORN].item.emoji_name,
-            .description = "Set player proficiency acorn"
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = enchanted_acorns[BUFF_LUCK_ACORN].item.emoji_name,
-            .description = "Set player luck acorn"
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = enchanted_acorns[BUFF_STRENGTH_ACORN].item.emoji_name,
-            .description = "Set player strength acorn"
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = enchanted_acorns[BUFF_ENDURANCE_ACORN].item.emoji_name,
-            .description = "Set player strength acorn"
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = enchanted_acorns[BUFF_DEFENSE_ACORN].item.emoji_name,
-            .description = "Set player strength acorn"
-          }
-        },
-
-        .size = BUFFS_SIZE +1
-      }
-    },
-    { // util_set_scurry_res
-      .name = "util_set_scurry_res",
-      .description = "Set a scurry's resources",
-      .type = DISCORD_APPLICATION_CHAT_INPUT,
-
-      .options = &(struct discord_application_command_options)
-      {
-        .array = (struct discord_application_command_option[])
-        {
-          {
-            .type = DISCORD_APPLICATION_OPTION_STRING,
-            .name = "target_scurry",
-            .description = "Scurry owner id that will receive the resources",
-            .required = true
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = scurry_items[SCURRY_ITEM_COURAGE].item.emoji_name,
-            .description = "Set scurry's courage"
-          },
-          {
-            .type = DISCORD_APPLICATION_OPTION_INTEGER,
-            .name = scurry_items[SCURRY_ITEM_WAR_ACORNS].item.emoji_name,
-            .description = "Set scurry's war acorns"
-          }
-        },
-
-        .size = SCURRY_ITEM_SIZE +1
-      }
-    },
-    { // util_delete_player
-      .name = "util_delete_player",
-      .description = "Reset a player's stats",
-      .type = DISCORD_APPLICATION_CHAT_INPUT,
-
-      .options = &(struct discord_application_command_options)
-      {
-        .array = (struct discord_application_command_option[])
-        {
-          {
-            .type = DISCORD_APPLICATION_OPTION_STRING,
-            .name = "target_user",
-            .description = "Name of user that will be reset",
-            .required = true
-          }
-        },
-
-        .size = 1
-      }
-    },
-    { // util_delete_scurry
-      .name = "util_delete_scurry",
-      .description = "Delete a scurry",
-      .type = DISCORD_APPLICATION_CHAT_INPUT,
-
-      .options = &(struct discord_application_command_options)
-      {
-        .array = (struct discord_application_command_option[])
-        {
-          {
-            .type = DISCORD_APPLICATION_OPTION_STRING,
-            .name = "target_scurry",
-            .description = "Name of scurry that will be deleted",
-            .required = true
-          }
-        },
-
-        .size = 1
-      }
-    },
-    { // util_rules
-      .name = "util_rules",
+    { // rules
+      .name = "rules",
       .description = "Load the rules embed",
       .type = DISCORD_APPLICATION_CHAT_INPUT
     },
-    { // util_verify
-      .name = "util_verify",
+    { // verify
+      .name = "verify",
       .description = "Load the verify embed",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
-    },
-    { // util_create_beta
-      .name = "util_create_beta",
-      .description = "Refresh a new beta table for testing",
       .type = DISCORD_APPLICATION_CHAT_INPUT
     }
   };
@@ -661,7 +415,8 @@ void create_commands(struct discord *client, const struct discord_guild *guild)
   for (int i = 0; i < (int)(sizeof(commands)/sizeof(*commands)); i++)
     discord_create_guild_application_command(client, APPLICATION_ID, guild->id, &commands[i], NULL);
 
-  // must be parent server and be Future Squirrel to initialize util commands!!!
-  if (guild->id == GUILD_ID)
+  // depending on version, application id can vary!
+  // only constant for the duration of the program
+  if (APPLICATION_ID == 1048439491607674930)
     create_util_commands(client, guild);
 }

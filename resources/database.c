@@ -21,17 +21,16 @@ struct sd_player load_player_struct(unsigned long user_id)
     user_id);
 
   if (PQntuples(search_player) == 0)
-  {
-    SQL_query(conn, "BEGIN; \
-      insert into public.player values(%ld, 0, 0, 0, 50, 100, 0, 0, 0, 0, 0, %d, 0); \
-      insert into public.stats values(%ld, 1, 1, 1); \
-      insert into public.buffs values(%ld, 0, 0, 0, 0, 0); \
-      insert into public.events values (%ld, 0); \
-      COMMIT;", 
+  {  
+    SQL_query(conn, "BEGIN; \n"
+      "insert into public.player values(%ld, 0, 0, 0, 50, 100, 0, 0, 0, 0, 0, %d, 0); \n"
+      "insert into public.stats values(%ld, 1, 1, 1); \n"
+      "insert into public.buffs values(%ld, 0, 0, 0, 0, 0); \n"
+      "insert into public.events values (%ld, 0); \n"
+      "COMMIT;", 
       user_id, ERROR_STATUS, // ERROR_STATUS so an encounter doesnt trigger
       user_id, user_id, user_id);
   }
-
   PQclear(search_player);
 
   search_player = SQL_query(conn, "select * from public.player \

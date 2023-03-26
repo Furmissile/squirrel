@@ -243,3 +243,72 @@ void not_user(struct discord *client, struct discord_response *resp)
 
   error_message(event, "This is not a valid user!");
 }
+
+
+/*
+  The following functions are only utilized in the support server!
+*/
+
+// mechanic for reaction verification
+void verify(struct discord *client, const struct discord_message_reaction_add *event)
+{
+  if (event->member->user->id == APPLICATION_ID || event->channel_id != VERIFY_CHANNEL_ID)
+    return;
+
+  // delete whatever emoji user reacted with
+  discord_delete_user_reaction(client, event->channel_id, event->message_id, event->member->user->id, 
+      event->emoji->id, event->emoji->name, NULL);
+
+  // only assign member role if they reacted with the acorn
+  if (event->emoji->id != items[ITEM_ACORNS].item.emoji_id)
+    return;
+
+  discord_add_guild_member_role(client, GUILD_ID, event->member->user->id, MEMBER_ROLE_ID, 
+  &(struct discord_add_guild_member_role) { .reason = "New member" }, 
+  NULL);
+}
+
+void welcome_embed(struct discord *client, const struct discord_guild_member *event)
+{
+  if (event->guild_id != GUILD_ID) return;
+
+  struct discord_embed *embed = calloc(1, sizeof(struct discord_embed));
+
+  //Load Author
+  embed->author = sd_msg_embed_author(
+      format_str(SIZEOF_TITLE, event->user->username),
+      format_str(SIZEOF_URL, "https://cdn.discordapp.com/avatars/%lu/%s.png", 
+          event->user->id, event->user->avatar) );
+
+  // color must be flat since this is a module
+  embed->color = (int)strtol("00eeff", NULL, 16);
+
+  embed->title = format_str(SIZEOF_TITLE, "Welcome to Squirrel Dash!");
+
+  embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
+  embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, squirrels[GRAY_SQUIRREL].squirrel.file_path);
+
+  embed->description = format_str(SIZEOF_DESCRIPTION,
+      " "OFF_ARROW" Read the <#1046640388456321126> to <#1046813534790635550>! \n"
+      " "OFF_ARROW" Begin your adventure in <#1046635264883294259>! \n"
+      " "OFF_ARROW" Chat with fellow squirrel advocators in <#1046628380222685255> \n"
+      " "OFF_ARROW" Looking for extra help? Ask away in <#1047233819201261748>!");
+
+  embed->image = calloc(1, sizeof(struct discord_embed_image));
+  embed->image->url = format_str(SIZEOF_URL, GIT_PATH, WELCOME_MSG_PATH);
+
+  embed->footer = calloc(1, sizeof(struct discord_embed_footer));
+  embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "Happy Foraging!");
+  embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, items[ITEM_ACORNS].item.file_path);
+
+  struct discord_create_message intro_message = (struct discord_create_message) {
+    .content = format_str(SIZEOF_DESCRIPTION, "*<@%ld> is looking for acorns...*", event->user->id),
+    .embeds = &(struct discord_embeds) {
+      .array = embed,
+      .size = 1
+    }
+  };
+
+  discord_create_message(client, WELCOME_CHANNEL_ID, &intro_message, NULL);
+  free(embed);
+}
