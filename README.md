@@ -5,10 +5,6 @@
 # Welcome to Squirrel Dash!
 [![Discord](https://img.shields.io/static/v1?label=Discord&message=Support%20Server&color=5865F2)](https://discord.gg/Dd8Te3HmPW)
 
-[![Invite Bot](https://img.shields.io/badge/Squirrel%20Dash%20Invite-Join%20here!-green)(https://discord.com/api/oauth2/authorize?client_id=905163158149287936&permissions=2416168000&scope=bot%20applications.commands)]
-
-https://img.shields.io/badge/Squirrel%20Dash%20Invite-Join%20here!-green
-
 ## About
 **Squirrel Dash** is a game inspired by squirrels' nutty behaviors! See life through the eyes of a squirrel in a fictitious world where you can:
 
