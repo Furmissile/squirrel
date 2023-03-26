@@ -182,7 +182,7 @@ void create_util_commands(struct discord *client, const struct discord_guild *gu
 
 void create_commands(struct discord *client, const struct discord_guild *guild)
 {
-  struct discord_create_guild_application_command commands[] =
+  struct discord_create_global_application_command commands[] =
   {
     // MAIN COMMANDS
     { // forage
@@ -413,10 +413,17 @@ void create_commands(struct discord *client, const struct discord_guild *guild)
   };
 
   for (int i = 0; i < (int)(sizeof(commands)/sizeof(*commands)); i++)
-    discord_create_guild_application_command(client, APPLICATION_ID, guild->id, &commands[i], NULL);
+    discord_create_global_application_command(client, APPLICATION_ID, &commands[i], NULL);
 
   // depending on version, application id can vary!
   // only constant for the duration of the program
   if (APPLICATION_ID == 1048439491607674930)
     create_util_commands(client, guild);
 }
+
+// CCORDcode discord_create_global_application_command	(	
+// struct discord * 	client,
+// u64snowflake 	application_id,
+// struct discord_create_global_application_command * 	params,
+// struct discord_ret_application_command * 	ret 
+// )	
