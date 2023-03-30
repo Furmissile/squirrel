@@ -9,6 +9,7 @@ struct sd_command
 
 enum CMD_TYPE
 {
+  CMD_PLAYER_HELP,
   CMD_MAIN_FORAGE,
   CMD_ENCOUNTER_FORAGE,
   CMD_UPGRADE,
@@ -18,15 +19,13 @@ enum CMD_TYPE
   CMD_STEAL,
   CMD_SQUIRREL,
 
+  CMD_EVENT_HELP,
   CMD_SEASON_INFO,
   CMD_BUNNY_ENDEAVOR,
 
-  CMD_PLAYER_HELP,
-  CMD_EVENT_HELP,
-  CMD_SCURRY_HELP,
-
   CMD_LEADERBOARD,
 
+  CMD_SCURRY_HELP,
   CMD_SCURRY_INFO,
   CMD_SCURRY_INVITE,
   CMD_SCURRY_KICK,
@@ -41,6 +40,10 @@ enum CMD_TYPE
 static struct sd_command *cmds = (struct sd_command[])
 {
   // MAIN COMMANDS
+  { // CMD_PLAYER_HELP
+    .name = "player_help",
+    .func_cb = &help_interaction
+  },
   { // CMD_MAIN_FORAGE
     .name = "forage", // can be skipped when comparing names
     .command_id = TYPE_ENCOUNTER_MSG,
@@ -89,26 +92,16 @@ static struct sd_command *cmds = (struct sd_command[])
     .func_cb = &squirrels_interaction
   },
 
-  // HELP COMMANDS
-  { // CMD_PLAYER_HELP
-    .name = "player_help",
-    .func_cb = &help_interaction
-  },
-  { // CMD_EVENT_HELP
-    .name = "event_help",
-    .func_cb = &event_help_interaction
-  },
-  { // CMD_SCURRY_HELP
-    .name = "scurry_help",
-    .func_cb = &scurry_help_interaction
-  },
-
   { // CMD_LEADERBOARD
     .name = "leaderboard",
     .func_cb = &get_leaderboard
   },
 
   // EVENT COMMANDS
+  { // CMD_EVENT_HELP
+    .name = "event_help",
+    .func_cb = &event_help_interaction
+  },
   { // CMD_SEASON_INFO
     .name = "season_info",
     .func_cb = &get_season_event
@@ -122,6 +115,10 @@ static struct sd_command *cmds = (struct sd_command[])
   },
 
   // SCURRY COMMANDS
+  { // CMD_SCURRY_HELP
+    .name = "scurry_help",
+    .func_cb = &scurry_help_interaction
+  },
   { // CMD_SCURRY_INFO
     .name = "scurry_info",
     .command_id = TYPE_SCURRY_WAR,
