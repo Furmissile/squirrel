@@ -3,6 +3,7 @@ struct sd_player player = { 0 };
 struct sd_scurry scurry = { 0 };
 
 struct sd_rewards rewards = { 0 };
+struct sd_buff_status buff_status = { 0 };
 
 enum DB_TUPLE
 {
@@ -489,7 +490,7 @@ enum BIOME
   NATURE_END,
   DEATH_GRIP,
   LAST_ACORN,
-  BIOME_SIZE = 3 // is last available biome (temporary)
+  BIOME_SIZE = 4 // is last available biome (temporary)
 };
 
 struct sd_biome biomes[BIOME_SIZE] = {
@@ -727,7 +728,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .solutions = {"Give him head pats", "Offer an acorn", "Don't take your chances"}
       },
       {
-        .name = "Ruins of Lamour: Sewage Rats",
+        .name = "Ruins of Luxos: Sewage Rats",
         .conflict = "[dry heaves] Those rats STINK! Where have they been, the sewers?",
         .file_path = "ne_content/encounters/city_rat.png",
 
@@ -769,7 +770,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .solutions = {"Run under him", "Climb up a tree", "Aim for the throat!"}
       },
       {
-        .name = "Ruins of Lamour: Aggressive Trash Pandas",
+        .name = "Ruins of Luxos: Aggressive Trash Pandas",
         .conflict = "Is it growling? Is it smiling? Does it want your acorns?",
         .file_path = "ne_content/encounters/raccoon.png",
 
@@ -783,7 +784,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .solutions = {"Give him a random carrot", "Give him chin rubs", "Take him with you"}
       },
       {
-        .name = "Ruins of Lamour: Ancient Squirrel",
+        .name = "Ruins of Luxos: Ancient Squirrel",
         .conflict = "This squirrel has seen a bit... Can he see?",
         .file_path = "ne_content/encounters/skeletal_squirrel.png",
 
@@ -799,5 +800,126 @@ struct sd_biome biomes[BIOME_SIZE] = {
     },
 
     .encounter_size = 12
+  },
+  { // DEATH'S GRIP
+    .biome_scene_path = "dg_content/death_grip_scene.gif",
+
+    .biome_icon = {
+      .formal_name = "Death's Grip",
+      .file_path = "dg_content/dg_icon.png",
+
+      .emoji_name = "dg_icon",
+      .emoji_id = 1092903646196412426
+    },
+
+    .encounters = (struct sd_encounter[]) {
+      {
+        .name = "Boreal Forest: Fluffy Bunn- uh, Foxes",
+        .conflict = "An arctic fox's head pops above the snow and locks eyes with you.",
+        .file_path = "dg_content/encounters/arctic_fox.png",
+
+        .solutions = {"Stare harder", "Wave", "Keep running"}
+      },
+      {
+        .name = "Boreal Forest: Sneaky Puppers",
+        .conflict = "You hear snow patting and realize a wolf is after you!",
+        .file_path = "dg_content/encounters/arctic_wolf.png",
+
+        .solutions = {"Throw an acorn", "Scurry faster", "Aim for the throat!"}
+      },
+      {
+        .name = "Death's Valley: Less Fluffy Bunn- uh, Fox",
+        .conflict = "This fox has been at the mercy of some necromancers... Not friendly.",
+        .file_path = "dg_content/encounters/consumed_fox.png",
+
+        .solutions = {"Offer an acorn for its troubles", "Scurry away", "Dance to lighten its mood"}
+      },
+      {
+        .name = "Death's Valley: Nature's Dilemma",
+        .conflict = "So cute but scary at the same!",
+        .file_path = "dg_content/encounters/consumed_hare.png",
+
+        .solutions = {"Stare in confusion", "Attempt to pat its head", "Don't look in its eyes!"}
+      },
+      {
+        .name = "Death's Valley: Angry Teddy Bear",
+        .conflict = "This polar bear doesn't look too happy about his situation...",
+        .file_path = "dg_content/encounters/consumed_polar_bear.png",
+
+        .solutions = {"Appease with an acorn", "Scurry away", "Pretend like he isn't there"}
+      },
+      {
+        .name = "Necrotic Lakes: Purple Energy",
+        .conflict = "That- that's a squirrel? So dark. So smokey. So... deadly...",
+        .file_path = "dg_content/encounters/dark_skeletal_squirrel.png",
+
+        .solutions = {"Squeal!", "Ignore it", "Run up a tree"}
+      },
+      {
+        .name = "Kingdom of Ice: Desparate for Warmth",
+        .conflict = "This squirrel has been wandering aimlessly for hours. But he finds a warm companion...",
+        .file_path = "dg_content/encounters/frost_squirrel.png",
+
+        .solutions = {"Scurry away", "Don't make eye contact", "Cough"}
+      },
+      {
+        .name = "Necrotic Lakes: Squirrel-o-mancer",
+        .conflict = "Does he raise- tiny fluffballs of doom? Should you find out?",
+        .file_path = "dg_content/encounters/nero_squirrel.png",
+
+        .solutions = {"Approach", "Bonk him on the cabeza with an acorn", "Don't want to know"}
+      },
+      {
+        .name = "Boreal Forest: Waddle Waddle",
+        .conflict = "This curious penguin approaches you with intrigument.",
+        .file_path = "dg_content/encounters/penguin.png",
+
+        .solutions = {"Stop him before he pecks", "Offer an acorn", "Scurry on"}
+      },
+      {
+        .name = "Kingdom of Ice: Nice Teddy Bear",
+        .conflict = "This polar bear appears to be a bit lonely...",
+        .file_path = "dg_content/encounters/polar_bear.png",
+
+        .solutions = {"Snuggle with him", "Offer an acorn", "Let him be"}
+      },
+      {
+        .name = "Lost City of Honor: Bony Teddy Bear",
+        .conflict = "Those claws look sharp and it doesn't look happy...",
+        .file_path = "dg_content/encounters/skeletal_bear.png",
+
+        .solutions = {"Scurry away", "Aim for the throat!", "Ride it to where you want to go next"}
+      },
+      {
+        .name = "Lost City of Honor: Future Me?",
+        .conflict = "We bare uncanny resemblance, but it prefers to be alone.",
+        .file_path = "dg_content/encounters/skeletal_squirrel.png",
+
+        .solutions = {"Tame it", "Leash it", "Poke with an acorn until it does something"}
+      },
+      {
+        .name = "Lost City of Honor: Not so Fluffy...",
+        .conflict = "Can it see? Can it hear? What do you do?",
+        .file_path = "dg_content/encounters/skeletal_wolf.png",
+
+        .solutions = {"Squeal to test its hearing", "Throw an acorn to see if it can feel", "Boop his skeletal snoot"}
+      },
+      {
+        .name = "Kingdom of Ice: Definitely a Fluffy Bunny",
+        .conflict = "He's so cute, small ans squishy you could just-",
+        .file_path = "dg_content/encounters/snowshoe_hare.png",
+
+        .solutions = {"Dunk him in your acorn stew", "Give him head pats", "Call him Squishy"}
+      },
+      {
+        .name = "Necrotic Lakes: Re-foraging",
+        .conflict = "This poor guy was in the unfortunate hands of a necro-squirrel.",
+        .file_path = "dg_content/encounters/undead_squirrel.png",
+
+        .solutions = {"Offer an acorn", "Put him out of his misery", "Hug him"}
+      },
+    },
+
+    .encounter_size = 15
   }
 };
