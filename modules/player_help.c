@@ -43,10 +43,12 @@ void p_help(struct sd_message *discord_msg)
   embed->fields->array[TOPIC_PROGRESSION].value = format_str(SIZEOF_FIELD_VALUE,
       " "OFF_ARROW" You must reach the next designated value of acorn count to proceed to the next biome. \n"
       " "OFF_ARROW" With each biome, the damage in encounters and reward increases. Send `/info` to check it out! \n"
-      " "OFF_ARROW" Upon losing all your "HEALTH" health, your acorn count is reset!");
+      " "OFF_ARROW" Upon losing all your "HEALTH" health, your acorn count is reset! \n"
+      " "OFF_ARROW" If your score was above **%s**, you will start with 20%% of your acorn count.",
+      num_str(PRESTIGE_REQ));
 
-  embed->fields->array[TOPIC_PROGRESSION].name = format_str(SIZEOF_TITLE, ""ACORNS" Squirrels");
-  embed->fields->array[TOPIC_PROGRESSION].value = format_str(SIZEOF_FIELD_VALUE,
+  embed->fields->array[TOPIC_SQUIRREL].name = format_str(SIZEOF_TITLE, ""ACORNS" Squirrels");
+  embed->fields->array[TOPIC_SQUIRREL].value = format_str(SIZEOF_FIELD_VALUE,
       " "OFF_ARROW" With certain acorn count milestones, you can unlock new squirrels! \n"
       " "OFF_ARROW" Each squirrel has its own benefit based on player needs. Send `/squirrels` to check it out! \n");
 
