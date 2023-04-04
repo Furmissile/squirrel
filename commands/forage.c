@@ -7,19 +7,19 @@ void get_rewards(char msg_id)
       rewards.acorns = genrand(25, 15);
       break;
     case TYPE_ACORN_MOUTHFUL:
-      rewards.acorns = genrand(50, 25);
+      rewards.acorns = genrand(75, 25);
       if (msg_id == TYPE_ENCOUNTER_MSG)
         rewards.golden_acorns = genrand(25, 25);
       break;
     case TYPE_LOST_STASH:
-      rewards.acorns = genrand(75, 25);
+      rewards.acorns = genrand(125, 25);
       rewards.golden_acorns = genrand(25, 25);
       break;
     case TYPE_HEALTH_LOSS:
       rewards.health_loss = genrand(10, 5) + (player.biome_num * BIOME_DAMAGE);
       break;
     case TYPE_ACORN_SACK:
-      rewards.acorns = genrand(100, 25);
+      rewards.acorns = genrand(150, 50);
       if (msg_id == TYPE_ENCOUNTER_MSG)
         rewards.golden_acorns = genrand(25, 25);
   }
@@ -54,12 +54,16 @@ void get_rewards(char msg_id)
     // if KING_SQUIRREL is active, double normal acorn count
     player.acorn_count += (player.squirrel == KING_SQUIRREL) ? rewards.acorns * 2 : rewards.acorns;
 
+    // increase acorns per biome interval:
+    rewards.acorns += (BIOME_ACORN_INC * player.biome_num);
+
     // apply stat and buff
     rewards.acorns *= generate_factor(player.stats.proficiency_lv, PROFICIENCY_VALUE);
     if (player.buffs.proficiency_acorn > 0)
     {
       rewards.acorns *= 2;
       player.buffs.proficiency_acorn--;
+      buff_status.proficiency_acorn = true;
     }
 
     // passive scurry buff
@@ -76,11 +80,14 @@ void get_rewards(char msg_id)
   // golden acorns
   if (rewards.golden_acorns)
   { // apply stat then buff
+    rewards.golden_acorns += (BIOME_GOLDEN_ACORN_INC * player.biome_num);
+    
     rewards.golden_acorns *= generate_factor(player.stats.luck_lv, LUCK_VALUE);
     if (player.buffs.luck_acorn > 0)
     {
       rewards.golden_acorns *= 2;
       player.buffs.luck_acorn--;
+      buff_status.luck_acorn = true;
     }
 
     player.golden_acorns += rewards.golden_acorns;
@@ -94,6 +101,7 @@ void get_rewards(char msg_id)
     {
       rewards.health_loss /= 2;
       player.buffs.defense_acorn--;
+      buff_status.defense_acorn = true;
     }
     if (player.health - rewards.health_loss < 0)
       player.health = 0;
@@ -102,7 +110,7 @@ void get_rewards(char msg_id)
     
     if (player.health == 0)
     {
-      player.golden_acorns += (player.biome +1) * DIVIDEND_VALUE * player.acorn_count;
+      player.golden_acorns += DIVIDEND_VALUE * player.acorn_count * generate_factor(player.stats.luck_lv, LUCK_VALUE);
       player.squirrel = 0;
     }
   }
@@ -119,17 +127,18 @@ void generate_rewards(
 
   get_rewards(event->data->custom_id[0]);
 
+  // +On last use, buff is 0 but a buff is used
   if (rewards.acorns)
     ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n+**%s** "ACORNS" Acorns \n%s", 
       num_str(rewards.acorns), 
-      (player.buffs.proficiency_acorn > 0) ? "-**1** "PROFICIENCY_ACORN" Acorn of Proficiency \n" : " " );
+      (buff_status.proficiency_acorn) ? "-**1** "PROFICIENCY_ACORN" Acorn of Proficiency \n" : " " );
   else
     ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\nYou received no earnings! \n");
 
   if (rewards.golden_acorns)
     ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n+**%s** "GOLDEN_ACORNS" Golden Acorns \n%s", 
       num_str(rewards.golden_acorns), 
-      (player.buffs.luck_acorn > 0) ? "-**1** "LUCK_ACORN" Acorn of Luck \n" : " " );
+      (buff_status.luck_acorn) ? "-**1** "LUCK_ACORN" Acorn of Luck \n" : " " );
 
   if (rewards.catnip)
     ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n+**%s** "CATNIP" Catnip \n", num_str(rewards.catnip));
@@ -138,7 +147,7 @@ void generate_rewards(
     ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n-**%s** "BROKEN_HEALTH" HP (**%s** "HEALTH" HP Left) \n%s", 
       num_str(rewards.health_loss), 
       num_str(player.health), 
-      (player.buffs.defense_acorn > 0) ? "-**1** "DEFENSE_ACORN" Acorn of Defense \n" : " " );
+      (buff_status.defense_acorn) ? "-**1** "DEFENSE_ACORN" Acorn of Defense \n" : " " );
   
   if (rewards.health_regen)
     ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n+**%s** "HEALTH" HP (**%s** "HEALTH" HP Left) \n", 
@@ -159,7 +168,8 @@ void generate_rewards(
     // final acorns are added and then high score is set
     // high score is overwritten regardless of acorn count being higher
     player.high_acorn_count = player.acorn_count;
-    player.acorn_count = 0;
+
+    player.acorn_count = (player.acorn_count > PRESTIGE_REQ) ? player.acorn_count / PRESTIGE_REQ : 0;
   }
 
   if (rewards.stolen_acorns)
@@ -193,10 +203,15 @@ struct discord_components* main_button_response(
         : (chance < COMMON_CHANCE) ? TYPE_ACORN_HANDFUL
         : (chance < UNCOMMON_CHANCE) ? TYPE_ACORN_MOUTHFUL
         : (chance < CONTAINER_CHANCE) ? TYPE_LOST_STASH : TYPE_ACORN_SACK;
-    else
+    else {
       button_item =
           (chance < NORMAL_CHANCE) ? TYPE_ACORN_MOUTHFUL
         : (chance < HEALTH_LOSS_CHANCE) ? TYPE_HEALTH_LOSS : TYPE_ACORN_SACK;
+
+      if (button_item == TYPE_HEALTH_LOSS 
+        || button_item == TYPE_NO_ACORNS)
+        rewards.failure++;
+    }
 
     struct discord_emoji *emoji = calloc(1, sizeof(struct discord_emoji));
     if (rewards.has_responded)
@@ -225,6 +240,36 @@ struct discord_components* main_button_response(
     }
     else 
       buttons->array[i].style = DISCORD_BUTTON_SECONDARY;
+  }
+
+  // if all buttons are TYPE_HEALTH_LOSS or TYPE_NO_ACORNS, edit a button to have a reward
+  // ensure not all buttons are TYPE_HEALTH_LOSS
+  if (rewards.failure == buttons->size)
+  {
+    // select a random button to edit
+    int idx = rand() % buttons->size;
+
+    //free the emoji
+    free(buttons->array[idx].emoji);
+
+    // select a button item
+    int chance = rand() % MAX_CHANCE;
+    int button_item = 0;
+    if (msg_type == TYPE_MAIN_MSG)
+      button_item = (chance < COMMON_CHANCE) ? TYPE_ACORN_HANDFUL
+        : (chance < UNCOMMON_CHANCE) ? TYPE_ACORN_MOUTHFUL
+        : (chance < CONTAINER_CHANCE) ? TYPE_LOST_STASH : TYPE_ACORN_SACK;
+    else
+      button_item = (chance < NORMAL_CHANCE) ? TYPE_ACORN_MOUTHFUL : TYPE_ACORN_SACK;
+
+    // realloc the emoji for the new item
+    buttons->array[idx].emoji = calloc(1, sizeof(struct discord_emoji));
+    buttons->array[idx].emoji->name = item_types[button_item].file_path;
+    buttons->array[idx].emoji->id = item_types[button_item].emoji_id;
+
+    // if the button index is the same as the button edited -- change the reward
+    if (event->data->custom_id[1] == idx)
+      rewards.item_type = button_item;
   }
 
   return buttons;

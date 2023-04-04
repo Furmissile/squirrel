@@ -57,7 +57,8 @@ float generate_factor(int stat_lv, double base_value)
 /* Returns a total price based on stat level, currency unit, and a value multiplier */
 int generate_price(int stat_lv, double value_mult)
 {
-  return (value_mult * stat_lv) + (value_mult * (stat_lv/STAT_EVOLUTION));
+  // return (value_mult * stat_lv) + (value_mult * (stat_lv/STAT_EVOLUTION));
+  return ((stat_lv +1)/STAT_EVOLUTION * value_mult + value_mult) * stat_lv;
 }
 
 /* Checks for matching ids to make sure the player that sent the embed is the one pressing a button */
@@ -179,27 +180,30 @@ char* lowercase(const char* str)
 void energy_status(struct sd_message *discord_msg, int energy_loss)
 {
   struct discord_embed *embed = discord_msg->embed;
-
-  int energy_chance = (player.squirrel == GRAY_SQUIRREL) ? 40 : 70;
-
-  // if KING_SQUIRREL is active apply defect
-  int final_energy_loss = (energy_loss == MAIN_ENERGY_COST && player.squirrel == KING_SQUIRREL) 
-    ? energy_loss *2 : energy_loss;
-
-  if (energy_loss == STEAL_ENERGY_COST
-    || (rand() % MAX_CHANCE < energy_chance) )
+  int final_energy_loss = energy_loss;
+  
+  if (final_energy_loss == MAIN_ENERGY_COST)
   {
-    player.energy -= final_energy_loss;
-
-    embed->footer = calloc(1, sizeof(struct discord_embed_footer));
-    embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You have %d energy left!", player.energy),
-    embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, items[ITEM_ENERGY].item.file_path);
-    
-    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION,
-        "\n-**%d** "ENERGY" Energy \n", final_energy_loss);
+    if (player.squirrel == GRAY_SQUIRREL
+      && (rand() % MAX_CHANCE) > 70)
+    {
+      ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n"ENERGY" No energy was lost! \n");
+      return;
+    }
+    else if (player.squirrel == KING_SQUIRREL)
+    {
+      final_energy_loss *= 2;
+    }
   }
-  else
-    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n"ENERGY" No energy was lost! \n");
+
+  player.energy -= final_energy_loss;
+
+  embed->footer = calloc(1, sizeof(struct discord_embed_footer));
+  embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You have %d energy left!", player.energy),
+  embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, items[ITEM_ENERGY].item.file_path);
+  
+  ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION,
+      "\n-**%d** "ENERGY" Energy \n", final_energy_loss);
 }
 
 struct tm* get_UTC()

@@ -82,6 +82,13 @@ struct sd_buffs
   int endurance_acorn;
 };
 
+struct sd_buff_status
+{
+  bool proficiency_acorn;
+  bool defense_acorn;
+  bool luck_acorn;
+};
+
 struct sd_events 
 {
   int catnip;
@@ -121,6 +128,7 @@ struct sd_rewards
   int has_responded;
   int acorns;
   int health_loss;
+  int failure; // responds to all 3 encounter buttons being TYPE_HEALTH_LOSS
   int health_regen;
 
   int courage;

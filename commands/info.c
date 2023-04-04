@@ -123,6 +123,7 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
   embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, squirrels[player.squirrel].squirrel.file_path);
 
   create_info_interaction(event, discord_msg);
+  update_player_row(player);
 }
 
 void info_error(struct discord *client, struct discord_response *resp)

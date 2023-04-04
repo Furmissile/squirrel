@@ -28,7 +28,13 @@ struct discord_components* build_squirrel_buttons(const struct discord_interacti
     buttons->array[i] = (struct discord_component)
     {
       .type = DISCORD_COMPONENT_BUTTON,
-      .style = (player.acorn_count >= squirrels[i].acorn_count_req) 
+      /*
+        if no custom id && enough acorn count && this squirrel is not the selected squirrel
+        OR
+        custom id && enough acorn count && this squirrel is the selected squirrel
+      */
+      .style = ( (!event->data->custom_id && player.acorn_count >= squirrels[i].acorn_count_req && player.squirrel != i)
+        || (event->data->custom_id && player.acorn_count >= squirrels[i].acorn_count_req && player.squirrel == i) ) 
           ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
       .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%d_%ld", TYPE_SQUIRREL, i, event->member->user->id),
       .label = squirrels[i].squirrel.formal_name,

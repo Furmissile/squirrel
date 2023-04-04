@@ -17,9 +17,6 @@
 #define BUNNY_ED_PATH "sd_utils/bunny.png"
 #define VERIFY_PLUS_PATH "symbols/plus.png"
 
-#define ACORN_LB_ICON_PATH
-#define COURAGE_LB_ICON_PATH
-
 // SUPPORT SERVER SPECIFIC IDS
 #define WELCOME_CHANNEL_ID 1046634205729275955
 #define VERIFY_CHANNEL_ID 1046813534790635550
@@ -51,7 +48,7 @@
 // Multiply into rank
 #define BASE_COURAGE_MULT 0.05f
 
-#define MAX_ENERGY 50
+#define MAX_ENERGY 100
 #define MAX_HEALTH 100
 
 /* @@@ COOLDOWNS @@@ */
@@ -71,15 +68,20 @@
 #define CONTAINER_CHANCE 95  // 15 % -- Lost Stash
 #define MAX_CHANCE       100 // 5  % -- Sack of acorns
 
-#define ENCOUNTER_CHANCE 100 // 20 % -- checked separately
+#define ENCOUNTER_CHANCE 20 // 20 % -- checked separately
 
-#define NORMAL_CHANCE 50      // 50 % -- Normal Reward
-#define HEALTH_LOSS_CHANCE 90 // 40 % -- Health Loss
+#define NORMAL_CHANCE 60      // 60 % -- Normal Reward
+#define HEALTH_LOSS_CHANCE 90 // 30 % -- Health Loss
 #define DOUBLE_REWARD 100     // 10 % -- Double Reward
 
 #define BIOME_INTERVAL 5000
 #define BIOME_DAMAGE 10
+#define BIOME_ACORN_INC 10
+#define BIOME_GOLDEN_ACORN_INC 5
+#define STRENGTH_BUFF_INC 5
 #define DIVIDEND_VALUE 0.05f
+#define ACORN_PRESTIGE 4 // every 4 points grants 1 acorn count on death!
+#define PRESTIGE_REQ 20000 // minimin acorn for prestige to happen
 
 /* @@@ INTERACTION TYPES  @@@ */
 #define TYPE_MAIN_MSG 'r'
@@ -104,6 +106,8 @@
 
 #define SIZEOF_CUSTOM_ID 64
 
+#define SIZEOF_SQL_COMMAND 1024
+
 #define SIZEOF_URL 1024
 
 #define SIZEOF_SCURRY_NAME 16
@@ -112,27 +116,27 @@
 /* @@@ STAT CONSTANTS @@@ */
 #define STAT_EVOLUTION 5
 
-#define BASE_HEALTH_REGEN 10
+#define BASE_HEALTH_REGEN 5
 
-#define GOLDEN_ACORN_BUFF_COST 1000
+#define GOLDEN_ACORN_BUFF_COST 1500
 
 #define COLOR_COST 1500
 
 /* Price multiplier factors */
-#define PROFICIENCY_UNIT 1000
-#define LUCK_UNIT 2500
-#define STRENGTH_UNIT 5000
+#define PROFICIENCY_UNIT 1500
+#define LUCK_UNIT 5000
+#define STRENGTH_UNIT 10000
 
 /* @@@ The following stats are to increase resource earning, NOT to collect them @@@*/
 
 // See generate_factor() for details
 #define PROFICIENCY_VALUE 0.1f
-#define LUCK_VALUE 0.1f
-#define STRENGTH_VALUE 50
+#define LUCK_VALUE 0.2f
+#define STRENGTH_VALUE 100
  
 // Stat level brackets (for some style)
 #define BRONZE_BRACKET 20
-#define SILVER_BRACKET 30
+#define SILVER_BRACKET 40
 #define GOLD_BRACKET 50
 
 // SEASON MULTIPLIERS
@@ -142,8 +146,8 @@
 #define WINTER_MULT 1 // Explicit for definition
 
 #define SKELETAL_SQUIRREL_COUNT 25000
-#define BOOKIE_SQUIRREL_COUNT 75000
-#define KING_SQUIRREL_COUNT 150000
+#define BOOKIE_SQUIRREL_COUNT 50000
+#define KING_SQUIRREL_COUNT 100000
 
 #define ERROR_STATUS -1
 
@@ -153,8 +157,6 @@
       error_message(event, message); \
       return ERROR_STATUS; \
     }
-
-#define SIZEOF_SQL_COMMAND 1024
 
 // Errors involving clearing a query
 #define ERROR_DATABASE_RET(error, message, PQ_result) \
