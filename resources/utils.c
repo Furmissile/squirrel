@@ -13,7 +13,7 @@ char* format_str(int size, char* format, ...)
   return buffer;
 }
 
-PGresult* SQL_query(PGconn* db_conn, char* format, ...)
+PGresult* SQL_query(enum ACTION_TYPE action, char* format, ...)
 {
   char* buffer = calloc(SIZEOF_SQL_COMMAND, sizeof(char));
 
@@ -25,7 +25,12 @@ PGresult* SQL_query(PGconn* db_conn, char* format, ...)
 
   va_end(args);
 
-  PGresult* query = PQexec(db_conn, buffer);
+  PGresult* query = PQexec(conn, buffer);
+
+  // also make the call to update the backup DB ONLY if it's not a search (so essentially an update)
+  // (this way, we arent searching two matching databases)
+  if (action != DB_ACTION_SEARCH)
+    PQexec(backup_conn, buffer);
 
   free(buffer);
 

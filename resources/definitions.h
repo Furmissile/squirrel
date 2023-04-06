@@ -43,6 +43,15 @@ enum SCURRY_RES
   DB_WAR_FLAG
 };
 
+// some listed here are identical for my intents and purposes
+// but it's nice to have explicit definitions
+enum ACTION_TYPE {
+  DB_ACTION_SEARCH,
+  DB_ACTION_INSERT,
+  DB_ACTION_UPDATE,
+  DB_ACTION_DELETE
+};
+
 enum SCURRY_RANKS 
 {
   SEED_NOT,

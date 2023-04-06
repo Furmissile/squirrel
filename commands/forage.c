@@ -110,7 +110,7 @@ void get_rewards(char msg_id)
     
     if (player.health == 0)
     {
-      player.golden_acorns += DIVIDEND_VALUE * player.acorn_count * generate_factor(player.stats.luck_lv, LUCK_VALUE);
+      player.golden_acorns += (DIVIDEND_VALUE * player.acorn_count * generate_factor(player.stats.luck_lv, LUCK_VALUE));
       player.squirrel = 0;
     }
   }

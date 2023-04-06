@@ -22,19 +22,19 @@ int scurry_create(
       "The name needs to be less than 16 characters.");
 
   // check if the name is unique
-  PGresult* check_scurry = SQL_query(conn, "select * from public.scurry where s_name like '%s'", input);
+  PGresult* check_scurry = SQL_query(DB_ACTION_SEARCH, "select * from public.scurry where s_name like '%s'", input);
   ERROR_DATABASE_RET(
       (PQntuples(check_scurry) > 0), 
       format_str(SIZEOF_DESCRIPTION, "Sorry, the name \"%s\" is already taken!", input), 
       check_scurry);
   PQclear(check_scurry);
 
-  check_scurry = SQL_query(conn, "INSERT INTO public.scurry VALUES(%ld, '%s', 0, 0, 0)", 
+  check_scurry = SQL_query(DB_ACTION_SEARCH, "INSERT INTO public.scurry VALUES(%ld, '%s', 0, 0, 0)", 
       event->member->user->id, input);
   PQclear(check_scurry);
 
   // check if input was successful
-  check_scurry = SQL_query(conn, "select * from public.scurry where owner_id = %ld", event->member->user->id);
+  check_scurry = SQL_query(DB_ACTION_SEARCH, "select * from public.scurry where owner_id = %ld", event->member->user->id);
   ERROR_DATABASE_RET((PQntuples(check_scurry) == 0), "An error has occurred during creation. Scurry could not be found!", check_scurry);
 
   player.scurry_id = event->member->user->id; // the player is the owner

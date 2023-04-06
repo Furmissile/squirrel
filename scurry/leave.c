@@ -18,8 +18,6 @@ int scurry_leave(
 
   char* input = event->data->options->array[0].value;
 
-  printf("%s \n", lowercase(input));
-
   ERROR_INTERACTION((strcmp(lowercase(input), "yes") != 0), "Please enter 'yes' to verify!");
 
   player.scurry_id = 0;

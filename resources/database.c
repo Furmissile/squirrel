@@ -17,12 +17,13 @@ PGconn* establish_connection(char* conninfo)
 
 struct sd_player load_player_struct(unsigned long user_id)
 {
-  PGresult* search_player = SQL_query(conn, "select * from public.player where user_id = %ld",
+  PGresult* search_player = SQL_query(DB_ACTION_SEARCH, "select * from public.player where user_id = %ld",
     user_id);
 
   if (PQntuples(search_player) == 0)
   {  
-    SQL_query(conn, "BEGIN; \n"
+    SQL_query(DB_ACTION_UPDATE, 
+      "BEGIN; \n"
       "insert into public.player values(%ld, 0, 0, 0, 100, 100, 0, 0, 0, 0, 0, %d, 0); \n"
       "insert into public.stats values(%ld, 1, 1, 1); \n"
       "insert into public.buffs values(%ld, 0, 0, 0, 0, 0); \n"
@@ -33,7 +34,8 @@ struct sd_player load_player_struct(unsigned long user_id)
   }
   PQclear(search_player);
 
-  search_player = SQL_query(conn, "select * from public.player \
+  search_player = SQL_query(DB_ACTION_UPDATE, 
+    "select * from public.player \
     join public.stats on player.user_id = stats.user_id \
     join public.buffs on player.user_id = buffs.user_id \
     join public.events on player.user_id = events.user_id \
@@ -96,7 +98,7 @@ struct sd_scurry load_scurry_struct(unsigned long scurry_id)
 
   if (scurry_id > 0)
   {
-    PGresult* scurry_db = SQL_query(conn, "select * from public.scurry where owner_id = %ld", scurry_id);
+    PGresult* scurry_db = SQL_query(DB_ACTION_SEARCH, "select * from public.scurry where owner_id = %ld", scurry_id);
 
     scurry = (struct sd_scurry) { 0 };
 
@@ -202,7 +204,7 @@ void update_player_row(struct sd_player player_res)
     player_res.events.catnip, 
     player_res.user_id);
 
-  SQL_query(conn, sql_str);
+  SQL_query(DB_ACTION_UPDATE, sql_str);
 
   free(sql_str);
 }
@@ -218,7 +220,7 @@ void update_scurry_row(struct sd_scurry scurry_res)
         scurry_res.courage, scurry_res.war_acorns, scurry_res.war_flag,
         scurry_res.scurry_owner_id);
   
-  PQexec(conn, sql_str);
+  SQL_query(DB_ACTION_UPDATE, sql_str);
 
   free(sql_str);
 }

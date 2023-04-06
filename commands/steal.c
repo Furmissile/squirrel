@@ -79,7 +79,8 @@ void steal_acorns(
         event->member->user->id, num_str(steal_info->steal_amt));
   }
   else {
-    SQL_query(conn, "update public.player set acorns = acorns - %d where user_id = %ld", 
+    SQL_query(DB_ACTION_UPDATE, 
+        "update public.player set acorns = acorns - %d where user_id = %ld", 
         steal_info->steal_amt, steal_info->t_user_id);
 
     int golden_acorns = genrand(25, 25) * generate_factor(player.stats.luck_lv, LUCK_VALUE);
@@ -159,10 +160,9 @@ int steal_interaction(
   int steal_min = STEAL_MINIMUM * (*stats[STAT_PROFICIENCY].stat_ptr +1);
   float random_percent = (float)genrand(50, 25) /100;
 
-  printf("\nSearching for players who have more than %d acorns... \n", steal_min);
-
   // select all players that isnt the player, game owner, within a range of acorns, or is the same scurry
-  PGresult* t_user = SQL_query(conn, "select user_id, acorns from public.player \
+  PGresult* t_user = SQL_query(DB_ACTION_SEARCH, 
+    "select user_id, acorns from public.player \
       where user_id != %ld \
       and user_id != %ld \
       %s \

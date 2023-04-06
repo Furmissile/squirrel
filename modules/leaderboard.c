@@ -46,7 +46,7 @@ void create_leaderboard_interaction(struct discord *client, const struct discord
   if (user_data->is_top_ten == 0) 
   {
     // player position in leaderboard
-    player_pos = SQL_query(conn, "select row_idx, user_id, acorn_count \
+    player_pos = SQL_query(DB_ACTION_SEARCH, "select row_idx, user_id, acorn_count \
         from (select dense_rank() over (order by acorn_count desc) as row_idx, user_id, acorn_count from public.player) \
         as lb where lb.user_id = %ld",
         player.user_id);
@@ -186,6 +186,7 @@ void courage_leaderboard(struct discord *client, struct discord_response *resp, 
   free(discord_msg);
 }
 
+// TODO: Get leaderboard working again!!
 int get_leaderboard(
   const struct discord_interaction *event, 
   struct sd_message *discord_msg)
@@ -202,12 +203,11 @@ int get_leaderboard(
 
   if (strcmp(command_type, "acorn_count") == 0)
   {
-    ERROR_INTERACTION((player.acorn_count == 0), "You must be have an acorn count to view this leaderboard!");
+    ERROR_INTERACTION((player.high_acorn_count == 0), "You must be have an acorn count to view this leaderboard!");
 
-    player_pos = SQL_query(conn, "select dense_rank() over (order by acorn_count desc) as rank_idx, user_id, high_acorn_count \
-        from (select dense_rank() over (order by high_acorn_count desc) as rank_idx, user_id, high_acorn_count from public.player) as lb \
-        where user_id != %ld and rank_idx <= 10 and acorn_count > 0", 
-        OWNER_ID);
+    player_pos = SQL_query(DB_ACTION_SEARCH, "select dense_rank() over (order by acorn_count desc) as rank_idx, user_id, acorn_count \
+    from (select dense_rank() over (order by acorn_count desc) as rank_idx, user_id, (coalesce((select acorn_count where acorn_count > high_acorn_count), (select high_acorn_count where high_acorn_count > acorn_count)))  as acorn_count \
+    from public.player) as lb where rank_idx <= 10 and acorn_count > 0");
 
     ERROR_DATABASE_RET((PQntuples(player_pos) == 0), "There aren't enough entries yet!", player_pos);
 
@@ -218,10 +218,9 @@ int get_leaderboard(
     ERROR_INTERACTION((player.scurry_id == 0), "You must be in a scurry to view this leaderboard!");
     ERROR_INTERACTION((scurry.courage == 0), "Your scurry must participate in a war to view this leaderboard!");
 
-    player_pos = SQL_query(conn, "select dense_rank() over (order by courage desc) as rank_idx, owner_id, s_name, courage \
+    player_pos = SQL_query(DB_ACTION_SEARCH, "select dense_rank() over (order by courage desc) as rank_idx, owner_id, s_name, courage \
         from (select dense_rank() over (order by courage desc) as rank_idx, owner_id, s_name, courage from public.scurry) as lb \
-        where lb.owner_id != %ld and rank_idx <= 10 and courage > 0", 
-        OWNER_ID);
+        where rank_idx <= 10 and courage > 0");
 
     ERROR_DATABASE_RET((PQntuples(player_pos) == 0), "There aren't enough entries yet!", player_pos);
 
