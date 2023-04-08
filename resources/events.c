@@ -1,9 +1,3 @@
-#define VICTUALS_CHANCE 80
-
-#define BLUEBERRY_CHANCE 60 // Gives acorn count
-#define CHERRY_CHANCE 80 // Gives health
-#define SEED_CHANCE 100 // Gives energy
-
 void factor_season()
 {
   struct tm *info = get_UTC();

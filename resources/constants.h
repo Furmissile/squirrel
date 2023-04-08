@@ -74,6 +74,12 @@
 #define HEALTH_LOSS_CHANCE 90 // 30 % -- Health Loss
 #define DOUBLE_REWARD 100     // 10 % -- Double Reward
 
+#define VICTUALS_CHANCE 80
+
+#define BLUEBERRY_CHANCE 60 // Gives acorn count
+#define CHERRY_CHANCE 80 // Gives health
+#define SEED_CHANCE 100 // Gives energy
+
 #define BIOME_INTERVAL 5000
 #define BIOME_DAMAGE 10
 #define BIOME_ACORN_INC 10
