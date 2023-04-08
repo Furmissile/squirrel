@@ -234,7 +234,11 @@ void energy_regen()
     player.buffs.strength_acorn = 0;
   }
 
-  int add_energy = (player.energy < MAX_ENERGY) ? (time(NULL) - player.main_cd)/ BASE_ENERGY_CD : 0;
+  struct tm *info = get_UTC();
+
+  int energy_cd = (info->tm_mday > 7 && info->tm_mday < 14) ? 90 : 180;
+
+  int add_energy = (player.energy < MAX_ENERGY) ? (time(NULL) - player.main_cd)/ energy_cd : 0;
 
   if (player.energy + add_energy > MAX_ENERGY)
     player.energy += (player.energy > MAX_ENERGY) ? 0 : add_energy - (add_energy - (MAX_ENERGY - player.energy));
@@ -242,7 +246,7 @@ void energy_regen()
     player.energy += add_energy;
 
   // wont disturb cooldown when info embed is sent
-  player.main_cd = time(NULL) - ((time(NULL) - player.main_cd) % BASE_ENERGY_CD);
+  player.main_cd = time(NULL) - ((time(NULL) - player.main_cd) % energy_cd);
 }
 
 void not_user(struct discord *client, struct discord_response *resp)

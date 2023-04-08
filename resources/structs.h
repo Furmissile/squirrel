@@ -33,6 +33,14 @@ struct sd_obj_stats
   float value_mult;
 };
 
+struct sd_victuals
+{
+  struct sd_file_data item;
+  int* stat_ptr;
+
+  struct sd_obj_items *item_ref;
+};
+
 struct sd_encounter
 {
   char* name;
@@ -127,6 +135,7 @@ struct sd_rewards
   int item_type;
   int has_responded;
   int acorns;
+  int acorn_count;
   int health_loss;
   int failure; // responds to all 3 encounter buttons being TYPE_HEALTH_LOSS
   int health_regen;
@@ -137,6 +146,8 @@ struct sd_rewards
   int golden_acorns;
   
   int catnip;
+  int victuals;
+  int victual_type;
 
   int buff_duration;
 };

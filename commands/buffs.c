@@ -17,7 +17,7 @@ struct discord_components* build_buff_buttons(const struct discord_interaction *
           (*enchanted_acorns[button_idx].stat_ptr) += genrand(5, 5);
           break;
         case BUFF_STRENGTH_ACORN:
-          (*enchanted_acorns[button_idx].stat_ptr) += genrand(15, 5) + (player.stats.strength_lv * 5);
+          (*enchanted_acorns[button_idx].stat_ptr) += genrand(15, 5) * player.stats.strength_lv;
           break;
         default:
           (*enchanted_acorns[button_idx].stat_ptr) += genrand(15, 5);

@@ -9,10 +9,11 @@
 // other event are to be added (including holiday events, etc.)
 enum E_TOPIC {
   E_TOPIC_SEASONS,
-  E_TOPIC_SPRING,
-  E_TOPIC_BUNNY,
   E_TOPIC_ACORN_COUNT,
-  E_TOPIC_FUTURE,
+  E_TOPIC_SPRING,
+  E_TOPIC_SUMMER,
+  E_TOPIC_FALL,
+  E_TOPIC_WINTER,
   E_TOPIC_SIZE
 };
 
@@ -32,6 +33,12 @@ void e_help(struct sd_message *discord_msg)
   embed->fields->size = E_TOPIC_SIZE;
   embed->fields->array = calloc(E_TOPIC_SIZE, sizeof(struct discord_embed_field));
 
+  embed->fields->array[E_TOPIC_ACORN_COUNT].name = format_str(SIZEOF_TITLE, ""ACORNS" Acorn Count Event");
+  embed->fields->array[E_TOPIC_ACORN_COUNT].value = format_str(SIZEOF_FIELD_VALUE,
+      " "OFF_ARROW" This is an ongoing event where players compete based on the amount of acorns they've collected! \n"
+      " "OFF_ARROW" The count is uneffected by your stats and buffs, so be sure to have your luck in your right pocket! \n"
+      " "OFF_ARROW" The count is increased by `/forage` and successful steals! \n");
+
   embed->fields->array[E_TOPIC_SEASONS].name = format_str(SIZEOF_TITLE, ""ACORNS" Seasons");
   embed->fields->array[E_TOPIC_SEASONS].value = format_str(SIZEOF_FIELD_VALUE,
       " "OFF_ARROW" Seasons change every week and passively occur. Each season gives a different boost to acorn gains. \n"
@@ -44,21 +51,23 @@ void e_help(struct sd_message *discord_msg)
       " "OFF_ARROW" Lasts throughout the in-game Spring season! \n"
       " "OFF_ARROW" Golden acorns have a chance to be included in every `/forage` instead of just from `/steal` or lost stashes! \n");
 
-  embed->fields->array[E_TOPIC_BUNNY].name = format_str(SIZEOF_TITLE, ""ACORNS" Bunny's Endeavor (Winter)");
-  embed->fields->array[E_TOPIC_BUNNY].value = format_str(SIZEOF_FIELD_VALUE,
+  embed->fields->array[E_TOPIC_SUMMER].name = format_str(SIZEOF_TITLE, ""ACORNS" Garden Raid Event (Summer)");
+  embed->fields->array[E_TOPIC_SUMMER].value = format_str(SIZEOF_FIELD_VALUE,
+      " "OFF_ARROW" Everyone is growing all sorts of useful victuals! *RaId ThEiR gArDeNsSs!* \n"
+      " "OFF_ARROW" Lasts throughout the in-game Summer season! \n"
+      " "OFF_ARROW" Look for all sorts of victuals including blueberries, seeds, and cherries for bonus rewards! \n");
+
+  embed->fields->array[E_TOPIC_FALL].name = format_str(SIZEOF_TITLE, ""ACORNS" Winter Prep Event (Fall)");
+  embed->fields->array[E_TOPIC_FALL].value = format_str(SIZEOF_FIELD_VALUE,
+      " "OFF_ARROW" Winter is coming! Take this time to snatch all the acorns you can before hibernation! \n"
+      " "OFF_ARROW" Lasts throughout the in-game Fall season! \n"
+      " "OFF_ARROW" Energy regeneration for all players is halved! \n");
+
+  embed->fields->array[E_TOPIC_WINTER].name = format_str(SIZEOF_TITLE, ""ACORNS" Bunny's Endeavor (Winter)");
+  embed->fields->array[E_TOPIC_WINTER].value = format_str(SIZEOF_FIELD_VALUE,
       " "OFF_ARROW" Resources are depleting! Bunny is looking for able-bodies who can fetch him "CATNIP" catnip. He'll pay handsomely for it, too. \n"
       " "OFF_ARROW" Lasts throughout the in-game Winter season! Check out `/bunny_endeavor`! \n"
       " "OFF_ARROW" Catnip has a chance to be included in every `/forage`! \n");
-
-  embed->fields->array[E_TOPIC_ACORN_COUNT].name = format_str(SIZEOF_TITLE, ""ACORNS" Acorn Count Event");
-  embed->fields->array[E_TOPIC_ACORN_COUNT].value = format_str(SIZEOF_FIELD_VALUE,
-      " "OFF_ARROW" This is an ongoing event where players compete based on the amount of acorns they've collected! \n"
-      " "OFF_ARROW" The count is uneffected by your stats and buffs, so be sure to have your luck in your right pocket! \n"
-      " "OFF_ARROW" The count is increased by `/forage` and successful steals! \n");
-
-  embed->fields->array[E_TOPIC_FUTURE].name = format_str(SIZEOF_TITLE, ""ACORNS" Future Events");
-  embed->fields->array[E_TOPIC_FUTURE].value = format_str(SIZEOF_FIELD_VALUE,
-      " "OFF_ARROW" Future events will be listed here!");
   
   embed->footer = calloc(1, sizeof(struct discord_embed_footer));
   embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "Happy Foraging!");

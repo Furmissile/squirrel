@@ -395,6 +395,52 @@ enum BUNNY_STORE
   BUNNY_STORE_SIZE
 };
 
+enum TYPE_victuals {
+  BLUEBERRY_VICTUALS,
+  CHERRY_VICTUALS,
+  SEED_VICTUALS,
+  VICTUALS_SIZE
+};
+
+struct sd_victuals victuals[VICTUALS_SIZE] = {
+  {
+    .item = {
+      .formal_name = "Blueberries",
+      .file_path = "victuals/blueberry_victuals.png",
+
+      .emoji_name = "blueberry_victuals",
+      .emoji_id = 1094282921944305724
+    },
+
+    .stat_ptr = &player.acorn_count,
+    .item_ref = &items[ITEM_ACORN_COUNT]
+  },
+  {
+    .item = {
+      .formal_name = "Cherries",
+      .file_path = "victuals/cherry_victuals.png",
+
+      .emoji_name = "cherry_victuals",
+      .emoji_id = 1094282923806556251,
+    },
+
+    .stat_ptr = &player.health,
+    .item_ref = &items[ITEM_HEALTH]
+  },
+  {
+    .item = {
+      .formal_name = "Seeds",
+      .file_path = "victuals/seed_victuals.png",
+
+      .emoji_name = "seed_victuals",
+      .emoji_id = 1094282924750274572
+    },
+
+    .stat_ptr = &player.energy,
+    .item_ref = &items[ITEM_ENERGY]
+  }
+};
+
 enum SQUIRREL 
 {
   GRAY_SQUIRREL,
@@ -491,7 +537,6 @@ struct sd_squirrel squirrels[SQUIRREL_SIZE] = {
   }
 };
 
-// TODO: UPDATE BIOME SIZE
 enum BIOME 
 {
   GRASSLANDS,

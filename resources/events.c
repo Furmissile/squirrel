@@ -1,3 +1,9 @@
+#define VICTUALS_CHANCE 80
+
+#define BLUEBERRY_CHANCE 60 // Gives acorn count
+#define CHERRY_CHANCE 80 // Gives health
+#define SEED_CHANCE 100 // Gives energy
+
 void factor_season()
 {
   struct tm *info = get_UTC();
@@ -8,8 +14,29 @@ void factor_season()
           : (rewards.item_type < TYPE_LOST_STASH) ? genrand(15, 10) : genrand(25, 10);
     rewards.acorns *= SPRING_MULT;
   }
-  else if (info->tm_mday < 14)
+  else if (info->tm_mday < 14) {
     rewards.acorns *= SUMMER_MULT;
+    // resource overflow is acceptable in this case since the chance is so low
+    if ((rand() % MAX_CHANCE) > VICTUALS_CHANCE) 
+    {
+      int victuals_chance = rand() % MAX_CHANCE;
+
+      if (victuals_chance < BLUEBERRY_CHANCE) {
+        float random_percent = (float)genrand(50, 50) /100;
+        rewards.victuals = rewards.acorn_count * random_percent;
+        rewards.victual_type = BLUEBERRY_VICTUALS;
+      }
+      else if (victuals_chance < CHERRY_CHANCE) {
+        rewards.victuals = genrand(15, 5) * player.stats.strength_lv;
+        rewards.victual_type = CHERRY_VICTUALS;
+      }
+      else {
+        rewards.victuals = genrand(15, 10);
+        rewards.victual_type = SEED_VICTUALS;
+      }
+    }
+    (*victuals[rewards.victual_type].stat_ptr) += rewards.victuals;
+  }
   else if (info->tm_mday < 21)
     rewards.acorns *= FALL_MULT;
   else {
@@ -28,7 +55,7 @@ int get_season_event(
 
   char* months[12] = {"Jan", "Feb", "Mar", "April", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
-  char* seasons[4] = {"Spring (Spring Chicken Live!)", "Summer", "Fall", "Winter (Bunny's Endeavor Live!)"};
+  char* seasons[4] = {"Spring (Spring Chicken Live!)", "Summer (Garden Raid Season!)", "Fall (Winter Prep Live!)", "Winter (Bunny's Endeavor Live!)"};
 
   discord_msg->content = format_str(SIZEOF_DESCRIPTION,
           "Current Season: **%s** (Ends on %s **%d**)", 

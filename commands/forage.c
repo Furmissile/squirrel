@@ -52,7 +52,8 @@ void get_rewards(char msg_id)
           ? scurry.war_acorn_cap : scurry.war_acorns + rewards.acorns;
 
     // if KING_SQUIRREL is active, double normal acorn count
-    player.acorn_count += (player.squirrel == KING_SQUIRREL) ? rewards.acorns * 2 : rewards.acorns;
+    rewards.acorn_count = (player.squirrel == KING_SQUIRREL) ? rewards.acorns * 2 : rewards.acorns;
+    player.acorn_count += rewards.acorn_count;
 
     // increase acorns per biome interval:
     rewards.acorns += (BIOME_ACORN_INC * player.biome_num);
@@ -71,9 +72,6 @@ void get_rewards(char msg_id)
 
     // if SQUIRREL_BOOKIE is active, double acorn earning
     rewards.acorns *= (player.squirrel == SQUIRREL_BOOKIE) ? 2 : 1;
-
-    // only acorns gets multiplied -- the rest are added making the func call here no different
-    factor_season();
 
     player.acorns += rewards.acorns;
   }
@@ -114,6 +112,10 @@ void get_rewards(char msg_id)
       player.squirrel = 0;
     }
   }
+  
+  //factor season prior to acorn count and not an encounter
+  if (msg_id != TYPE_ENCOUNTER_MSG)
+    factor_season();
 
   player.events.catnip += rewards.catnip;
 }
@@ -153,6 +155,14 @@ void generate_rewards(
     ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n+**%s** "HEALTH" HP (**%s** "HEALTH" HP Left) \n", 
       num_str(rewards.health_regen),
       num_str(player.health) );
+  
+  if (rewards.victuals) {
+    struct sd_file_data victual_type = victuals[rewards.victual_type].item;
+    struct sd_file_data victual_ref = victuals[rewards.victual_type].item_ref->item;
+    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n**%s** <:%s:%ld> %s (+**%s** <:%s:%ld> %s) \n",
+      num_str(rewards.victuals), victual_type.emoji_name, victual_type.emoji_id, victual_type.formal_name,
+      num_str(rewards.victuals), victual_ref.emoji_name, victual_ref.emoji_id, victual_ref.formal_name);
+  }
 
   if (player.health == 0)
   {
@@ -195,7 +205,7 @@ struct discord_components* main_button_response(
   {
     int chance = rand() % MAX_CHANCE;
 
-    int button_item = 0;
+    int button_item = TYPE_HEALTH_LOSS;
 
     if (msg_type == TYPE_MAIN_MSG)
       button_item = 
@@ -268,7 +278,7 @@ struct discord_components* main_button_response(
     buttons->array[idx].emoji->id = item_types[button_item].emoji_id;
 
     // if the button index is the same as the button edited -- change the reward
-    if (event->data->custom_id[1] == idx)
+    if (event->data->custom_id[1] -48 == idx)
       rewards.item_type = button_item;
   }
 
