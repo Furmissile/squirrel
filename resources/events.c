@@ -8,7 +8,7 @@ void factor_season()
           : (rewards.item_type < TYPE_LOST_STASH) ? genrand(15, 10) : genrand(25, 10);
     rewards.acorns *= SPRING_MULT;
   }
-  else if (info->tm_mday < 14) {
+  else if (rewards.acorns && info->tm_mday < 14) {
     rewards.acorns *= SUMMER_MULT;
     // resource overflow is acceptable in this case since the chance is so low
     if ((rand() % MAX_CHANCE) > VICTUALS_CHANCE) 
