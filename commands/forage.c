@@ -264,7 +264,7 @@ struct discord_components* main_button_response(
 
   // if all buttons are TYPE_HEALTH_LOSS or TYPE_NO_ACORNS, edit a button to have a reward
   // ensure not all buttons are TYPE_HEALTH_LOSS
-  if (rewards.failure == buttons->size)
+  if (rewards.failure == buttons->size -1)
   {
     // select a random button to edit
     int idx = rand() % buttons->size;
@@ -397,6 +397,8 @@ void main_embed(
 
       embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
       embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, item_types[rewards.item_type].file_path);
+
+      printf("\n%s\n\n", embed->thumbnail->url);
 
       embed->title = format_str(SIZEOF_TITLE, "You found %s!", item_types[rewards.item_type].formal_name);
 
