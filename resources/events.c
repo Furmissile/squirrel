@@ -21,7 +21,7 @@ void factor_season()
         rewards.victual_type = BLUEBERRY_VICTUALS;
       }
       else if (victuals_chance < CHERRY_CHANCE) {
-        rewards.victuals = genrand(15, 5) * player.stats.strength_lv;
+        rewards.victuals = genrand(BASE_HEALTH_REGEN, BASE_HEALTH_REGEN) * player.stats.strength_lv;
         rewards.victual_type = CHERRY_VICTUALS;
       }
       else {

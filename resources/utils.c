@@ -236,7 +236,7 @@ void energy_regen()
 
   struct tm *info = get_UTC();
 
-  int energy_cd = (info->tm_mday > 7 && info->tm_mday < 14) ? 90 : 180;
+  int energy_cd = (info->tm_mday > 14 && info->tm_mday < 21) ? 90 : 180;
 
   int add_energy = (player.energy < MAX_ENERGY) ? (time(NULL) - player.main_cd)/ energy_cd : 0;
 

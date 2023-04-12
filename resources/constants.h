@@ -76,8 +76,8 @@
 
 #define VICTUALS_CHANCE 80
 
-#define BLUEBERRY_CHANCE 60 // Gives acorn count
-#define CHERRY_CHANCE 80 // Gives health
+#define BLUEBERRY_CHANCE 75 // Gives acorn count
+#define CHERRY_CHANCE 90 // Gives health
 #define SEED_CHANCE 100 // Gives energy
 
 #define BIOME_INTERVAL 5000
@@ -93,6 +93,7 @@
 #define TYPE_MAIN_MSG 'r'
 #define TYPE_ENCOUNTER_MSG 'e'
 
+#define TYPE_FORAGE 'f'
 #define TYPE_UPGRADE 's'
 #define TYPE_SQUIRREL 'q'
 #define TYPE_BUNNY 'y'
@@ -124,7 +125,7 @@
 
 #define BASE_HEALTH_REGEN 5
 
-#define GOLDEN_ACORN_BUFF_COST 1500
+#define GOLDEN_ACORN_BUFF_COST 2000
 
 #define COLOR_COST 1500
 
@@ -137,7 +138,7 @@
 
 // See generate_factor() for details
 #define PROFICIENCY_VALUE 0.1f
-#define LUCK_VALUE 0.2f
+#define LUCK_VALUE 0.1f
 #define STRENGTH_VALUE 100
  
 // Stat level brackets (for some style)

@@ -919,7 +919,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
       {
         .name = "Necrotic Lakes: Squirrel-o-mancer",
         .conflict = "Does he raise- tiny fluffballs of doom? Should you find out?",
-        .file_path = "dg_content/encounters/nero_squirrel.png",
+        .file_path = "dg_content/encounters/necro-squirrel.png",
 
         .solutions = {"Approach", "Bonk him on the cabeza with an acorn", "Don't want to know"}
       },

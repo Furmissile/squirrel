@@ -179,7 +179,7 @@ void generate_rewards(
     // high score is overwritten regardless of acorn count being higher
     player.high_acorn_count = player.acorn_count;
 
-    player.acorn_count = (player.acorn_count > PRESTIGE_REQ) ? player.acorn_count / PRESTIGE_REQ : 0;
+    player.acorn_count = (player.acorn_count > PRESTIGE_REQ) ? player.acorn_count / ACORN_PRESTIGE : 0;
   }
 
   if (rewards.stolen_acorns)
@@ -198,14 +198,15 @@ struct discord_components* main_button_response(
   struct discord_components* buttons = calloc(1, sizeof(struct discord_components));
   struct sd_encounter encounter = biomes[player.biome].encounters[player.encounter];
 
-  buttons->size = 3;
+  buttons->size = 4;
   buttons->array = calloc(buttons->size, sizeof(struct discord_component));
 
-  for (int i = 0; i < buttons->size; i++) 
+  // only for main buttons
+  for (int i = 0; i < buttons->size -1; i++) 
   {
     int chance = rand() % MAX_CHANCE;
 
-    int button_item = TYPE_HEALTH_LOSS;
+    int button_item = 0;
 
     if (msg_type == TYPE_MAIN_MSG)
       button_item = 
@@ -251,6 +252,15 @@ struct discord_components* main_button_response(
     else 
       buttons->array[i].style = DISCORD_BUTTON_SECONDARY;
   }
+
+  buttons->array[3] = (struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .style = DISCORD_BUTTON_SUCCESS,
+    .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c3_%ld", TYPE_FORAGE, event->member->user->id),
+    .label = "Forage again!",
+    .disabled = (event->data->custom_id && event->data->custom_id[0] == 3) ? true : false
+  };
 
   // if all buttons are TYPE_HEALTH_LOSS or TYPE_NO_ACORNS, edit a button to have a reward
   // ensure not all buttons are TYPE_HEALTH_LOSS
@@ -363,7 +373,7 @@ void main_embed(
 
   embed->description = calloc(SIZEOF_DESCRIPTION, sizeof(char));
 
-  if (event->data->custom_id)
+  if (event->data->custom_id && event->data->custom_id[1] -48 != 3)
   { // this is a response
     if (event->data->custom_id[0] == TYPE_ENCOUNTER_MSG
       || player.encounter != ERROR_STATUS) 
@@ -429,7 +439,7 @@ int forage_interaction(const struct discord_interaction *event, struct sd_messag
 
   struct discord_interaction_response interaction = 
   {
-    .type = (event->data->custom_id) ? DISCORD_INTERACTION_UPDATE_MESSAGE : DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
+    .type = (event->data->custom_id && event->data->custom_id[1] -48 != 3) ? DISCORD_INTERACTION_UPDATE_MESSAGE : DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
 
     .data = &(struct discord_interaction_callback_data) 
     {
