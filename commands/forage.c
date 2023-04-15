@@ -190,6 +190,12 @@ void generate_rewards(
     
     player.golden_acorns += ((player.biome +1) * DIVIDEND_VALUE * player.acorn_count);
   }
+  else if (player.acorn_count/BIOME_INTERVAL > player.biome)
+  {
+    struct sd_file_data next_biome = biomes[(player.biome_num +1) % BIOME_SIZE].biome_icon;
+    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n "QUEST_MARKER" You have reached <:%s:%ld> **%s**!\n",
+        next_biome.emoji_name, next_biome.emoji_id, next_biome.formal_name);
+  }
 
   if (rewards.stolen_acorns)
     ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\nYou successfully stole **%s** "STOLEN_ACORNS" War Acorns! \n+**%s** "COURAGE" Courage \n", 
