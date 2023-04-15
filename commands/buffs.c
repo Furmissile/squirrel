@@ -9,9 +9,9 @@ struct discord_components* build_buff_buttons(const struct discord_interaction *
 
   if (event->data->custom_id)
   {
+    int button_idx = event->data->custom_id[1] -48;
     if (player.golden_acorns >= golden_acorn_cost)
     {
-      int button_idx = event->data->custom_id[1] -48;
       switch (button_idx) {
         case BUFF_DEFENSE_ACORN:
           (*enchanted_acorns[button_idx].stat_ptr) += genrand(5, 5);
@@ -31,6 +31,7 @@ struct discord_components* build_buff_buttons(const struct discord_interaction *
 
   int is_disabled = false;
   int button_style;
+
   if (player.golden_acorns >= golden_acorn_cost)
   {
     button_style = DISCORD_BUTTON_PRIMARY;
@@ -56,6 +57,11 @@ struct discord_components* build_buff_buttons(const struct discord_interaction *
       .disabled = is_disabled
     };
 
+  }
+
+  if (player.health > player.max_health) {
+    buttons->array[BUFF_STRENGTH_ACORN].disabled = true;
+    buttons->array[BUFF_STRENGTH_ACORN].style = DISCORD_BUTTON_SECONDARY;
   }
 
   return buttons;

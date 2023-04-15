@@ -168,18 +168,27 @@ void generate_rewards(
   {
     player.health = MAX_HEALTH + generate_factor(player.stats.strength_lv, STRENGTH_VALUE);
 
-    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION,
-        "\n No more health! \n"
-        ""QUEST_MARKER" Your acorn count was **%s** "ACORNS" Acorns! \n"
-        "+**%s** "GOLDEN_ACORNS" Golden Acorns \n"
-        "Your score was reset. \n", 
-        num_str(player.acorn_count),
-        num_str((player.biome +1) * DIVIDEND_VALUE * player.acorn_count) );
     // final acorns are added and then high score is set
-    // high score is overwritten regardless of acorn count being higher
-    player.high_acorn_count = player.acorn_count;
+    if (player.acorn_count > player.high_acorn_count)
+      player.high_acorn_count = player.acorn_count;
 
-    player.acorn_count = (player.acorn_count > PRESTIGE_REQ) ? player.acorn_count / ACORN_PRESTIGE : 0;
+    if (player.acorn_count > PRESTIGE_REQ) {
+      player.acorn_count = player.acorn_count / ACORN_PRESTIGE;
+      ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION,
+          ""QUEST_MARKER" Your acorn count was set to **%s**! \n", num_str(player.acorn_count));
+    }
+    else {
+      player.acorn_count = 0;
+      ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION,
+          ""QUEST_MARKER" Your acorn count was reset! \n");
+    }
+
+    // provide golden acorns
+    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION,
+        "+**%s** "GOLDEN_ACORNS" Golden Acorns \n",
+        num_str((player.biome +1) * DIVIDEND_VALUE * player.acorn_count) );
+    
+    player.golden_acorns += ((player.biome +1) * DIVIDEND_VALUE * player.acorn_count);
   }
 
   if (rewards.stolen_acorns)
