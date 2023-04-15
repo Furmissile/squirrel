@@ -41,11 +41,11 @@ void p_help(struct sd_message *discord_msg)
 
   embed->fields->array[TOPIC_PROGRESSION].name = format_str(SIZEOF_TITLE, ""ACORNS" Biome Progression");
   embed->fields->array[TOPIC_PROGRESSION].value = format_str(SIZEOF_FIELD_VALUE,
-      " "OFF_ARROW" You must reach the next designated value of acorn count to proceed to the next biome. \n"
+      " "OFF_ARROW" You must reach the next designated value of acorn count to proceed to the next biome (every **%s** acorns). \n"
       " "OFF_ARROW" With each biome, the damage in encounters and reward increases. Send `/info` to check it out! \n"
-      " "OFF_ARROW" Upon losing all your "HEALTH" health, your acorn count is reset! \n"
-      " "OFF_ARROW" If your score was above **%s**, you will start with 20%% of your acorn count.",
-      num_str(PRESTIGE_REQ));
+      " "OFF_ARROW" Upon losing all your "HEALTH" health, your acorn count is set back! \n"
+      " "OFF_ARROW" If your score was above **%s**, you will start with 50%% of your acorn count.",
+      num_str(BIOME_INTERVAL), num_str(PRESTIGE_REQ));
 
   embed->fields->array[TOPIC_SQUIRREL].name = format_str(SIZEOF_TITLE, ""ACORNS" Squirrels");
   embed->fields->array[TOPIC_SQUIRREL].value = format_str(SIZEOF_FIELD_VALUE,
