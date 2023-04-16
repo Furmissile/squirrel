@@ -164,11 +164,10 @@ int steal_interaction(
   PGresult* t_user = SQL_query(DB_ACTION_SEARCH, 
     "select user_id, acorns from public.player \
       where user_id != %ld \
-      and user_id != %ld \
       %s \
       and acorns > %d \
       order by random() LIMIT 1", 
-      event->member->user->id, OWNER_ID,
+      event->member->user->id,
       (player.scurry_id > 0) ? format_str(SIZEOF_URL, "and scurry_id != %ld", player.scurry_id) : "",
       steal_min );
 
