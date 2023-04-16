@@ -963,7 +963,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "He's so cute, small ans squishy you could just-",
         .file_path = "dg_content/encounters/snowshoe_hare.png",
 
-        .solutions = {"Dunk him in your acorn stew", "Give him head pats", "Call him Squishy"}
+        .solutions = {"Bring him home", "Give him head pats", "Call him Squishy"}
       },
       {
         .name = "Necrotic Lakes: Re-foraging",
