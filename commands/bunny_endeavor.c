@@ -62,7 +62,7 @@ void bunny_shop(
   embed->title = format_str(SIZEOF_TITLE, "Bunny's Wares");
 
   embed->description = format_str(SIZEOF_DESCRIPTION,
-      ""OFF_ARROW" Purchase a resource with Catnip ("CATNIP")! \n"
+      ""OFF_ARROW" Purchase a resource with "CATNIP" Catnip! \n"
       ""OFF_ARROW" Acorn and golden acorns increase with your stats. \n");
 
   embed->fields = calloc(1, sizeof(struct discord_embed_fields));

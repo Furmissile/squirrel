@@ -44,7 +44,7 @@ void p_help(struct sd_message *discord_msg)
       " "OFF_ARROW" You must reach the next designated value of acorn count to proceed to the next biome (every **%s** acorns). \n"
       " "OFF_ARROW" With each biome, the damage in encounters and reward increases. Send `/info` to check it out! \n"
       " "OFF_ARROW" Upon losing all your "HEALTH" health, your acorn count is set back! \n"
-      " "OFF_ARROW" If your score was above **%s**, you will start with 50%% of your acorn count.",
+      " "OFF_ARROW" If your score was above **%s** "ACORN_COUNT" acorn count, you will start with half your total score.",
       num_str(BIOME_INTERVAL), num_str(PRESTIGE_REQ));
 
   embed->fields->array[TOPIC_SQUIRREL].name = format_str(SIZEOF_TITLE, ""ACORNS" Squirrels");
