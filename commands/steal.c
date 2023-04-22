@@ -86,7 +86,7 @@ void steal_acorns(
     int golden_acorns = genrand(25, 25) * generate_factor(player.stats.luck_lv, LUCK_VALUE);
 
     player.acorns += steal_info->steal_amt;
-    player.acorn_count += steal_info->steal_amt * 0.1;
+    player.acorn_count += (steal_info->steal_amt * 0.1);
     player.golden_acorns += golden_acorns;
 
     embed->color = (int)ACTION_SUCCESS;
