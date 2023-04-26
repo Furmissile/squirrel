@@ -64,7 +64,7 @@ void squirrel_shop(
   embed->title = format_str(SIZEOF_TITLE, "Squirrels");
 
   embed->description = format_str(SIZEOF_DESCRIPTION,
-      ""OFF_ARROW" Squirrels are unlocked based on your *current* acorn count "ACORN_COUNT"! \n"
+      ""OFF_ARROW" Squirrels are unlocked based on your *current* "ACORN_COUNT" acorn count! \n"
       ""OFF_ARROW" Squirrels are lost upon health resetting.");
 
   embed->fields = calloc(1, sizeof(struct discord_embed_fields));
