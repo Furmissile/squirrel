@@ -63,7 +63,7 @@ void bunny_shop(
 
   embed->description = format_str(SIZEOF_DESCRIPTION,
       ""OFF_ARROW" Purchase a resource with "CATNIP" Catnip! \n"
-      ""OFF_ARROW" Acorn and golden acorns increase with your stats. \n");
+      ""OFF_ARROW" All quantities increase with your stats except "ENERGY" energy. \n");
 
   embed->fields = calloc(1, sizeof(struct discord_embed_fields));
   embed->fields->size = STORE_SIZE + BUNNY_STORE_SIZE;
@@ -75,8 +75,10 @@ void bunny_shop(
       "> "CATNIP" Catnip: **%s** \n"
       "> "ACORNS" Acorns: **%s** \n"
       "> "GOLDEN_ACORNS" Golden Acorns: **%s** \n"
+      "> "HEALTH" Health: **%s**/**%s** \n"
       "> "ENERGY" Energy: **%s**/%d \n", 
       num_str(player.events.catnip), num_str(player.acorns), num_str(player.golden_acorns),
+      num_str(player.health), num_str(player.max_health),
       num_str(player.energy), MAX_ENERGY );
 
   /* Fill in upgade information in separate fields */
@@ -146,6 +148,12 @@ int bunny_interaction(
       .cost = 500,
       .quantity = PROFICIENCY_UNIT/2 * (*stats[STAT_LUCK].stat_ptr +1),
       .stat_ptr = &player.golden_acorns
+    },
+    {
+      .item = &items[ITEM_HEALTH].item,
+      .cost = 750,
+      .quantity = STRENGTH_VALUE/2 * (*stats[STAT_STRENGTH].stat_ptr),
+      .stat_ptr = &player.health
     },
     {
       .item = &items[ITEM_ENERGY].item,

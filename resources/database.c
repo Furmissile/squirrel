@@ -59,7 +59,7 @@ struct sd_player load_player_struct(unsigned long user_id)
     .acorn_count = strtoint( PQgetvalue(search_player, 0, DB_ACORN_COUNT) ),
     .high_acorn_count = strtoint( PQgetvalue(search_player, 0, DB_HIGH_ACORN_COUNT) ),
     .golden_acorns = strtoint( PQgetvalue(search_player, 0, DB_GOLDEN_ACORNS) ),
-    .stolen_acorns = strtoint( PQgetvalue(search_player, 0, DB_STOLEN_ACORNS) ),
+    .war_acorns = strtoint( PQgetvalue(search_player, 0, DB_WAR_ACORNS) ),
   
     .encounter = strtoint( PQgetvalue(search_player, 0, DB_ENCOUNTER) ),
     .main_cd = strtobigint( PQgetvalue(search_player, 0, DB_MAIN_CD) ),
@@ -107,7 +107,7 @@ struct sd_scurry load_scurry_struct(unsigned long scurry_id)
       .scurry_owner_id = strtobigint( PQgetvalue(scurry_db, 0, DB_SCURRY_OWNER_ID) ),
       .scurry_name = format_str(32, PQgetvalue(scurry_db, 0, DB_SCURRY_NAME) ),
       .courage = strtoint( PQgetvalue(scurry_db, 0, DB_COURAGE) ),
-      .war_acorns = strtoint( PQgetvalue(scurry_db, 0, DB_WAR_ACORNS) ),
+      .war_acorns = strtoint( PQgetvalue(scurry_db, 0, DB_WAR_STASH) ),
       .war_flag = strtoint( PQgetvalue(scurry_db, 0, DB_WAR_FLAG) ),
       .rank = (scurry_res.courage < SEED_NOT_MAX) ? SEED_NOT
           : (scurry_res.courage < ACORN_SNATCHER_MAX) ? ACORN_SNATCHER
@@ -165,13 +165,13 @@ void update_player_row(struct sd_player player_res)
       acorn_count = %d, \
       high_acorn_count = %d, \
       golden_acorns = %d, \
-      stolen_acorns = %d, \
+      war_acorns = %d, \
       encounter = %d, \
       main_cd = %ld \
     where user_id = %ld;",
       player_res.scurry_id, player_res.color, player_res.squirrel, player_res.energy, 
       player_res.health, player_res.acorns, player_res.acorn_count, player_res.high_acorn_count, 
-      player_res.golden_acorns, player_res.stolen_acorns, player_res.encounter, player_res.main_cd,
+      player_res.golden_acorns, player_res.war_acorns, player_res.encounter, player_res.main_cd,
       player_res.user_id);
     
   ADD_TO_BUFFER(sql_str, SIZEOF_SQL_COMMAND,

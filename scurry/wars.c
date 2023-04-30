@@ -9,8 +9,8 @@
 
 void factor_war()
 {
-  rewards.stolen_acorns = rewards.acorns;
-  player.stolen_acorns += rewards.stolen_acorns;
+  rewards.war_acorns = rewards.acorns;
+  player.war_acorns += rewards.war_acorns;
 
   switch (rewards.item_type) 
   {
@@ -60,7 +60,7 @@ void scurry_war_update(const struct discord_interaction *event)
   {
     struct sd_scurry opponent = load_scurry_struct(strtobigint(PQgetvalue(opponents, rand() % PQntuples(opponents), DB_SCURRY_OWNER_ID)));
 
-    opponent.war_acorns -= rewards.stolen_acorns;
+    opponent.war_acorns -= rewards.war_acorns;
   
     if (opponent.war_acorns <= 0) 
     {
@@ -71,9 +71,9 @@ void scurry_war_update(const struct discord_interaction *event)
     update_scurry_row(opponent);
   }
   // simulate a bot object that steals scurry acorns
-  else if (rand() % MAX_CHANCE < 50 && rewards.stolen_acorns)
+  else if (rand() % MAX_CHANCE < 50 && rewards.war_acorns)
   {
-    scurry.war_acorns -= rewards.stolen_acorns;
+    scurry.war_acorns -= rewards.war_acorns;
 
     if (scurry.war_acorns <= 0)
     {

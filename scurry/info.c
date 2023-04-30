@@ -67,7 +67,7 @@ int scurry_info(
   if (event->data->custom_id && scurry.war_flag == 0)
   {
     scurry.war_flag = 1;
-    SQL_query(DB_ACTION_UPDATE, "update public.player set stolen_acorns = 0 where scurry_id = %ld", scurry.scurry_owner_id);
+    SQL_query(DB_ACTION_UPDATE, "update public.player set war_acorns = 0 where scurry_id = %ld", scurry.scurry_owner_id);
     scurry.courage = 0;
   }
   else if (event->data->custom_id && scurry.war_flag == 1)
@@ -102,19 +102,19 @@ int scurry_info(
 
   embed->fields->array[SCURRY_RANKINGS].name = format_str(SIZEOF_TITLE, "Participation");
 
-  PGresult* rankings = SQL_query(DB_ACTION_SEARCH, "select * from public.player where scurry_id = %ld order by stolen_acorns desc", scurry.scurry_owner_id);
+  PGresult* rankings = SQL_query(DB_ACTION_SEARCH, "select * from public.player where scurry_id = %ld order by war_acorns desc", scurry.scurry_owner_id);
 
   int total_score = 0;
   for (int i = 0; i < PQntuples(rankings); i++) 
   {
-    int stolen_acorns = strtoint(PQgetvalue(rankings, i, DB_STOLEN_ACORNS));
+    int war_acorns = strtoint(PQgetvalue(rankings, i, DB_WAR_ACORNS));
     ADD_TO_BUFFER(ranking_pos, SIZEOF_FIELD_VALUE,
         " "INDENT" %s <@%ld> **%s** \n",
         (i < 3) ? STAHR : (i < 8) ? SILVER_STAHR : BRONZE_STAHR, 
         strtobigint(PQgetvalue(rankings, i, DB_USER_ID)),
-        num_str(stolen_acorns) );
+        num_str(war_acorns) );
     
-    total_score += stolen_acorns;
+    total_score += war_acorns;
   }
 
   ADD_TO_BUFFER(ranking_pos, SIZEOF_FIELD_VALUE, "\nTotal Score: **%s**", num_str(total_score) );

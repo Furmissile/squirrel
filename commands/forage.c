@@ -27,7 +27,6 @@ void get_rewards(char msg_id)
   // health regen
   if (player.health < player.max_health
     && rewards.item_type != TYPE_HEALTH_LOSS
-    && msg_id != TYPE_ENCOUNTER_MSG
     && rand() % MAX_CHANCE > 80)
   {
     int hp_difference = player.max_health - player.health;
@@ -112,12 +111,10 @@ void get_rewards(char msg_id)
       player.squirrel = 0;
     }
   }
-  
-  //factor season prior to acorn count and not an encounter
-  if (msg_id != TYPE_ENCOUNTER_MSG)
-    factor_season();
 
-  player.events.catnip += rewards.catnip;
+  // factor season returns the acorn multiplier
+  int acorn_mult = factor_season();
+  rewards.acorns *= acorn_mult;
 }
 
 /* Load rewards onto main embed */
@@ -198,9 +195,9 @@ void generate_rewards(
         next_biome_data.emoji_name, next_biome_data.emoji_id, next_biome_data.formal_name);
   }
 
-  if (rewards.stolen_acorns)
-    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\nYou successfully stole **%s** "STOLEN_ACORNS" War Acorns! \n+**%s** "COURAGE" Courage \n", 
-        num_str(rewards.stolen_acorns), num_str(rewards.courage) );
+  if (rewards.war_acorns)
+    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\nYou successfully stole **%s** "WAR_ACORNS" War Acorns! \n+**%s** "COURAGE" Courage \n", 
+        num_str(rewards.war_acorns), num_str(rewards.courage) );
 
   energy_status(discord_msg, MAIN_ENERGY_COST);
   player.encounter = ERROR_STATUS; // this encounter has been responded to
@@ -269,15 +266,6 @@ struct discord_components* main_button_response(
       buttons->array[i].style = DISCORD_BUTTON_SECONDARY;
   }
 
-  buttons->array[3] = (struct discord_component)
-  {
-    .type = DISCORD_COMPONENT_BUTTON,
-    .style = DISCORD_BUTTON_SUCCESS,
-    .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c3_%ld", TYPE_FORAGE, event->member->user->id),
-    .label = "Forage again!",
-    .disabled = (event->data->custom_id && event->data->custom_id[0] == 3) ? true : false
-  };
-
   // if all buttons are TYPE_HEALTH_LOSS or TYPE_NO_ACORNS, edit a button to have a reward
   // ensure not all buttons are TYPE_HEALTH_LOSS
   if (rewards.failure == buttons->size -1)
@@ -307,6 +295,14 @@ struct discord_components* main_button_response(
     if (event->data->custom_id[1] -48 == idx)
       rewards.item_type = button_item;
   }
+
+  buttons->array[3] = (struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .style = DISCORD_BUTTON_SUCCESS,
+    .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c3_%ld", TYPE_FORAGE, event->member->user->id),
+    .label = "Forage again!"
+  };
 
   return buttons;
 }
@@ -339,7 +335,9 @@ struct discord_components* build_buttons(
     };
 
     if (msg_type == TYPE_ENCOUNTER_MSG)
-      buttons->array[i].custom_id[2] = (char)(player.encounter) +48;
+      buttons->array[i].custom_id[2] = (char)(player.encounter +96);
+    
+    printf("%s\n\n", buttons->array[i].custom_id);
   }
 
   return buttons;
@@ -394,11 +392,14 @@ void main_embed(
     if (event->data->custom_id[0] == TYPE_ENCOUNTER_MSG
       || player.encounter != ERROR_STATUS) 
     { // this is an encounter response
-      if (player.encounter == ERROR_STATUS)
+
+      // error handle if this was a prior encounter and not the current encounter if one is active
+      if (player.encounter == ERROR_STATUS
+        || player.encounter != event->data->custom_id[2] - 96)
       {
         rewards.has_responded = 1;
         // temorarily recall the encounter index through the custom id
-        player.encounter = event->data->custom_id[2] - 48;
+        player.encounter = event->data->custom_id[2] - 96;
       }
       encounter_embed(event, discord_msg);
     } 
@@ -413,8 +414,6 @@ void main_embed(
 
       embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
       embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, item_types[rewards.item_type].file_path);
-
-      printf("\n%s\n\n", embed->thumbnail->url);
 
       embed->title = format_str(SIZEOF_TITLE, "You found %s!", item_types[rewards.item_type].formal_name);
 
@@ -439,7 +438,7 @@ int forage_interaction(const struct discord_interaction *event, struct sd_messag
 
   energy_regen();
 
-  ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready!");
+  // ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready!");
   ERROR_INTERACTION((player.energy < 2), "You need more energy!");
 
   main_embed(event, discord_msg);

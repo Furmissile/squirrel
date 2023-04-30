@@ -117,7 +117,7 @@ struct sd_player
   int acorn_count;
   int high_acorn_count;
   int golden_acorns;
-  int stolen_acorns;
+  int war_acorns;
   
   int encounter;
   int biome;
@@ -141,7 +141,7 @@ struct sd_rewards
   int health_regen;
 
   int courage;
-  int stolen_acorns;
+  int war_acorns;
 
   int golden_acorns;
   

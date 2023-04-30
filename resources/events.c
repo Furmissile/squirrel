@@ -1,12 +1,22 @@
-void factor_season()
+int factor_season()
 {
+  if (rewards.acorns == 0 || rewards.golden_acorns == 0)
+    return 1;
+
   struct tm *info = get_UTC();
 
+  info->tm_mday = 2;
+
   if (info->tm_mday < 7) {
-    if (rand() % MAX_CHANCE > 80)
-      rewards.golden_acorns += (rewards.item_type < TYPE_ACORN_MOUTHFUL) ? genrand(10, 5)
+    if (rand() % MAX_CHANCE > 0)
+    {
+      int seasoned_golden_acorns = (rewards.item_type < TYPE_ACORN_MOUTHFUL) ? genrand(10, 5)
           : (rewards.item_type < TYPE_LOST_STASH) ? genrand(15, 10) : genrand(25, 10);
-    rewards.acorns *= SPRING_MULT;
+      
+      rewards.golden_acorns += seasoned_golden_acorns;
+      player.golden_acorns += seasoned_golden_acorns;
+    }
+    return SPRING_MULT;
   }
   else if (rewards.acorns && info->tm_mday < 14) {
     rewards.acorns *= SUMMER_MULT;
@@ -32,13 +42,16 @@ void factor_season()
     (*victuals[rewards.victual_type].stat_ptr) += rewards.victuals;
   }
   else if (info->tm_mday < 21)
-    rewards.acorns *= FALL_MULT;
-  else {
-    rewards.acorns *= WINTER_MULT;
-    if (rand() % MAX_CHANCE > 80)
-      rewards.catnip = (rewards.item_type < TYPE_ACORN_MOUTHFUL) ? genrand(10, 5)
-          : (rewards.item_type < TYPE_LOST_STASH) ? genrand(15, 10) : genrand(25, 10);
+    return FALL_MULT;
+
+  if (rand() % MAX_CHANCE > 80)
+  {
+    rewards.catnip = (rewards.item_type < TYPE_ACORN_MOUTHFUL) ? genrand(10, 5)
+        : (rewards.item_type < TYPE_LOST_STASH) ? genrand(15, 10) : genrand(25, 10);
+    player.events.catnip += rewards.catnip;
   }
+  return WINTER_MULT;
+
 }
 
 int get_season_event(

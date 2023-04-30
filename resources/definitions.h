@@ -17,7 +17,7 @@ enum DB_TUPLE
   DB_ACORN_COUNT,
   DB_HIGH_ACORN_COUNT,
   DB_GOLDEN_ACORNS,
-  DB_STOLEN_ACORNS,
+  DB_WAR_ACORNS,
   DB_ENCOUNTER,
   DB_MAIN_CD,
   // skip user id
@@ -39,7 +39,7 @@ enum SCURRY_RES
   DB_SCURRY_OWNER_ID,
   DB_SCURRY_NAME,
   DB_COURAGE,
-  DB_WAR_ACORNS,
+  DB_WAR_STASH,
   DB_WAR_FLAG
 };
 
@@ -66,7 +66,7 @@ enum ITEMS
   ITEM_ACORNS,
   ITEM_ACORN_COUNT,
   ITEM_GOLDEN_ACORN,
-  ITEM_STOLEN_ACORNS,
+  ITEM_WAR_ACORNS,
   ITEM_ENERGY,
   ITEM_HEALTH,
   ITEM_CATNIP,
@@ -109,14 +109,14 @@ struct sd_obj_items items[ITEM_SIZE] = {
   },
   {
     .item = {
-      .formal_name = "Stolen Acorns",
-      .file_path = "scurry_items/war_acorns.png",
+      .formal_name = "War Acorns",
+      .file_path = "scurry_utils/war_acorns.png",
 
-      .emoji_name = "stolen_acorns",
-      .emoji_id = 1055143210839720067
+      .emoji_name = "war_acorns",
+      .emoji_id = 1066105193655193640
     },
 
-    .stat_ptr = &player.stolen_acorns
+    .stat_ptr = &player.war_acorns
   },
   {
     .item = {
