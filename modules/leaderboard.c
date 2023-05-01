@@ -203,11 +203,14 @@ int get_leaderboard(
 
   if (strcmp(command_type, "acorn_count") == 0)
   {
-    ERROR_INTERACTION((player.high_acorn_count == 0), "You must be have an acorn count to view this leaderboard!");
+    ERROR_INTERACTION((player.acorn_count == 0), "You must be have an acorn count to view this leaderboard!");
 
-    player_pos = SQL_query(DB_ACTION_SEARCH, "select dense_rank() over (order by acorn_count desc) as rank_idx, user_id, acorn_count \
-    from (select dense_rank() over (order by acorn_count desc) as rank_idx, user_id, (coalesce((select acorn_count where acorn_count > high_acorn_count), (select high_acorn_count where high_acorn_count > acorn_count)))  as acorn_count \
-    from public.player) as lb where rank_idx <= 10 and acorn_count > 0");
+    player_pos = SQL_query(DB_ACTION_SEARCH, "select rank_idx, user_id, best_acorn \
+        from ( \
+          select user_id, \
+          coalesce((select acorn_count where acorn_count > high_acorn_count), (select high_acorn_count where high_acorn_count > acorn_count)) as best_acorn, \
+          dense_rank() over (order by coalesce((select acorn_count where acorn_count > high_acorn_count), (select high_acorn_count where high_acorn_count > acorn_count)) desc) as rank_idx \
+        from public.player) as lb where rank_idx <= 10 and best_acorn > 0;");
 
     ERROR_DATABASE_RET((PQntuples(player_pos) == 0), "There aren't enough entries yet!", player_pos);
 

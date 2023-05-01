@@ -257,6 +257,46 @@ void not_user(struct discord *client, struct discord_response *resp)
   error_message(event, "This is not a valid user!");
 }
 
+struct discord_components* build_help_buttons(const struct discord_interaction *event, int page_idx, int help_type, int last_topic)
+{
+  struct discord_components* buttons = calloc(1, sizeof(struct discord_components));
+  buttons->size = 4;
+  buttons->array = calloc(buttons->size, sizeof(struct discord_component));
+
+  buttons->array[0] = (struct discord_component) {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .label = "⏮️",
+    .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c0a_%ld", help_type, event->member->user->id),
+    .style = (page_idx > 0) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
+    .disabled = (page_idx == 0) ? true : false
+  };
+
+  buttons->array[1] = (struct discord_component) {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .label = "⏪",
+    .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%db_%ld", help_type, (page_idx > 0) ? page_idx -1 : 0, event->member->user->id),
+    .style = (page_idx > 0) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
+    .disabled = (page_idx == 0) ? true : false
+  };
+
+  buttons->array[2] = (struct discord_component) {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .label = "⏩",
+    .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%dc_%ld", help_type, (page_idx < last_topic) ? page_idx +1 : last_topic, event->member->user->id),
+    .style = (page_idx < last_topic) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
+    .disabled = (page_idx == last_topic) ? true : false
+  };
+
+  buttons->array[3] = (struct discord_component) {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .label = "⏭️",
+    .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%dd_%ld", help_type, last_topic, event->member->user->id),
+    .style = (page_idx < last_topic) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
+    .disabled = (page_idx == last_topic) ? true : false
+  };
+
+  return buttons;
+}
 
 /*
   The following functions are only utilized in the support server!
