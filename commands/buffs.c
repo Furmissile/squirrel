@@ -14,10 +14,15 @@ struct discord_components* build_buff_buttons(const struct discord_interaction *
     {
       switch (button_idx) {
         case BUFF_DEFENSE_ACORN:
-          (*enchanted_acorns[button_idx].stat_ptr) += genrand(5, 5);
+          player.buffs.defense_acorn += genrand(5, 5);
           break;
         case BUFF_STRENGTH_ACORN:
-          (*enchanted_acorns[button_idx].stat_ptr) += genrand(15, 5) * player.stats.strength_lv;
+          int acorn_duration = genrand(15, 5) * player.stats.strength_lv;
+
+          player.buffs.strength_acorn += (acorn_duration > player.max_health - player.health) 
+              ? player.max_health - player.health : acorn_duration;
+
+          player.health += player.buffs.strength_acorn;
           break;
         default:
           (*enchanted_acorns[button_idx].stat_ptr) += genrand(15, 5);
@@ -59,7 +64,7 @@ struct discord_components* build_buff_buttons(const struct discord_interaction *
 
   }
 
-  if (player.health > player.max_health) {
+  if (player.health >= player.max_health) {
     buttons->array[BUFF_STRENGTH_ACORN].disabled = true;
     buttons->array[BUFF_STRENGTH_ACORN].style = DISCORD_BUTTON_SECONDARY;
   }
