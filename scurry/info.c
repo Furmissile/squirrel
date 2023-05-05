@@ -1,7 +1,5 @@
 /*
-
   This file handles the retrieval of guild info if the user is in a guild
-
 */
 
 enum SCURRY_FORMAT 
@@ -11,11 +9,12 @@ enum SCURRY_FORMAT
   SCURRY_SIZE
 };
 
-struct discord_component* build_war_button(const struct discord_interaction *event)
+struct discord_components* build_war_button(const struct discord_interaction *event)
 {
   struct discord_components *buttons = calloc(1, sizeof(struct discord_components));
-  buttons->array = calloc(1, sizeof(struct discord_component));
+
   buttons->size = 1;
+  buttons->array = calloc(buttons->size, sizeof(struct discord_component));
 
   PGresult* scurry_members = SQL_query(DB_ACTION_SEARCH, "select * from public.player where scurry_id = %ld", scurry.scurry_owner_id);
 
@@ -44,14 +43,9 @@ struct discord_component* build_war_button(const struct discord_interaction *eve
     .disabled = (event->data->custom_id) ? true : false
   };
 
-  struct discord_component *action_rows = calloc(1, sizeof(struct discord_component));
-
-  action_rows->type = DISCORD_COMPONENT_ACTION_ROW;
-  action_rows->components = buttons;
-
   PQclear(scurry_members);
 
-  return action_rows;
+  return buttons;
 }
 
 
@@ -77,6 +71,8 @@ int scurry_info(
   embed->color = player.color;
 
   embed->title = format_str(SIZEOF_TITLE, scurry.scurry_name);
+
+  discord_msg->buttons = build_war_button(event);
 
   embed->fields = calloc(1, sizeof(struct discord_embed_fields));
   embed->fields->size = SCURRY_SIZE;
@@ -108,14 +104,19 @@ int scurry_info(
   for (int i = 0; i < PQntuples(rankings); i++) 
   {
     int war_acorns = strtoint(PQgetvalue(rankings, i, DB_WAR_ACORNS));
-    ADD_TO_BUFFER(ranking_pos, SIZEOF_FIELD_VALUE,
-        " "INDENT" %s <@%ld> **%s** \n",
-        (i < 3) ? STAHR : (i < 8) ? SILVER_STAHR : BRONZE_STAHR, 
-        strtobigint(PQgetvalue(rankings, i, DB_USER_ID)),
-        num_str(war_acorns) );
+
+    if (war_acorns > 0)
+      ADD_TO_BUFFER(ranking_pos, SIZEOF_FIELD_VALUE,
+          " "INDENT" %s <@%ld> **%s** \n",
+          (i < 3) ? STAHR : (i < 8) ? SILVER_STAHR : BRONZE_STAHR, 
+          strtobigint(PQgetvalue(rankings, i, DB_USER_ID)),
+          num_str(war_acorns) );
     
     total_score += war_acorns;
   }
+
+  if (total_score == 0)
+    ADD_TO_BUFFER(ranking_pos, SIZEOF_FIELD_VALUE, ""OFF_ARROW" *No members have participated yet!* \n");
 
   ADD_TO_BUFFER(ranking_pos, SIZEOF_FIELD_VALUE, "\nTotal Score: **%s**", num_str(total_score) );
 
@@ -135,8 +136,8 @@ int s_info_interaction(
   const struct discord_interaction *event, 
   struct sd_message *discord_msg) 
 {
-
   player = load_player_struct(event->member->user->id);
+
   if (event->data->options)
   {
     PGresult* get_scurry = SQL_query(DB_ACTION_SEARCH, "select * from public.scurry where s_name like '%s'", event->data->options->array[0].value);
@@ -154,8 +155,12 @@ int s_info_interaction(
         event->member->user->id, event->member->user->avatar) );
 
   //if an error is returned, an interaction was already generated
-  if ( scurry_info(event, discord_msg) == ERROR_STATUS ) 
-    return 0;
+  scurry_info(event, discord_msg);
+
+  struct discord_component action_rows = {
+    .type = DISCORD_COMPONENT_ACTION_ROW,
+    .components = discord_msg->buttons
+  };
 
   struct discord_interaction_response interaction = 
   {
@@ -164,15 +169,13 @@ int s_info_interaction(
 
     .data = &(struct discord_interaction_callback_data) 
     {
-      .content = discord_msg->content,
       .embeds = &(struct discord_embeds) 
       {
         .array = discord_msg->embed,
         .size = 1
       },
-
       .components = &(struct discord_components) {
-        .array = build_war_button(event),
+        .array = &action_rows,
         .size = 1
       }
     }
