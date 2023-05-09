@@ -187,18 +187,18 @@ void energy_status(struct sd_message *discord_msg, int energy_loss)
   struct discord_embed *embed = discord_msg->embed;
   int final_energy_loss = energy_loss;
   
-  if (final_energy_loss == MAIN_ENERGY_COST)
+  if (final_energy_loss == MAIN_ENERGY_COST
+    && player.squirrel == GRAY_SQUIRREL)
   {
-    if (player.squirrel == GRAY_SQUIRREL
-      && (rand() % MAX_CHANCE) > 70)
+    int energy_loss_chance = (player.buffs.boosted > 0) ? 35 : 70;
+    
+    if ((rand() % MAX_CHANCE) > energy_loss_chance)
     {
+      // only reduce on condition that the boost is used
+      if (player.buffs.boosted > 0) player.buffs.boosted--;
       ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n"ENERGY" No energy was lost! \n");
       return;
-    }
-    else if (player.squirrel == KING_SQUIRREL)
-    {
-      final_energy_loss *= 2;
-    }
+      }
   }
 
   player.energy -= final_energy_loss;
@@ -229,10 +229,7 @@ void energy_regen()
     player.buffs.endurance_acorn = 0;
   }
   if (player.buffs.strength_acorn > 0)
-  {
-    player.health += player.buffs.strength_acorn;
     player.buffs.strength_acorn = 0;
-  }
 
   struct tm *info = get_UTC();
 
@@ -257,7 +254,7 @@ void not_user(struct discord *client, struct discord_response *resp)
   error_message(event, "This is not a valid user!");
 }
 
-struct discord_components* build_help_buttons(const struct discord_interaction *event, int page_idx, int help_type, int last_topic)
+struct discord_components* build_help_buttons(const struct discord_interaction *event, int page_idx, char help_type, int last_topic)
 {
   struct discord_components* buttons = calloc(1, sizeof(struct discord_components));
   buttons->size = 4;

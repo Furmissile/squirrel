@@ -38,7 +38,7 @@ void p_help(const struct discord_interaction *event, struct sd_message *discord_
           " "OFF_ARROW" The required acorn count to reach the next biome is also shown after your acorn count. \n"
           " "OFF_ARROW" With each biome, the damage dealt by encounters and earnings increases. \n"
           " "OFF_ARROW" Upon losing all your "HEALTH" health, your acorn count is set back! \n"
-          " "OFF_ARROW" If you get past the first cycle in a run and die, your acorn count is halved. Otherwise, it is set back to 0.",
+          " "OFF_ARROW" If you get past the first biome cycle in a run and die, your acorn count is halved. Otherwise, it is set back to 0.",
           num_str(BIOME_INTERVAL), num_str(PRESTIGE_REQ))
     },
     {
@@ -57,7 +57,7 @@ void p_help(const struct discord_interaction *event, struct sd_message *discord_
       .name = format_str(SIZEOF_TITLE, ""ACORNS" Stealing Player Acorns"),
       .value = format_str(SIZEOF_FIELD_VALUE,
           " "OFF_ARROW" Stealing from other players gives "ACORNS" acorns and "GOLDEN_ACORNS" golden acorns. \n"
-          " "OFF_ARROW" Golden acorns can be spent on buffs to make the most of your run! Check it out using `/buffs`.")
+          " "OFF_ARROW" Golden acorns can be spent on buffs to make the most of your run! Check it out using `/buffs`!")
     },
     {
       .name = format_str(SIZEOF_TITLE, ""ACORNS" Scurries"),
@@ -67,6 +67,14 @@ void p_help(const struct discord_interaction *event, struct sd_message *discord_
           " "OFF_ARROW" For more info on scurries, send `/scurry_help`! \n"
           " "OFF_ARROW" Already in a scurry? Send `/scurry_info`!",
           num_str(SCURRY_CREATION_COST))
+    },
+    {
+      .name = format_str(SIZEOF_TITLE, ""ACORNS" Conjured Acorns"),
+      .value = format_str(SIZEOF_FIELD_VALUE,
+          " "OFF_ARROW" "CONJURED_ACORNS" Conjured Acorns are fragments of dark power originating from the **Last Acorn**. They can be found in corruption-touched areas throughout the world. \n"
+          " "OFF_ARROW" Corruption-touched areas include: \n"INDENT" "GRASSLANDS_ICON" *Witch Swamp* \n"INDENT" "SEEPING_SANDS_ICON" *Wormhole* \n"INDENT" "NATURE_END_ICON" *Breached Woods* \n"INDENT" "DEATH_GRIP_ICON" *Necrotic Lakes* \n"INDENT" "LAST_ACORN_ICON" *Death's Locus* \n"
+          " "OFF_ARROW" Conjured acorns are used to boost your current squirrel's effect and are transferrable among squirrels. \n"
+          " "OFF_ARROW" Check it out in `/buffs`!")
     },
     {
       .name = format_str(SIZEOF_TITLE, ""ACORNS" Reporting Issues"),

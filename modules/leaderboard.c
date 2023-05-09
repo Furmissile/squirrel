@@ -208,9 +208,9 @@ int get_leaderboard(
     player_pos = SQL_query(DB_ACTION_SEARCH, "select rank_idx, user_id, best_acorn \
         from ( \
           select user_id, \
-          coalesce((select acorn_count where acorn_count > high_acorn_count), (select high_acorn_count where high_acorn_count > acorn_count)) as best_acorn, \
-          dense_rank() over (order by coalesce((select acorn_count where acorn_count > high_acorn_count), (select high_acorn_count where high_acorn_count > acorn_count)) desc) as rank_idx \
-        from public.player) as lb where rank_idx <= 10 and best_acorn > 0;");
+          (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) AS best_acorn, \
+          dense_rank() over (order by (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) desc) as rank_idx \
+        from public.player) as lb where rank_idx <= 10 and best_acorn > 0");
 
     ERROR_DATABASE_RET((PQntuples(player_pos) == 0), "There aren't enough entries yet!", player_pos);
 
