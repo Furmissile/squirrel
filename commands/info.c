@@ -66,18 +66,19 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
       " "INDENT" "ACORN_COUNT" Acorn Count: **%s**/%s \n"
       " "INDENT" <:%s:%ld> Biome: **%s** \n"
       " "INDENT" "LEADER" High Score: **%s** \n"
-      " "INDENT" "GOLDEN_ACORNS" Golden Acorns: **%s** \n",
+      " "INDENT" "GOLDEN_ACORNS" Golden Acorns: **%s** \n"
+      " "INDENT" "CONJURED_ACORNS" Conjured Acorns: **%s** \n" ,
       player.energy, MAX_ENERGY, 
       num_str(player.health), num_str(player.max_health),
       num_str(player.acorns), num_str(player.acorn_count), num_str(BIOME_INTERVAL * (player.biome_num +1) ),
       biome_icon.emoji_name, biome_icon.emoji_id, biome_icon.formal_name,
       (player.high_acorn_count > 0) ? num_str(player.high_acorn_count) : num_str(player.acorn_count),
-      num_str(player.golden_acorns) );
+      num_str(player.golden_acorns), num_str(player.conjured_acorns) );
 
   struct tm *info = get_UTC();
   if (info->tm_mday > 21)
     ADD_TO_BUFFER(embed->fields->array[INFO_GENERAL].value, SIZEOF_FIELD_VALUE,
-        " "INDENT" "CATNIP" Catnip: **%s** \n", num_str(player.events.catnip) );
+        " "INDENT" "CATNIP" Catnip: **%s** \n", num_str(player.catnip) );
 
   if (player.scurry_id > 0)
     ADD_TO_BUFFER(embed->fields->array[INFO_GENERAL].value, SIZEOF_FIELD_VALUE,
@@ -103,18 +104,29 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
   embed->fields->array[INFO_STATS].value = format_str(SIZEOF_FIELD_VALUE, player_stat_field);
 
   char player_buffs_field[SIZEOF_FIELD_VALUE] = {};
-  for (int i = 0; i < BUFFS_SIZE; i++)
-    if (*enchanted_acorns[i].stat_ptr > 0)
-      ADD_TO_BUFFER(player_buffs_field, SIZEOF_FIELD_VALUE,
-          "<:%s:%ld> *%s* (**%s**) \n",
-          enchanted_acorns[i].item.emoji_name, enchanted_acorns[i].item.emoji_id, enchanted_acorns[i].item.formal_name,
-          num_str(*enchanted_acorns[i].stat_ptr) );
-  
+
   if (player.buffs.proficiency_acorn == 0
     && player.buffs.luck_acorn == 0
-    && player.buffs.defense_acorn == 0)
+    && player.buffs.defense_acorn == 0
+    && player.buffs.boosted == 0)
     ADD_TO_BUFFER(player_buffs_field, SIZEOF_FIELD_VALUE,
         ""OFF_ARROW" *No enchanted acorns are currrently active*");
+  else {
+    for (int i = 0; i < BUFFS_SIZE; i++) 
+    {
+      if (*enchanted_acorns[i].stat_ptr > 0)
+        ADD_TO_BUFFER(player_buffs_field, SIZEOF_FIELD_VALUE,
+            "<:%s:%ld> *%s* (**%s**) \n",
+            enchanted_acorns[i].item.emoji_name, enchanted_acorns[i].item.emoji_id, enchanted_acorns[i].item.formal_name,
+            num_str(*enchanted_acorns[i].stat_ptr) );
+    }
+  
+    if (player.buffs.boosted > 0)
+      ADD_TO_BUFFER(player_buffs_field, SIZEOF_FIELD_VALUE,
+          "<:%s:%ld> *%s* (**%s**) \n",
+          boosted_acorn.item.emoji_name, boosted_acorn.item.emoji_id, boosted_acorn.item.formal_name,
+          num_str(player.buffs.boosted));
+  }
 
   embed->fields->array[INFO_BUFFS].name = format_str(SIZEOF_TITLE, "Squirrel Buffs");
   embed->fields->array[INFO_BUFFS].value = format_str(SIZEOF_FIELD_VALUE, player_buffs_field);
@@ -149,7 +161,8 @@ int info_interaction(
   };
 
   unsigned long user_id;
-  if (event->data->options) {
+  if (event->data->options) 
+  {
     user_id = strtobigint(trim_user_id(event->data->options->array[0].value));
 
     PGresult* search_player = SQL_query(DB_ACTION_SEARCH, "select * from public.player where user_id = %ld", user_id);

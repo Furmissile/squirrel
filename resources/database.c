@@ -24,10 +24,9 @@ struct sd_player load_player_struct(unsigned long user_id)
   {  
     SQL_query(DB_ACTION_UPDATE, 
       "BEGIN; \n"
-      "insert into public.player values(%ld, 0, 0, 0, 100, 100, 0, 0, 0, 0, 0, %d, 0); \n"
+      "insert into public.player values(%ld, 0, 0, 0, 100, 100, 0, 0, 0, 0, 0, %d, 0, 0, 0); \n"
       "insert into public.stats values(%ld, 1, 1, 1); \n"
-      "insert into public.buffs values(%ld, 0, 0, 0, 0, 0); \n"
-      "insert into public.events values (%ld, 0); \n"
+      "insert into public.buffs values(%ld, 0, 0, 0, 0, 0, 0); \n"
       "COMMIT;", 
       user_id, ERROR_STATUS, // ERROR_STATUS so an encounter doesnt trigger
       user_id, user_id, user_id);
@@ -38,7 +37,6 @@ struct sd_player load_player_struct(unsigned long user_id)
     "select * from public.player \
     join public.stats on player.user_id = stats.user_id \
     join public.buffs on player.user_id = buffs.user_id \
-    join public.events on player.user_id = events.user_id \
     where player.user_id = %ld",
     user_id);
 
@@ -59,7 +57,9 @@ struct sd_player load_player_struct(unsigned long user_id)
     .acorn_count = strtoint( PQgetvalue(search_player, 0, DB_ACORN_COUNT) ),
     .high_acorn_count = strtoint( PQgetvalue(search_player, 0, DB_HIGH_ACORN_COUNT) ),
     .golden_acorns = strtoint( PQgetvalue(search_player, 0, DB_GOLDEN_ACORNS) ),
+    .conjured_acorns = strtoint( PQgetvalue(search_player, 0, DB_CONJURED_ACORNS)),
     .war_acorns = strtoint( PQgetvalue(search_player, 0, DB_WAR_ACORNS) ),
+    .catnip = strtoint( PQgetvalue(search_player, 0, DB_CATNIP) ),
   
     .encounter = strtoint( PQgetvalue(search_player, 0, DB_ENCOUNTER) ),
     .main_cd = strtobigint( PQgetvalue(search_player, 0, DB_MAIN_CD) ),
@@ -75,11 +75,8 @@ struct sd_player load_player_struct(unsigned long user_id)
       .luck_acorn = strtoint( PQgetvalue(search_player, 0, DB_LUCK_ACORN) ),
       .defense_acorn = strtoint( PQgetvalue(search_player, 0, DB_DEFENSE_ACORN) ),
       .strength_acorn = strtoint( PQgetvalue(search_player, 0, DB_STRENGTH_ACORN) ),
-      .endurance_acorn = strtoint( PQgetvalue(search_player, 0, DB_ENDURANCE_ACORN) )
-    },
-
-    .events = {
-      .catnip = strtoint( PQgetvalue(search_player, 0, DB_CATNIP) )
+      .endurance_acorn = strtoint( PQgetvalue(search_player, 0, DB_ENDURANCE_ACORN) ),
+      .boosted = strtoint( PQgetvalue(search_player, 0, DB_BOOSTED) )
     }
   };
 
@@ -165,14 +162,16 @@ void update_player_row(struct sd_player player_res)
       acorn_count = %d, \
       high_acorn_count = %d, \
       golden_acorns = %d, \
+      conjured_acorns = %d, \
       war_acorns = %d, \
+      catnip = %d, \
       encounter = %d, \
       main_cd = %ld \
     where user_id = %ld;",
       player_res.scurry_id, player_res.color, player_res.squirrel, player_res.energy, 
       player_res.health, player_res.acorns, player_res.acorn_count, player_res.high_acorn_count, 
-      player_res.golden_acorns, player_res.war_acorns, player_res.encounter, player_res.main_cd,
-      player_res.user_id);
+      player_res.golden_acorns, player_res.conjured_acorns, player_res.war_acorns, player_res.catnip,
+      player_res.encounter, player_res.main_cd, player_res.user_id);
     
   ADD_TO_BUFFER(sql_str, SIZEOF_SQL_COMMAND,
     "update public.stats set \
@@ -189,20 +188,14 @@ void update_player_row(struct sd_player player_res)
       luck_acorn = %d, \
       proficiency_acorn = %d, \
       strength_acorn = %d, \
-      endurance_acorn = %d \
-    where user_id = %ld;",
-      player_res.buffs.defense_acorn, player_res.buffs.luck_acorn,
-      player_res.buffs.proficiency_acorn, player_res.buffs.strength_acorn, 
-      player_res.buffs.endurance_acorn,
-      player_res.user_id);
-  
-  ADD_TO_BUFFER(sql_str, SIZEOF_SQL_COMMAND,
-    "update public.events set \
-      catnip = %d \
+      endurance_acorn = %d, \
+      boosted = %d \
     where user_id = %ld; \
     COMMIT;",
-    player_res.events.catnip, 
-    player_res.user_id);
+      player_res.buffs.defense_acorn, player_res.buffs.luck_acorn,
+      player_res.buffs.proficiency_acorn, player_res.buffs.strength_acorn, 
+      player_res.buffs.endurance_acorn, player_res.buffs.boosted,
+      player_res.user_id);
 
   SQL_query(DB_ACTION_UPDATE, sql_str);
 

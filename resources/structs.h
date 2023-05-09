@@ -88,6 +88,7 @@ struct sd_buffs
   int luck_acorn;
   int strength_acorn;
   int endurance_acorn;
+  int boosted; // boosted squirrel duration
 };
 
 struct sd_buff_status
@@ -95,11 +96,6 @@ struct sd_buff_status
   bool proficiency_acorn;
   bool defense_acorn;
   bool luck_acorn;
-};
-
-struct sd_events 
-{
-  int catnip;
 };
 
 struct sd_player 
@@ -117,7 +113,9 @@ struct sd_player
   int acorn_count;
   int high_acorn_count;
   int golden_acorns;
+  int conjured_acorns;
   int war_acorns;
+  int catnip;
   
   int encounter;
   int biome;
@@ -127,7 +125,6 @@ struct sd_player
 
   struct sd_stats stats;
   struct sd_buffs buffs;
-  struct sd_events events;
 };
 
 struct sd_rewards
@@ -144,6 +141,7 @@ struct sd_rewards
   int war_acorns;
 
   int golden_acorns;
+  int conjured_acorns;
   
   int catnip;
   int victuals;

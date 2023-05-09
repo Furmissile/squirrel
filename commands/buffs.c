@@ -10,7 +10,13 @@ struct discord_components* build_buff_buttons(const struct discord_interaction *
   if (event->data->custom_id)
   {
     int button_idx = event->data->custom_id[1] -48;
-    if (player.golden_acorns >= golden_acorn_cost)
+    if (button_idx == SQUIRREL_BOOST_INDEX)
+    {
+      player.conjured_acorns -= SQUIRREL_BOOST_COST;
+      *boosted_acorn.stat_ptr += genrand(15, 10);
+      rewards.item_type = SQUIRREL_BOOST_INDEX;
+    }
+    else if (player.golden_acorns >= golden_acorn_cost)
     {
       switch (button_idx) {
         case BUFF_DEFENSE_ACORN:
@@ -75,7 +81,8 @@ struct discord_components* build_buff_buttons(const struct discord_interaction *
 enum POWER_FORMAT {
   POWER_GENERAL = 0,
   POWER_PRICES = 1,
-  POWER_SIZE = 2
+  BOOST_PRICE = 2,
+  POWER_SIZE = 3
 };
 
 void power_shop(
@@ -94,18 +101,23 @@ void power_shop(
     ""OFF_ARROW" Active buffs show up with a "QUEST_MARKER" and its duration. \n");
 
   embed->fields = calloc(1, sizeof(struct discord_embed_fields));
-  embed->fields->size = POWER_SIZE + BUFFS_SIZE;
-  embed->fields->array = calloc(POWER_SIZE + BUFFS_SIZE, sizeof(struct discord_embed_field));
+  embed->fields->size = POWER_SIZE + BUFFS_SIZE +1;
+  embed->fields->array = calloc(POWER_SIZE + BUFFS_SIZE + 1, sizeof(struct discord_embed_field));
 
   embed->fields->array[POWER_GENERAL].name = format_str(SIZEOF_TITLE, "Balance");
   embed->fields->array[POWER_GENERAL].value = format_str(SIZEOF_FIELD_VALUE,
-      "\n > "GOLDEN_ACORNS" Golden Acorns: **%s**",
-      num_str(player.golden_acorns) );
+      " "INDENT" "GOLDEN_ACORNS" Golden Acorns: **%s** \n"
+      " "INDENT" "CONJURED_ACORNS" Conjured Acorns: **%s**",
+      num_str(player.golden_acorns), num_str(player.conjured_acorns) );
 
   embed->fields->array[POWER_PRICES].name = format_str(SIZEOF_TITLE, "Enchanted Acorn Cost");
   embed->fields->array[POWER_PRICES].value = format_str(SIZEOF_FIELD_VALUE, 
-      "> **%s** "GOLDEN_ACORNS" Golden Acorns \n", 
+      " "INDENT" **%s** "GOLDEN_ACORNS" Golden Acorns", 
       num_str(GOLDEN_ACORN_BUFF_COST * generate_factor(player.stats.luck_lv, LUCK_VALUE)) );
+
+  embed->fields->array[BOOST_PRICE].name = format_str(SIZEOF_TITLE, "Squirrel Boost Cost");
+  embed->fields->array[BOOST_PRICE].value = format_str(SIZEOF_FIELD_VALUE, 
+      " "INDENT" **%d** "CONJURED_ACORNS" Conjured Acorns", SQUIRREL_BOOST_COST );
 
   for (int i = POWER_SIZE; i < POWER_SIZE + BUFFS_SIZE; i++)
   {
@@ -126,6 +138,20 @@ void power_shop(
         " "OFF_ARROW" %s \n", enchanted_acorns[buffs_idx].item.description);
   }
 
+  if (*boosted_acorn.stat_ptr > 0)
+    embed->fields->array[SQUIRREL_BOOST_INDEX + POWER_SIZE].name = format_str(SIZEOF_TITLE,
+        "<:%s:%ld> %s ("QUEST_MARKER" **%s**) \n", 
+        boosted_acorn.item.emoji_name, boosted_acorn.item.emoji_id, 
+        boosted_acorn.item.formal_name, num_str(*boosted_acorn.stat_ptr) );
+  else
+    embed->fields->array[SQUIRREL_BOOST_INDEX + POWER_SIZE].name = format_str(SIZEOF_TITLE,
+        "<:%s:%ld> %s \n", 
+        boosted_acorn.item.emoji_name, boosted_acorn.item.emoji_id, 
+        boosted_acorn.item.formal_name);
+  
+  embed->fields->array[SQUIRREL_BOOST_INDEX + POWER_SIZE].value = format_str(SIZEOF_FIELD_VALUE,
+      " "OFF_ARROW" %s \n", boosted_acorn.item.description);
+
   embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
   embed->footer = calloc(1, sizeof(struct discord_embed_footer));
 
@@ -136,6 +162,12 @@ void power_shop(
       embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, SQ_CHEM_PATH);
       embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You need more acorn!");
       embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_types[TYPE_NO_ACORNS].file_path);
+    }
+    else if (rewards.item_type == SQUIRREL_BOOST_INDEX)
+    {
+      embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, boosted_acorn.item.file_path);
+      embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You received the %s!", boosted_acorn.item.formal_name);
+      embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, boosted_acorn.item.file_path);
     }
     else {
       embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, enchanted_acorns[rewards.item_type].item.file_path);
@@ -171,6 +203,29 @@ int buffs_interaction(
     .components = discord_msg->buttons
   };
 
+  struct discord_component boost_row = 
+  {
+    .type = DISCORD_COMPONENT_ACTION_ROW,
+
+    .components = &(struct discord_components)
+    {
+      .array = &(struct discord_component) 
+      {
+        .type = DISCORD_COMPONENT_BUTTON,
+        .label = boosted_acorn.item.formal_name,
+        .emoji = &(struct discord_emoji) {
+          .name = boosted_acorn.item.emoji_name,
+          .id = boosted_acorn.item.emoji_id
+        },
+        .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c5_%ld", TYPE_E_ACORN, event->member->user->id),
+        .style = (player.conjured_acorns >= 5) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
+        .disabled = (player.conjured_acorns >= 5) ? false : true
+      },
+
+      .size = 1
+    }
+  };
+
   struct discord_interaction_response interaction = 
   {
     .type = (event->data->custom_id) ? DISCORD_INTERACTION_UPDATE_MESSAGE : DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
@@ -183,8 +238,8 @@ int buffs_interaction(
         .size = 1
       },
       .components = &(struct discord_components) {
-        .array = &action_rows,
-        .size = 1
+        .array = (struct discord_component[]) {action_rows, boost_row},
+        .size = 2
       }
     }
 

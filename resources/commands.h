@@ -10,6 +10,7 @@ struct sd_command
 enum CMD_TYPE
 {
   CMD_PLAYER_HELP,
+  CMD_BIOME_STORY,
   CMD_MAIN_FORAGE,
   CMD_ENCOUNTER_FORAGE,
   CMD_UPGRADE,
@@ -37,12 +38,23 @@ enum CMD_TYPE
   CMD_SIZE
 };
 
-static struct sd_command *cmds = (struct sd_command[])
+struct sd_command *cmds = (struct sd_command[])
 {
   // MAIN COMMANDS
   { // CMD_PLAYER_HELP
     .name = "player_help",
-    .func_cb = &help_interaction
+    .command_id = TYPE_PLAYER_HELP,
+    .error_msg = "This help embed belongs to someone else! Please send `/player_help` for support.",
+
+    .func_cb = &player_help_interaction,
+  },
+  // CMD_BIOME_STORY
+  {
+    .name = "biome_story",
+    .command_id = TYPE_BIOME_STORY,
+    .error_msg = "This info embed belongs to someone else! Please send `/biome_story to read through it.",
+
+    .func_cb = &biome_story_interaction
   },
   { // CMD_MAIN_FORAGE
     .name = "forage", // can be skipped when comparing names
@@ -100,6 +112,9 @@ static struct sd_command *cmds = (struct sd_command[])
   // EVENT COMMANDS
   { // CMD_EVENT_HELP
     .name = "event_help",
+    .command_id = TYPE_EVENT_HELP,
+    .error_msg = "This help embed belongs to someone else! Please send `/event_help` for support.",
+
     .func_cb = &event_help_interaction
   },
   { // CMD_SEASON_INFO
@@ -117,6 +132,9 @@ static struct sd_command *cmds = (struct sd_command[])
   // SCURRY COMMANDS
   { // CMD_SCURRY_HELP
     .name = "scurry_help",
+    .command_id = TYPE_SCURRY_HELP,
+    .error_msg = "This help embed belongs to someone else! Please send `/scurry_help` for support.",
+    
     .func_cb = &scurry_help_interaction
   },
   { // CMD_SCURRY_INFO
@@ -181,6 +199,11 @@ void create_commands(struct discord *client, const struct discord_guild *guild)
 {
   struct discord_create_global_application_command commands[] =
   {
+    {
+      .name = "biome_story",
+      .description = "Background about the biomes.",
+      .type = DISCORD_APPLICATION_CHAT_INPUT
+    },
     // MAIN COMMANDS
     { // forage
       .name = "forage",
