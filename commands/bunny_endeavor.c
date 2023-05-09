@@ -12,9 +12,9 @@ struct discord_components* build_bunny_buttons(const struct discord_interaction 
     int button_idx = event->data->custom_id[1] -48;
     int* stat_ptr = bunny_store[button_idx].stat_ptr;
 
-    if (player.events.catnip >= bunny_store[button_idx].cost)
+    if (player.catnip >= bunny_store[button_idx].cost)
     {
-      player.events.catnip -= bunny_store[button_idx].cost;
+      player.catnip -= bunny_store[button_idx].cost;
       rewards.item_type = button_idx;
       (*stat_ptr) += bunny_store[button_idx].quantity;
     }
@@ -32,12 +32,12 @@ struct discord_components* build_bunny_buttons(const struct discord_interaction 
     buttons->array[i] = (struct discord_component)
     {
       .type = DISCORD_COMPONENT_BUTTON,
-      .style = (player.events.catnip >= bunny_store[i].cost) 
+      .style = (player.catnip >= bunny_store[i].cost) 
           ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
       .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%d_%ld", TYPE_BUNNY, i, event->member->user->id),
       .label = bunny_store[i].item->formal_name,
       .emoji = emoji,
-      .disabled = (player.events.catnip < bunny_store[i].cost) ? true : false
+      .disabled = (player.catnip < bunny_store[i].cost) ? true : false
     };
   }
 
@@ -77,7 +77,7 @@ void bunny_shop(
       "> "GOLDEN_ACORNS" Golden Acorns: **%s** \n"
       "> "HEALTH" Health: **%s**/**%s** \n"
       "> "ENERGY" Energy: **%s**/%d \n", 
-      num_str(player.events.catnip), num_str(player.acorns), num_str(player.golden_acorns),
+      num_str(player.catnip), num_str(player.acorns), num_str(player.golden_acorns),
       num_str(player.health), num_str(player.max_health),
       num_str(player.energy), MAX_ENERGY );
 
