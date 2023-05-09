@@ -27,7 +27,7 @@
 #define ACTION_UNDEFINED 0x0
 
 #define SCURRY_MEMBER_MAX 15
-#define SCURRY_MEMBER_REQ 5 // requirement to participate in wars
+#define SCURRY_MEMBER_REQ 3 // requirement to participate in wars
 
 #define SCURRY_CREATION_COST 50000 //50,000
 
@@ -52,7 +52,7 @@
 #define MAX_HEALTH 100
 
 /* @@@ COOLDOWNS @@@ */
-#define COOLDOWN 3
+#define COOLDOWN 2
 #define BASE_ENERGY_CD 180 //3 minutes/ energy
 #define INVITE_CD 120
 #define MAIN_ENERGY_COST 2
@@ -84,10 +84,12 @@
 #define BIOME_DAMAGE 10
 #define BIOME_ACORN_INC 10
 #define BIOME_GOLDEN_ACORN_INC 5
-#define STRENGTH_BUFF_INC 5
 #define DIVIDEND_VALUE 0.05f
-#define ACORN_PRESTIGE 4 // every 4 points grants 1 acorn count on death!
-#define PRESTIGE_REQ 20000 // minimin acorn for prestige to happen
+#define ACORN_PRESTIGE 2 // score is halved on death
+#define PRESTIGE_REQ 25000 // minimin acorn for prestige to happen
+
+#define SQUIRREL_BOOST_INDEX 5
+#define SQUIRREL_BOOST_COST 5
 
 /* @@@ INTERACTION TYPES  @@@ */
 #define TYPE_MAIN_MSG 'r'
@@ -100,6 +102,11 @@
 #define TYPE_E_ACORN 'a'
 #define TYPE_INVITE 'i'
 #define TYPE_SCURRY_WAR 'x'
+
+#define TYPE_PLAYER_HELP 'p'
+#define TYPE_SCURRY_HELP 'c'
+#define TYPE_EVENT_HELP 'v'
+#define TYPE_BIOME_STORY 'b'
 
 
 /* @@@ EMBED BUFFER SIZES @@@ */
@@ -181,14 +188,13 @@
 #define ACORNS "<:acorns:1045028765392187402>"
 #define ACORN_COUNT "<:passive_acorns:1050407923823677502>"
 #define GOLDEN_ACORNS "<:golden_acorn:1045032005420728430>"
+#define CONJURED_ACORNS "<:conjured_acorn:1102676336289521774>"
+#define CATNIP "<:catnip:1052250368039452732>"
 
 // Stats
 #define IMMORTALITY_STAT "<:immortality:1072161685844021388>"
 #define ARCANE_STAT "<:arcane:1072161681737793536>"
 #define FINESSE_STAT "<:finesse:1072162409642463263>"
-
-// Events
-#define CATNIP "<:catnip:1052250368039452732>"
 
 // Items
 #define LOST_STASH "<:lost_stash:1044620525944705146>"
@@ -206,7 +212,6 @@
 
 // Scurry
 #define GUILD_ICON "<:guild_icon:1020714354351542362>"
-#define OPPOSING_SCURRY "<:opposing_scurry:1037000813291241524>"
 #define LEADER "<:leader:1035976066965196861>"
 #define COURAGE "<:courage:1045555306832347147>"
 #define WAR_ACORNS "<:war_acorns:1066105193655193640>"
@@ -219,3 +224,10 @@
 #define PROFICIENCY_ACORN "<:proficiency_acorn:1045027184475123813>"
 #define LUCK_ACORN "<:luck_acorn:1045027183334264872>"
 #define DEFENSE_ACORN "<:defense_acorn:1045027185754390578>"
+
+// Biomes
+#define GRASSLANDS_ICON "<:grasslands_icon:1007390631016017991>"
+#define SEEPING_SANDS_ICON "<:sp_icon:1042082262566572153>"
+#define NATURE_END_ICON "<:ne_icon:1071474392783142932>"
+#define DEATH_GRIP_ICON "<:dg_icon:1092903646196412426>"
+#define LAST_ACORN_ICON "<:la_icon:1105304340400451645>"
