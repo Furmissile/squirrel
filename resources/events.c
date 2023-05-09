@@ -1,25 +1,25 @@
 int factor_season()
 {
-  if (rewards.acorns == 0 || rewards.golden_acorns == 0)
-    return 1;
-
   struct tm *info = get_UTC();
 
-  info->tm_mday = 2;
-
-  if (info->tm_mday < 7) {
+  if (info->tm_mday < 7
+    && rewards.golden_acorns > 0) 
+  {
     if (rand() % MAX_CHANCE > 0)
     {
       int seasoned_golden_acorns = (rewards.item_type < TYPE_ACORN_MOUTHFUL) ? genrand(10, 5)
           : (rewards.item_type < TYPE_LOST_STASH) ? genrand(15, 10) : genrand(25, 10);
+
+      seasoned_golden_acorns *= generate_factor(player.stats.luck_lv, LUCK_VALUE);
       
       rewards.golden_acorns += seasoned_golden_acorns;
       player.golden_acorns += seasoned_golden_acorns;
     }
     return SPRING_MULT;
   }
-  else if (rewards.acorns && info->tm_mday < 14) {
-    rewards.acorns *= SUMMER_MULT;
+  else if (info->tm_mday < 14
+    && rewards.acorns > 0)
+  {
     // resource overflow is acceptable in this case since the chance is so low
     if ((rand() % MAX_CHANCE) > VICTUALS_CHANCE) 
     {
@@ -40,18 +40,20 @@ int factor_season()
       }
     }
     (*victuals[rewards.victual_type].stat_ptr) += rewards.victuals;
+
+    return SUMMER_MULT;
   }
-  else if (info->tm_mday < 21)
+  else if (info->tm_mday < 21
+    && rewards.acorns > 0)
     return FALL_MULT;
 
   if (rand() % MAX_CHANCE > 80)
   {
     rewards.catnip = (rewards.item_type < TYPE_ACORN_MOUTHFUL) ? genrand(10, 5)
         : (rewards.item_type < TYPE_LOST_STASH) ? genrand(15, 10) : genrand(25, 10);
-    player.events.catnip += rewards.catnip;
+    player.catnip += rewards.catnip;
   }
   return WINTER_MULT;
-
 }
 
 int get_season_event(
