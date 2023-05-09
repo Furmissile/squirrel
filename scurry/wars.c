@@ -7,8 +7,9 @@
 */
 
 
-void factor_war()
+void factor_war(struct sd_message *discord_msg)
 {
+  struct discord_embed *embed = discord_msg->embed;
   rewards.war_acorns = rewards.acorns;
   player.war_acorns += rewards.war_acorns;
 
@@ -40,6 +41,9 @@ void factor_war()
   }
 
   scurry.courage += rewards.courage;
+
+  ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\nYou successfully stole **%s** "WAR_ACORNS" War Acorns! \n+**%s** "COURAGE" Courage \n", 
+      num_str(rewards.war_acorns), num_str(rewards.courage) );
 }
 
 /* REQUIRES factor_war() to be called! */
