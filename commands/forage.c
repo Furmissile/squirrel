@@ -113,7 +113,6 @@ void apply_conjured_acorn(struct sd_message *discord_msg)
       if (player.encounter > 11 && player.encounter < 15)
         give_conjured_acorn = 1;
       break;
-      break;
   }
 
   if (give_conjured_acorn)
@@ -174,11 +173,11 @@ void apply_base_rewards(struct sd_message *discord_msg)
     {
       if (player.buffs.boosted > 0)
       {
-        rewards.acorns = rewards.acorns *3;
+        rewards.acorns *= 3;
         player.buffs.boosted--;
       }
       else {
-        rewards.acorns = rewards.acorns *2;
+        rewards.acorns *= 2;
       }
     }
 
