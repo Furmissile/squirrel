@@ -6,6 +6,11 @@ void is_health_regen(struct sd_message *discord_msg)
   int health_regen = BASE_HEALTH_REGEN * (player.stats.strength_lv/STAT_EVOLUTION +1);
   if (player.squirrel == SKELETAL_SQUIRREL)
     health_regen *= 2;
+  
+  if (player.buffs.boosted > 0) {
+    health_regen += 1.5;
+    player.buffs.boosted--;
+  }
 
   // if difference of player health and max health is less than the health regen ? give the difference : apply regen
   // so players can regen their health completely
@@ -220,7 +225,7 @@ void apply_base_rewards(struct sd_message *discord_msg)
   if (rewards.victuals) {
     struct sd_file_data victual_type = victuals[rewards.victual_type].item;
     struct sd_file_data victual_ref = victuals[rewards.victual_type].item_ref->item;
-    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n**%s** <:%s:%ld> %s (+**%s** <:%s:%ld> %s) \n",
+    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n+**%s** <:%s:%ld> %s (+**%s** <:%s:%ld> %s) \n",
       num_str(rewards.victuals), victual_type.emoji_name, victual_type.emoji_id, victual_type.formal_name,
       num_str(rewards.victuals), victual_ref.emoji_name, victual_ref.emoji_id, victual_ref.formal_name);
   }
