@@ -115,6 +115,30 @@ char* trim_user_id(char* input)
   return user_id;
 }
 
+char* trim_buffer(char* input, char separator)
+{
+  char* user_id = calloc(SIZEOF_TITLE, sizeof(char));
+
+  char tmp_buffer[SIZEOF_TITLE] = {};
+  snprintf(tmp_buffer, sizeof(tmp_buffer), input);
+  int tmp_buffer_size = strlen(tmp_buffer);
+
+  int tmp_buffer_idx = 0;
+  while (tmp_buffer[tmp_buffer_idx] != separator)
+    tmp_buffer_idx++;
+  tmp_buffer_idx++;
+
+  int buffer_idx = 0;
+  while (tmp_buffer[tmp_buffer_idx] != separator)
+  {
+    if (tmp_buffer_idx == tmp_buffer_size)
+      break;
+    user_id[buffer_idx++] = tmp_buffer[tmp_buffer_idx++];
+  }
+
+  return user_id;
+}
+
 int strtoint(const char* str)
 {
   int num = 0;

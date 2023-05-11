@@ -62,7 +62,7 @@ struct discord_components* build_info_buttons(const struct discord_interaction *
     .style = (button_idx == 1) ? DISCORD_BUTTON_SECONDARY : DISCORD_BUTTON_PRIMARY,
     .label = "Members",
     .custom_id = format_str(SIZEOF_CUSTOM_ID,
-        "%c1_%ld", TYPE_SCURRY_INFO, event->member->user->id),
+        "%c1_%ld*%ld", TYPE_SCURRY_INFO, event->member->user->id, scurry.scurry_owner_id),
     .disabled = (button_idx == 1) ? true : false
   };
 
@@ -72,7 +72,7 @@ struct discord_components* build_info_buttons(const struct discord_interaction *
     .style = (button_idx != 1) ? DISCORD_BUTTON_SECONDARY : DISCORD_BUTTON_PRIMARY,
     .label = "War Ranks",
     .custom_id = format_str(SIZEOF_CUSTOM_ID,
-        "%c2_%ld", TYPE_SCURRY_INFO, event->member->user->id),
+        "%c2_%ld*%ld", TYPE_SCURRY_INFO, event->member->user->id, scurry.scurry_owner_id),
     .disabled = (button_idx != 1) ? true : false
   };
 
@@ -263,16 +263,28 @@ int s_info_interaction(
 
   player = load_player_struct(event->member->user->id);
 
+  PGresult* get_scurry;
   if (event->data->options) // load a different scurry by name if it exists
   {
-    PGresult* get_scurry = SQL_query(DB_ACTION_SEARCH, "select * from public.scurry where s_name like '%s'", event->data->options->array[0].value);
+    get_scurry = SQL_query(DB_ACTION_SEARCH, "select * from public.scurry where s_name like '%s'", event->data->options->array[0].value);
     ERROR_DATABASE_RET((PQntuples(get_scurry) == 0), "This scurry doesn't exist!", get_scurry);
 
     scurry = load_scurry_struct(strtobigint(PQgetvalue(get_scurry, 0, DB_SCURRY_OWNER_ID)));
   }
   else { // load player scurry if they're in one
-    ERROR_INTERACTION((player.scurry_id == 0), "You are not in a scurry yet!");
-    scurry = load_scurry_struct(player.scurry_id);
+
+    // at this point, the retrieved scurry is already in the custom id if one exists
+    unsigned long scurry_id = 0;
+
+    if (event->data->custom_id)
+      scurry_id = strtobigint(trim_buffer(event->data->custom_id, '*'));
+    else {
+      // regardless of there being a custom id, the player's scurry should be loaded by default
+      scurry_id = player.scurry_id;
+      ERROR_INTERACTION((scurry_id == 0), "You are not in a scurry yet!");
+    }
+    
+    scurry = load_scurry_struct(scurry_id);
   }
 
   //Load Author
