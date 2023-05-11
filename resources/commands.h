@@ -178,7 +178,7 @@ struct sd_command *cmds = (struct sd_command[])
   }
 };
 
-void create_util_commands(struct discord *client, const struct discord_guild *guild)
+void create_util_commands(struct discord *client)
 {
   struct discord_create_guild_application_command commands[] =
   {
@@ -195,11 +195,13 @@ void create_util_commands(struct discord *client, const struct discord_guild *gu
   };
 
   for (int i = 0; i < (int)(sizeof(commands)/sizeof(*commands)); i++)
-    discord_create_guild_application_command(client, APPLICATION_ID, guild->id, &commands[i], NULL);
+    discord_create_guild_application_command(client, APPLICATION_ID, GUILD_ID, &commands[i], NULL);
 }
 
-void create_commands(struct discord *client, const struct discord_guild *guild)
+void create_commands(struct discord *client, const struct discord_ready *event)
 {
+  (void)event;
+
   struct discord_create_global_application_command commands[] =
   {
     {
@@ -412,5 +414,5 @@ void create_commands(struct discord *client, const struct discord_guild *guild)
   // depending on version, application id can vary!
   // only constant for the duration of the program
   if (APPLICATION_ID == 1048439491607674930)
-    create_util_commands(client, guild);
+    create_util_commands(client);
 }
