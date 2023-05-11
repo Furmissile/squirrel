@@ -129,9 +129,7 @@ void apply_base_rewards(struct sd_message *discord_msg)
   if (rewards.acorns)
   {
     // base amount goes to war stash and acorn count
-    if (scurry.war_flag == 1 && (rand() % MAX_CHANCE) > 65)
-      factor_war(discord_msg);
-    else if (scurry.war_flag == 0)
+    if (scurry.war_flag == 0)
       scurry.war_acorns = (scurry.war_acorns + rewards.acorns >= scurry.war_acorn_cap) 
           ? scurry.war_acorn_cap : scurry.war_acorns + rewards.acorns;
 
@@ -188,6 +186,9 @@ void apply_base_rewards(struct sd_message *discord_msg)
     ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n+**%s** "ACORNS" Acorns \n%s", 
       num_str(rewards.acorns), 
       (buff_status.proficiency_acorn) ? "-**1** "PROFICIENCY_ACORN" Acorn of Proficiency \n" : " " );
+
+    if (scurry.war_flag == 1 && (rand() % MAX_CHANCE) > 65)
+      factor_war(discord_msg);
   }
   else {
     ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\nYou received no earnings! \n");
