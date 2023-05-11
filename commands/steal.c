@@ -68,7 +68,7 @@ void steal_acorns(
     format_str(SIZEOF_URL, "https://cdn.discordapp.com/avatars/%lu/%s.png", 
         event->member->user->id, event->member->user->avatar) );
 
-  if (rand() % MAX_CHANCE > 100) // STEAL_CHANCE)
+  if (rand() % MAX_CHANCE > STEAL_CHANCE)
   {
     embed->color = (int)ACTION_FAILED;
     embed->title = format_str(SIZEOF_TITLE, "Steal Failed!");
