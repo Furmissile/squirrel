@@ -102,6 +102,7 @@
 #define TYPE_E_ACORN 'a'
 #define TYPE_INVITE 'i'
 #define TYPE_SCURRY_INFO 'x'
+#define TYPE_LEADERBOARD 'l'
 
 #define TYPE_PLAYER_HELP 'p'
 #define TYPE_SCURRY_HELP 'c'

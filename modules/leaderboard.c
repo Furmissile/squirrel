@@ -1,9 +1,43 @@
 PGresult* player_pos;
 
+struct discord_components* build_leaderboard_buttons(const struct discord_interaction *event)
+{
+  struct discord_components *buttons = calloc(1, sizeof(struct discord_components));
+
+  buttons->size = 2;
+  buttons->array = calloc(buttons->size, sizeof(struct discord_component));
+
+  int button_idx = (event->data->custom_id) ? event->data->custom_id[1] - 48 : 0;
+
+  buttons->array[0] = (struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .style = (button_idx == 0) ? DISCORD_BUTTON_SECONDARY : DISCORD_BUTTON_PRIMARY,
+    .label = "Acorn Count",
+    .custom_id = format_str(SIZEOF_CUSTOM_ID,
+        "%c0_%ld", TYPE_LEADERBOARD, event->member->user->id),
+    .disabled = (button_idx == 0) ? true : false
+  };
+
+  buttons->array[1] = (struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .style = (button_idx == 1) ? DISCORD_BUTTON_SECONDARY : DISCORD_BUTTON_PRIMARY,
+    .label = "Courage",
+    .custom_id = format_str(SIZEOF_CUSTOM_ID,
+        "%c1_%ld", TYPE_LEADERBOARD, event->member->user->id),
+    .disabled = (button_idx == 1) ? true : false
+  };
+
+  return buttons;
+}
+
 void create_leaderboard_interaction(struct discord *client, const struct discord_interaction *event, struct sd_user_data *user_data) 
 {
   struct sd_message *discord_msg = user_data->discord_msg;
   struct discord_embed *embed = discord_msg->embed;
+
+  embed->description = calloc(SIZEOF_DESCRIPTION, sizeof(char));
 
   for (int idx = 0; idx < user_data->db_rows; idx++)
   {
@@ -42,17 +76,7 @@ void create_leaderboard_interaction(struct discord *client, const struct discord
       num_str(strtoint(PQgetvalue(player_pos, 0, 2))) );
   }
 
-  discord_edit_original_interaction_response(client, APPLICATION_ID, event->token, 
-    &(struct discord_edit_original_interaction_response)
-    {
-      .embeds = &(struct discord_embeds) 
-      {
-        .array = embed,
-        .size = 1
-      }
-
-    }, 
-    NULL);
+  complete_interaction(client, event, discord_msg);
 
   discord_embed_cleanup(embed);
   free(discord_msg);
@@ -84,7 +108,7 @@ void is_user(struct discord *client, struct discord_response *resp, const struct
 
 }
 
-void level_leaderboard(struct discord *client, struct discord_response *resp, const struct discord_interaction_response *ret)
+void acorn_count_leaderboard(struct discord *client, struct discord_response *resp, const struct discord_interaction_response *ret)
 {
   (void)ret;
   const struct discord_interaction *event = resp->keep;
@@ -94,12 +118,12 @@ void level_leaderboard(struct discord *client, struct discord_response *resp, co
 
   embed->title = format_str(SIZEOF_TITLE, "Acorn Leaderboard");
 
+  discord_msg->buttons = build_leaderboard_buttons(event);
+
   embed->color = player.color;
 
   embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
   embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, items[ITEM_ACORN_COUNT].item.file_path);
-
-  embed->description = calloc(SIZEOF_DESCRIPTION, sizeof(char));
 
   struct sd_user_data *user_data = calloc(1, sizeof(struct sd_user_data));
   user_data->discord_msg = calloc(1, sizeof(struct sd_message));
@@ -137,6 +161,8 @@ void courage_leaderboard(struct discord *client, struct discord_response *resp, 
 
   embed->title = format_str(SIZEOF_TITLE, "Courage Leaderboard");
 
+  discord_msg->buttons = build_leaderboard_buttons(event);
+
   embed->color = player.color;
 
   embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
@@ -154,17 +180,7 @@ void courage_leaderboard(struct discord *client, struct discord_response *resp, 
       PQgetvalue(player_pos, idx, 2), 
       num_str(strtoint(PQgetvalue(player_pos, idx, 3))) );
 
-  discord_edit_original_interaction_response(client, APPLICATION_ID, event->token, 
-    &(struct discord_edit_original_interaction_response)
-    {
-      .embeds = &(struct discord_embeds) 
-      {
-        .array = embed,
-        .size = 1
-      }
-
-    }, 
-    NULL);
+  complete_interaction(client, event, discord_msg);
 
   discord_embed_cleanup(embed);
   free(discord_msg);
@@ -174,10 +190,6 @@ int get_leaderboard(
   const struct discord_interaction *event, 
   struct sd_message *discord_msg)
 {
-  ERROR_INTERACTION((!event->data->options), "Please select the type of leaderboard you want!");
-
-  char* command_type = event->data->options->array[0].value;
-
   player = load_player_struct(event->member->user->id);
   scurry = load_scurry_struct(player.scurry_id);
 
@@ -187,20 +199,7 @@ int get_leaderboard(
     .keep = event 
   };
 
-  if (strcmp(command_type, "acorn_count") == 0)
-  {
-    player_pos = SQL_query(DB_ACTION_SEARCH, "select rank_idx, user_id, best_acorn \
-        from ( \
-          select user_id, \
-          (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) AS best_acorn, \
-          dense_rank() over (order by (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) desc) as rank_idx \
-        from public.player) as lb where rank_idx <= 10 and best_acorn > 0");
-
-    ERROR_DATABASE_RET((PQntuples(player_pos) == 0), "There aren't enough entries yet!", player_pos);
-
-    ret_response.done = &level_leaderboard;
-  }
-  else if (strcmp(command_type, "courage") == 0)
+  if (event->data->custom_id && event->data->custom_id[1] -48 == 1)
   {
     player_pos = SQL_query(DB_ACTION_SEARCH, "select dense_rank() over (order by courage desc) as rank_idx, owner_id, s_name, courage \
         from (select dense_rank() over (order by courage desc) as rank_idx, owner_id, s_name, courage from public.scurry) as lb \
@@ -211,14 +210,22 @@ int get_leaderboard(
     ret_response.done = &courage_leaderboard;
   }
   else {
-    error_message(event, "Sorry, this isn't a valid choice!");
-    return ERROR_STATUS;
+    player_pos = SQL_query(DB_ACTION_SEARCH, "select rank_idx, user_id, best_acorn \
+        from ( \
+          select user_id, \
+          (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) AS best_acorn, \
+          dense_rank() over (order by (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) desc) as rank_idx \
+        from public.player) as lb where rank_idx <= 10 and best_acorn > 0");
+
+    ERROR_DATABASE_RET((PQntuples(player_pos) == 0), "There aren't enough entries yet!", player_pos);
+
+    ret_response.done = &acorn_count_leaderboard;
   }
 
   discord_create_interaction_response(client, event->id, event->token, 
     &(struct discord_interaction_response)
     {
-      .type = DISCORD_INTERACTION_DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
+      .type = (event->data->custom_id) ? DISCORD_INTERACTION_DEFERRED_UPDATE_MESSAGE : DISCORD_INTERACTION_DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
 
       .data = &(struct discord_interaction_callback_data) 
       {

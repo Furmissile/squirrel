@@ -106,6 +106,9 @@ struct sd_command *cmds = (struct sd_command[])
 
   { // CMD_LEADERBOARD
     .name = "leaderboard",
+    .command_id = TYPE_LEADERBOARD,
+    .error_msg = "This leaderboard belongs to someone else! Please send `/leaderboard` to interact.",
+
     .func_cb = &get_leaderboard
   },
 
@@ -292,36 +295,7 @@ void create_commands(struct discord *client, const struct discord_guild *guild)
     { // leaderboard
       .name = "leaderboard",
       .description = "View the acorn leaderboard! (Top 10)",
-      .type = DISCORD_APPLICATION_CHAT_INPUT,
-
-      .options = &(struct discord_application_command_options)
-      {
-        .array = (struct discord_application_command_option[])
-        {
-          {
-            .type = DISCORD_APPLICATION_OPTION_STRING,
-            .name = "type",
-            .description = "Select the type of leaderboard",
-            
-            .choices = &(struct discord_application_command_option_choices)
-            {
-              .array = (struct discord_application_command_option_choice[])
-              {
-                {
-                    .name = "acorn_count",
-                    .value = "\"acorn_count\"",
-                },
-                {
-                    .name = "courage",
-                    .value = "\"courage\"",
-                }
-              },
-              .size = 2
-            },
-          }
-        },
-        .size = 1
-      }
+      .type = DISCORD_APPLICATION_CHAT_INPUT
     },
 
     // SCURRY COMMANDS

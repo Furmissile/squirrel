@@ -79,37 +79,6 @@ struct discord_components* build_info_buttons(const struct discord_interaction *
   return buttons;
 }
 
-void complete_interaction(
-  struct discord *client,
-  const struct discord_interaction *event,
-  struct sd_message *discord_msg)
-{
-  struct discord_embed *embed = discord_msg->embed;
-
-  struct discord_component action_rows = {
-    .type = DISCORD_COMPONENT_ACTION_ROW,
-    .components = discord_msg->buttons
-  };
-
-  discord_edit_original_interaction_response(client, APPLICATION_ID, event->token, 
-    &(struct discord_edit_original_interaction_response)
-    {
-      .embeds = &(struct discord_embeds) 
-      {
-        .array = embed,
-        .size = 1
-      },
-      .components = &(struct discord_components) {
-        .array = &action_rows,
-        .size = 1
-      }
-    }, 
-    NULL);
-
-  update_scurry_row(scurry);
-}
-
-
 void fill_members_field(
   struct discord *client,
   const struct discord_interaction *event,
@@ -140,6 +109,7 @@ void fill_members_field(
   }
 
   embed->fields->array[SCURRY_RANKINGS].value = format_str(SIZEOF_FIELD_VALUE, scurry_member_list);
+  update_scurry_row(scurry);
   complete_interaction(client, event, discord_msg);
 
   discord_embed_cleanup(discord_msg->embed);
