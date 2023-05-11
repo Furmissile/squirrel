@@ -50,7 +50,7 @@ void factor_war(struct sd_message *discord_msg)
 void scurry_war_update(const struct discord_interaction *event) 
 {
   // avoid conflict with forage button so check if not forage
-  if (event->data->custom_id && event->data->custom_id[0] == TYPE_SCURRY_WAR)
+  if (event->data->custom_id && event->data->custom_id[0] == TYPE_SCURRY_INFO)
   {
     scurry.war_flag = 0;
     return;

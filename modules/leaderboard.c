@@ -1,25 +1,5 @@
 PGresult* player_pos;
 
-struct DB_Info {
-  int db_idx;
-  char* username;
-  unsigned long user_id;
-  int value;
-};
-
-struct sd_user_data {
-  struct sd_message *discord_msg;
-  int db_rows;
-
-  // how many requests have been completed
-  int response_counter;
-
-  // set data in an array to prevent disorganization
-  struct DB_Info *row_data;
-
-  int is_top_ten;
-};
-
 void create_leaderboard_interaction(struct discord *client, const struct discord_interaction *event, struct sd_user_data *user_data) 
 {
   struct sd_message *discord_msg = user_data->discord_msg;
@@ -186,7 +166,6 @@ void courage_leaderboard(struct discord *client, struct discord_response *resp, 
   free(discord_msg);
 }
 
-// TODO: Get leaderboard working again!!
 int get_leaderboard(
   const struct discord_interaction *event, 
   struct sd_message *discord_msg)

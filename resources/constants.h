@@ -101,7 +101,7 @@
 #define TYPE_BUNNY 'y'
 #define TYPE_E_ACORN 'a'
 #define TYPE_INVITE 'i'
-#define TYPE_SCURRY_WAR 'x'
+#define TYPE_SCURRY_INFO 'x'
 
 #define TYPE_PLAYER_HELP 'p'
 #define TYPE_SCURRY_HELP 'c'
@@ -215,6 +215,9 @@
 #define LEADER "<:leader:1035976066965196861>"
 #define COURAGE "<:courage:1045555306832347147>"
 #define WAR_ACORNS "<:war_acorns:1066105193655193640>"
+#define LIST_LEADER "<:king_squirrel:1073298108508803113>"
+#define LIST_MEMBER "<:gl_squirrel:1014655900373504130>"
+#define LIST_YOU "<:squirrel_bookie:1050175322286469250>"
 
 // Health
 #define HEALTH "<:health:1064579080281923655>"

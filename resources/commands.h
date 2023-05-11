@@ -139,8 +139,8 @@ struct sd_command *cmds = (struct sd_command[])
   },
   { // CMD_SCURRY_INFO
     .name = "scurry_info",
-    .command_id = TYPE_SCURRY_WAR,
-    .error_msg = "You are not part of this guild!",
+    .command_id = TYPE_SCURRY_INFO,
+    .error_msg = "You are not part of this guild! Please send `/scurry_info` to check this scurry out.",
 
     .func_cb = &s_info_interaction
   },

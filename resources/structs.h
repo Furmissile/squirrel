@@ -166,3 +166,25 @@ struct sd_message
 
   char* content;
 };
+
+// For listing members...
+struct DB_Info {
+  int db_idx;
+  char* username;
+  unsigned long user_id;
+  int value;
+};
+
+struct sd_user_data {
+  struct sd_message *discord_msg;
+  int db_rows;
+
+  // how many requests have been completed
+  int response_counter;
+
+  // set data in an array to prevent disorganization
+  struct DB_Info *row_data;
+
+  int is_top_ten;
+  int is_war_rankings;
+};
