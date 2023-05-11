@@ -48,7 +48,8 @@ void e_help(const struct discord_interaction *event, struct sd_message *discord_
       .value = format_str(SIZEOF_FIELD_VALUE,
           " "OFF_ARROW" Everyone is growing all sorts of useful victuals! *RaId ThEiR gArDeNsSs!* \n"
           " "OFF_ARROW" Lasts throughout the in-game Summer season! \n"
-          " "OFF_ARROW" Look for all sorts of victuals including blueberries, seeds, and cherries for bonus rewards! \n")
+          " "OFF_ARROW" Look for all sorts of victuals including blueberries, seeds, and cherries for bonus rewards! \n"
+          " "OFF_ARROW" These victuals *are not resources*. They are not added to your inventory! What they give is what's in parentheses.")
     },
     {
       .name = format_str(SIZEOF_TITLE, ""ACORNS" Winter Prep Event (Fall)"),

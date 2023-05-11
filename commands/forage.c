@@ -463,6 +463,7 @@ void encounter_embed(
     if (rewards.health_loss)
       is_health_loss(discord_msg);
     else {
+      rewards.acorn_count = rewards.acorns;
       apply_base_rewards(discord_msg);
       apply_conjured_acorn(discord_msg);
     }
@@ -532,6 +533,8 @@ void main_embed(
         case TYPE_ACORN_SACK:
           rewards.acorns = genrand(150, 50);
       }
+
+      rewards.acorn_count = rewards.acorns;
 
       apply_base_rewards(discord_msg);
 
