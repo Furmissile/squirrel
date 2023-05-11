@@ -23,20 +23,23 @@ void create_leaderboard_interaction(struct discord *client, const struct discord
   }
 
   PQclear(player_pos);
-  if (user_data->is_top_ten == 0) 
+  player_pos = SQL_query(DB_ACTION_SEARCH, "select rank_idx, user_id, best_acorn \
+        from ( \
+          select user_id, \
+          (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) AS best_acorn, \
+          dense_rank() over (order by (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) desc) as rank_idx \
+        from public.player) as lb where lb.user_id = %ld and lb.best_acorn > 0",
+      player.user_id);
+
+  if (user_data->is_top_ten == 0
+    && PQntuples(player_pos) == 1) 
   {
     // player position in leaderboard
-    player_pos = SQL_query(DB_ACTION_SEARCH, "select row_idx, user_id, acorn_count \
-        from (select dense_rank() over (order by acorn_count desc) as row_idx, user_id, acorn_count from public.player) \
-        as lb where lb.user_id = %ld",
-        player.user_id);
-
     ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION,
       "\n**%d**. <@%ld> **%s** \n",
       strtoint(PQgetvalue(player_pos, 0, 0)),
       strtobigint(PQgetvalue(player_pos, 0, 1)), 
       num_str(strtoint(PQgetvalue(player_pos, 0, 2))) );
-    PQclear(player_pos);
   }
 
   discord_edit_original_interaction_response(client, APPLICATION_ID, event->token, 
@@ -53,6 +56,7 @@ void create_leaderboard_interaction(struct discord *client, const struct discord
 
   discord_embed_cleanup(embed);
   free(discord_msg);
+  PQclear(player_pos);
 }
 
 void is_user(struct discord *client, struct discord_response *resp, const struct discord_user *user)
@@ -178,12 +182,13 @@ int get_leaderboard(
   scurry = load_scurry_struct(player.scurry_id);
 
   // discord_msg gets passed along regardless of leaderboard type
-  struct discord_ret_interaction_response ret_response = { .data = discord_msg, .keep = event };
+  struct discord_ret_interaction_response ret_response = { 
+    .data = discord_msg, 
+    .keep = event 
+  };
 
   if (strcmp(command_type, "acorn_count") == 0)
   {
-    ERROR_INTERACTION((player.acorn_count == 0), "You must be have an acorn count to view this leaderboard!");
-
     player_pos = SQL_query(DB_ACTION_SEARCH, "select rank_idx, user_id, best_acorn \
         from ( \
           select user_id, \
@@ -197,9 +202,6 @@ int get_leaderboard(
   }
   else if (strcmp(command_type, "courage") == 0)
   {
-    ERROR_INTERACTION((player.scurry_id == 0), "You must be in a scurry to view this leaderboard!");
-    ERROR_INTERACTION((scurry.courage == 0), "Your scurry must participate in a war to view this leaderboard!");
-
     player_pos = SQL_query(DB_ACTION_SEARCH, "select dense_rank() over (order by courage desc) as rank_idx, owner_id, s_name, courage \
         from (select dense_rank() over (order by courage desc) as rank_idx, owner_id, s_name, courage from public.scurry) as lb \
         where rank_idx <= 10 and courage > 0");
