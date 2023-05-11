@@ -164,7 +164,6 @@ void list_scurry_user(
   else
     user_data->row_data[user_data->response_counter].username = format_str(SIZEOF_TITLE, " "INDENT" "LIST_MEMBER" `%s`", user->username);
   
-  printf("%s \n\n", user_data->row_data[user_data->response_counter].username);
   user_data->response_counter++;
 
   if (user_data->response_counter == user_data->db_rows)
@@ -221,10 +220,7 @@ void scurry_info(
     scurry.courage = 0;
   }
   else if (event->data->custom_id && event->data->custom_id[1] -48 == 0 && scurry.war_flag == 1)
-  {
-    printf("TRUEE \n");
     scurry_war_update(event);
-  }
 
   embed->color = player.color;
 
