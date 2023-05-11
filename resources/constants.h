@@ -58,7 +58,7 @@
 #define MAIN_ENERGY_COST 2
 #define STEAL_ENERGY_COST 20
 #define STEAL_CHANCE 30
-#define STEAL_MINIMUM 500
+#define STEAL_MINIMUM 1000
 
 
 /* @@@ CHANCE DATA @@@ */

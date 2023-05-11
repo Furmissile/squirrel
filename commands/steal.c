@@ -13,6 +13,7 @@
 struct Steal_Info {
   unsigned long t_user_id;
   int steal_amt;
+  int golden_acorns;
 
   struct sd_message *discord_msg;
   char* username;
@@ -67,7 +68,7 @@ void steal_acorns(
     format_str(SIZEOF_URL, "https://cdn.discordapp.com/avatars/%lu/%s.png", 
         event->member->user->id, event->member->user->avatar) );
 
-  if (rand() % MAX_CHANCE > STEAL_CHANCE)
+  if (rand() % MAX_CHANCE > 100) // STEAL_CHANCE)
   {
     embed->color = (int)ACTION_FAILED;
     embed->title = format_str(SIZEOF_TITLE, "Steal Failed!");
@@ -83,18 +84,18 @@ void steal_acorns(
         "update public.player set acorns = acorns - %d where user_id = %ld", 
         steal_info->steal_amt, steal_info->t_user_id);
 
-    int golden_acorns = genrand(25, 25) * generate_factor(player.stats.luck_lv, LUCK_VALUE);
-
     player.acorns += steal_info->steal_amt;
     player.acorn_count += (steal_info->steal_amt * 0.1);
-    player.golden_acorns += golden_acorns;
+    player.golden_acorns += steal_info->golden_acorns;
 
     embed->color = (int)ACTION_SUCCESS;
     embed->title = format_str(SIZEOF_TITLE, "Steal Successful!");
     embed->description = format_str(SIZEOF_DESCRIPTION,
         "You anonymously stole **%s** "ACORNS" acorns! \n"
-        "+**%s** "GOLDEN_ACORNS" Golden Acorns \n",
-        num_str(steal_info->steal_amt), num_str(golden_acorns));
+        "\n+**%s** "ACORN_COUNT" Acorn Count \n"
+        "\n+**%s** "GOLDEN_ACORNS" Golden Acorns \n",
+        num_str(steal_info->steal_amt), num_str(steal_info->golden_acorns),
+        num_str(steal_info->steal_amt * 0.1));
   }
 
   free(steal_info);
@@ -157,9 +158,13 @@ int steal_interaction(
   ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready!");
   ERROR_INTERACTION((player.energy < STEAL_ENERGY_COST), "You need more energy!");
 
-  int steal_min = STEAL_MINIMUM * (*stats[STAT_PROFICIENCY].stat_ptr +1);
-  float random_percent = (float)genrand(50, 25) /100;
+  float random_percent = (float)genrand(15, 5) /100;
 
+  // int steal_min = STEAL_MINIMUM * (*stats[STAT_PROFICIENCY].stat_ptr +1);
+  int steal_min = generate_price(player.stats.proficiency_lv, PROFICIENCY_UNIT);
+
+  int relative_golden_acorns = GOLDEN_ACORN_BUFF_COST * generate_factor(player.stats.luck_lv, LUCK_VALUE);
+  
   // select all players that isnt the player, game owner, within a range of acorns, or is the same scurry
   PGresult* t_user = SQL_query(DB_ACTION_SEARCH, 
     "select user_id, acorns from public.player \
@@ -179,6 +184,7 @@ int steal_interaction(
   steal_info->t_user_id = strtobigint( PQgetvalue(t_user, 0, TARGET_USER_ID));
   // take a random percent of steal min
   steal_info->steal_amt = steal_min * random_percent;
+  steal_info->golden_acorns = relative_golden_acorns * random_percent;
 
   struct discord_ret_guild_member ret_member = {
     .done = &steal_from_member,
