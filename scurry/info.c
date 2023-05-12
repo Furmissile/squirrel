@@ -24,7 +24,17 @@ struct discord_components* build_info_buttons(const struct discord_interaction *
   buttons->size = 3;
   buttons->array = calloc(buttons->size, sizeof(struct discord_component));
 
-  int button_idx = (event->data->custom_id) ? event->data->custom_id[1] - 48 : 1;
+  int button_idx = 1; // button_idx defaults to showing member list (or 1)
+  int is_war_button = 0; // is only set when button_idx == 0
+
+  if (event->data->custom_id)
+  {
+    button_idx = event->data->custom_id[1] - 48;
+    is_war_button = event->data->custom_id[2] - 48;
+
+    if (button_idx == 0)
+      is_war_button = (is_war_button) ? 0 : 1;
+  }
 
   scurry_members = SQL_query(DB_ACTION_SEARCH, "select * from public.player where scurry_id = %ld", scurry.scurry_owner_id);
 
@@ -35,9 +45,9 @@ struct discord_components* build_info_buttons(const struct discord_interaction *
     .style = DISCORD_BUTTON_SUCCESS,
     .label = "Join War",
     .custom_id = format_str(SIZEOF_CUSTOM_ID,
-        "%c0_%ld", TYPE_SCURRY_INFO, scurry.scurry_owner_id),
+        "%c0%d_%ld", TYPE_SCURRY_INFO, is_war_button, scurry.scurry_owner_id),
     // if war acorns isnt full or the button was pressed disable button
-    .disabled = (event->data->custom_id
+    .disabled = (is_war_button
       || scurry.war_acorns < scurry.war_acorn_cap
       // || PQntuples(scurry_members) < SCURRY_MEMBER_REQ)
     )
@@ -49,9 +59,9 @@ struct discord_components* build_info_buttons(const struct discord_interaction *
     .style = DISCORD_BUTTON_DANGER,
     .label = "Retreat",
     .custom_id = format_str(SIZEOF_CUSTOM_ID,
-        "%c0_%ld", TYPE_SCURRY_INFO, scurry.scurry_owner_id),
+        "%c0%d_%ld", TYPE_SCURRY_INFO, is_war_button, scurry.scurry_owner_id),
     // if the button was pressed, disable button
-    .disabled = (event->data->custom_id) ? true : false
+    .disabled = (is_war_button) ? true : false
   };
 
   PQclear(scurry_members);
@@ -62,7 +72,7 @@ struct discord_components* build_info_buttons(const struct discord_interaction *
     .style = (button_idx == 1) ? DISCORD_BUTTON_SECONDARY : DISCORD_BUTTON_PRIMARY,
     .label = "Members",
     .custom_id = format_str(SIZEOF_CUSTOM_ID,
-        "%c1_%ld*%ld", TYPE_SCURRY_INFO, event->member->user->id, scurry.scurry_owner_id),
+        "%c1%d_%ld", TYPE_SCURRY_INFO, is_war_button, event->member->user->id),
     .disabled = (button_idx == 1) ? true : false
   };
 
@@ -72,7 +82,7 @@ struct discord_components* build_info_buttons(const struct discord_interaction *
     .style = (button_idx != 1) ? DISCORD_BUTTON_SECONDARY : DISCORD_BUTTON_PRIMARY,
     .label = "War Ranks",
     .custom_id = format_str(SIZEOF_CUSTOM_ID,
-        "%c2_%ld*%ld", TYPE_SCURRY_INFO, event->member->user->id, scurry.scurry_owner_id),
+        "%c2%d_%ld", TYPE_SCURRY_INFO, is_war_button, event->member->user->id),
     .disabled = (button_idx != 1) ? true : false
   };
 
@@ -109,8 +119,9 @@ void fill_members_field(
   }
 
   embed->fields->array[SCURRY_RANKINGS].value = format_str(SIZEOF_FIELD_VALUE, scurry_member_list);
-  update_scurry_row(scurry);
   complete_interaction(client, event, discord_msg);
+
+  update_scurry_row(scurry);
 
   discord_embed_cleanup(discord_msg->embed);
   free(discord_msg->buttons);
@@ -191,7 +202,7 @@ void scurry_info(
   }
   else if (event->data->custom_id && event->data->custom_id[1] -48 == 0 && scurry.war_flag == 1)
     scurry_war_update(event);
-
+  
   embed->color = player.color;
 
   embed->title = format_str(SIZEOF_TITLE, scurry.scurry_name);
@@ -239,6 +250,7 @@ void scurry_info(
     {
       embed->fields->array[SCURRY_RANKINGS].value = format_str(SIZEOF_FIELD_VALUE, " "OFF_ARROW" No members have participated yet!");
       complete_interaction(client, event, discord_msg);
+      update_scurry_row(scurry);
       PQclear(scurry_members);
     }
     else
@@ -263,13 +275,13 @@ int s_info_interaction(
 
   player = load_player_struct(event->member->user->id);
 
-  PGresult* get_scurry;
   if (event->data->options) // load a different scurry by name if it exists
   {
-    get_scurry = SQL_query(DB_ACTION_SEARCH, "select * from public.scurry where s_name like '%s'", event->data->options->array[0].value);
-    ERROR_DATABASE_RET((PQntuples(get_scurry) == 0), "This scurry doesn't exist!", get_scurry);
+    scurry_members = SQL_query(DB_ACTION_SEARCH, "select * from public.scurry where s_name like '%s'", event->data->options->array[0].value);
+    ERROR_DATABASE_RET((PQntuples(scurry_members) == 0), "This scurry doesn't exist!", scurry_members);
 
-    scurry = load_scurry_struct(strtobigint(PQgetvalue(get_scurry, 0, DB_SCURRY_OWNER_ID)));
+    scurry = load_scurry_struct(strtobigint(PQgetvalue(scurry_members, 0, DB_SCURRY_OWNER_ID)));
+    PQclear(scurry_members);
   }
   else { // load player scurry if they're in one
 
@@ -277,7 +289,7 @@ int s_info_interaction(
     unsigned long scurry_id = 0;
 
     if (event->data->custom_id)
-      scurry_id = strtobigint(trim_buffer(event->data->custom_id, '*'));
+      scurry_id = strtobigint(trim_buffer(event->data->custom_id, '_'));
     else {
       // regardless of there being a custom id, the player's scurry should be loaded by default
       scurry_id = player.scurry_id;

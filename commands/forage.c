@@ -8,7 +8,7 @@ void is_health_regen(struct sd_message *discord_msg)
     health_regen *= 2;
   
   if (player.buffs.boosted > 0) {
-    health_regen += 1.5;
+    health_regen *= 1.5;
     player.buffs.boosted--;
   }
 
@@ -136,6 +136,8 @@ void apply_base_rewards(struct sd_message *discord_msg)
     if (scurry.war_flag == 0)
       scurry.war_acorns = (scurry.war_acorns + rewards.acorns >= scurry.war_acorn_cap) 
           ? scurry.war_acorn_cap : scurry.war_acorns + rewards.acorns;
+    else if ((rand() % MAX_CHANCE) > 65)
+      factor_war();
 
     // if KING_SQUIRREL is active, double normal acorn count (or if boost is active: triple)
     if (player.squirrel == KING_SQUIRREL)
@@ -191,8 +193,9 @@ void apply_base_rewards(struct sd_message *discord_msg)
       num_str(rewards.acorns), 
       (buff_status.proficiency_acorn) ? "-**1** "PROFICIENCY_ACORN" Acorn of Proficiency \n" : " " );
 
-    if (scurry.war_flag == 1 && (rand() % MAX_CHANCE) > 65)
-      factor_war(discord_msg);
+    if (rewards.war_acorns)
+      ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\nYou successfully stole **%s** "WAR_ACORNS" War Acorns! \n+**%s** "COURAGE" Courage \n", 
+          num_str(rewards.war_acorns), num_str(rewards.courage) );
   }
   else {
     ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\nYou received no earnings! \n");
