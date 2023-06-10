@@ -1,4 +1,3 @@
-
 PGconn* establish_connection(char* conninfo)
 {
   PGconn* db_conn = PQconnectdb(conninfo);
@@ -15,35 +14,39 @@ PGconn* establish_connection(char* conninfo)
   return db_conn;
 }
 
-struct sd_player load_player_struct(unsigned long user_id)
+void load_player_struct(struct sd_player *player_res, unsigned long user_id)
 {
-  PGresult* search_player = SQL_query(DB_ACTION_SEARCH, "select * from public.player where user_id = %ld",
-    user_id);
+  PGresult* search_player = (PGresult*) { 0 };
+  search_player = SQL_query(search_player, 
+      "select * from public.player where user_id = %ld",
+      user_id);
+  
+  if (PQntuples(search_player) == 0)
+    printf("There is no player of ID %ld \n\n", user_id);
 
   if (PQntuples(search_player) == 0)
-  {  
-    SQL_query(DB_ACTION_UPDATE, 
-      "BEGIN; \n"
-      "insert into public.player values(%ld, 0, 0, 0, 100, 100, 0, 0, 0, 0, 0, %d, 0, 0, 0); \n"
-      "insert into public.stats values(%ld, 1, 1, 1); \n"
-      "insert into public.buffs values(%ld, 0, 0, 0, 0, 0, 0); \n"
-      "COMMIT;", 
-      user_id, ERROR_STATUS, // ERROR_STATUS so an encounter doesnt trigger
-      user_id, user_id, user_id);
+  {
+    PQclear(search_player);
+    search_player = SQL_query(search_player,
+        "BEGIN; \n"
+        "insert into public.player values(%ld, 0, 0, 0, 100, 100, 0, 0, 0, 0, 0, %d, 0, 0, 0, 0); \n"
+        "insert into public.stats values(%ld, 1, 1, 1); \n"
+        "insert into public.buffs values(%ld, 0, 0, 0, 0, 0); \n"
+        "COMMIT;", 
+        user_id, ERROR_STATUS, // ERROR_STATUS so an encounter doesnt trigger
+        user_id, user_id);
   }
+
   PQclear(search_player);
 
-  search_player = SQL_query(DB_ACTION_UPDATE, 
-    "select * from public.player \
-    join public.stats on player.user_id = stats.user_id \
-    join public.buffs on player.user_id = buffs.user_id \
-    where player.user_id = %ld",
-    user_id);
+  search_player = SQL_query(search_player,
+      "select * from public.player \n"
+      "join public.stats on player.user_id = stats.user_id \n"
+      "join public.buffs on player.user_id = buffs.user_id \n"
+      "where player.user_id = %ld",
+      user_id);
 
-  player = (struct sd_player) { 0 };
-  buff_status = (struct sd_buff_status) { 0 };
-
-  struct sd_player player_res = (struct sd_player)
+  *player_res = (struct sd_player)
   {
     .user_id = strtobigint( PQgetvalue(search_player, 0, DB_USER_ID) ),
     .scurry_id = strtobigint( PQgetvalue(search_player, 0, DB_SCURRY_ID) ),
@@ -58,9 +61,10 @@ struct sd_player load_player_struct(unsigned long user_id)
     .high_acorn_count = strtoint( PQgetvalue(search_player, 0, DB_HIGH_ACORN_COUNT) ),
     .golden_acorns = strtoint( PQgetvalue(search_player, 0, DB_GOLDEN_ACORNS) ),
     .conjured_acorns = strtoint( PQgetvalue(search_player, 0, DB_CONJURED_ACORNS)),
-    .war_acorns = strtoint( PQgetvalue(search_player, 0, DB_WAR_ACORNS) ),
+    .stolen_acorns = strtoint( PQgetvalue(search_player, 0, DB_STOLEN_ACORNS) ),
     .catnip = strtoint( PQgetvalue(search_player, 0, DB_CATNIP) ),
   
+    .vengeance_flag = strtoint( PQgetvalue(search_player, 0, DB_VENGEANCE_MODE) ),
     .encounter = strtoint( PQgetvalue(search_player, 0, DB_ENCOUNTER) ),
     .main_cd = strtobigint( PQgetvalue(search_player, 0, DB_MAIN_CD) ),
 
@@ -73,147 +77,131 @@ struct sd_player load_player_struct(unsigned long user_id)
     .buffs = {
       .proficiency_acorn = strtoint( PQgetvalue(search_player, 0, DB_PROFICIENCY_ACORN) ),
       .luck_acorn = strtoint( PQgetvalue(search_player, 0, DB_LUCK_ACORN) ),
-      .defense_acorn = strtoint( PQgetvalue(search_player, 0, DB_DEFENSE_ACORN) ),
       .strength_acorn = strtoint( PQgetvalue(search_player, 0, DB_STRENGTH_ACORN) ),
       .endurance_acorn = strtoint( PQgetvalue(search_player, 0, DB_ENDURANCE_ACORN) ),
-      .boosted = strtoint( PQgetvalue(search_player, 0, DB_BOOSTED) )
+      .boosted_acorn = strtoint( PQgetvalue(search_player, 0, DB_BOOSTED_ACORN) )
     }
   };
 
-  player_res.biome = player_res.acorn_count/BIOME_INTERVAL % BIOME_SIZE;
-  player_res.biome_num = player_res.acorn_count/BIOME_INTERVAL;
-  player_res.max_health = generate_factor(player_res.stats.strength_lv, STRENGTH_VALUE) + MAX_HEALTH;
+  player_res->biome = player_res->acorn_count/BIOME_INTERVAL % BIOME_SIZE;
+  player_res->biome_num = player_res->acorn_count/BIOME_INTERVAL;
+  player_res->max_health = generate_factor(player_res->stats.strength_lv, STRENGTH_FACTOR) + MAX_HEALTH;
 
   PQclear(search_player);
-
-  return player_res;
 }
 
-struct sd_scurry load_scurry_struct(unsigned long scurry_id)
+void load_scurry_struct(struct sd_scurry *scurry_res, unsigned long scurry_id)
 {
-  struct sd_scurry scurry_res = (struct sd_scurry) { 0 };
-
   if (scurry_id > 0)
   {
-    PGresult* scurry_db = SQL_query(DB_ACTION_SEARCH, "select * from public.scurry where owner_id = %ld", scurry_id);
+    PGresult* scurry_db = (PGresult*) { 0 };
+    scurry_db = SQL_query(scurry_db,
+        "select * from public.scurry where owner_id = %ld", scurry_id);
 
-    scurry = (struct sd_scurry) { 0 };
-
-    scurry_res = (struct sd_scurry) 
+    *scurry_res = (struct sd_scurry) 
     {
       .scurry_owner_id = strtobigint( PQgetvalue(scurry_db, 0, DB_SCURRY_OWNER_ID) ),
-      .scurry_name = format_str(32, PQgetvalue(scurry_db, 0, DB_SCURRY_NAME) ),
-      .courage = strtoint( PQgetvalue(scurry_db, 0, DB_COURAGE) ),
+      .total_stolen_acorns = strtoint( PQgetvalue(scurry_db, 0, DB_TOTAL_STOLEN_ACORNS) ),
       .war_acorns = strtoint( PQgetvalue(scurry_db, 0, DB_WAR_STASH) ),
       .war_flag = strtoint( PQgetvalue(scurry_db, 0, DB_WAR_FLAG) ),
-      .rank = (scurry_res.courage < SEED_NOT_MAX) ? SEED_NOT
-          : (scurry_res.courage < ACORN_SNATCHER_MAX) ? ACORN_SNATCHER
-          : (scurry_res.courage < SEED_SNIFFER_MAX) ? SEED_SNIFFER
-          : (scurry_res.courage < OAKFFICIAL_MAX) ? OAKFFICIAL : ROYAL_NUT,
-      
-      .war_acorn_cap = (scurry_res.courage < SEED_NOT_MAX) ? SEED_NOT_CAP
-          : (scurry_res.courage < ACORN_SNATCHER_MAX) ? ACORN_SNATCHER_CAP
-          : (scurry_res.courage < SEED_SNIFFER_MAX) ? SEED_SNIFFER_CAP
-          : (scurry_res.courage < OAKFFICIAL_MAX) ? OAKFFICIAL_CAP : ROYAL_NUT_CAP
+      .prev_stolen_acorns = strtoint( PQgetvalue(scurry_db, 0, DB_PREV_STOLEN_ACORNS) )
     };
 
-    if (scurry_res.courage < SEED_NOT_MAX)
-    {
-      scurry_res.rank = SEED_NOT;
-      scurry_res.war_acorn_cap = SEED_NOT_CAP;
-    }
-    else if (scurry_res.courage < ACORN_SNATCHER_MAX)
-    {
-      scurry_res.rank = ACORN_SNATCHER;
-      scurry_res.war_acorn_cap = ACORN_SNATCHER_CAP;
-    }
-    else if (scurry_res.courage < SEED_SNIFFER_MAX)
-    {
-      scurry_res.rank = SEED_SNIFFER;
-      scurry_res.war_acorn_cap = SEED_SNIFFER_CAP;
-    }
-    else if (scurry_res.courage < OAKFFICIAL_MAX)
-    {
-      scurry_res.rank = OAKFFICIAL;
-      scurry_res.war_acorn_cap = OAKFFICIAL_CAP;
-    }
-    else {
-      scurry_res.rank = ROYAL_NUT;
-      scurry_res.war_acorn_cap = ROYAL_NUT_CAP;
-    }
-    
+    u_snprintf(scurry_res->scurry_name, sizeof(scurry_res->scurry_name), PQgetvalue(scurry_db, 0, DB_SCURRY_NAME));
     PQclear(scurry_db);
+
+    PGresult* members = (PGresult*) { 0 };
+    members = SQL_query(members, "select * from public.player where scurry_id = %ld", scurry_id);
+
+    int best_acorn = (scurry_res->total_stolen_acorns > scurry_res->prev_stolen_acorns) 
+        ? scurry_res->total_stolen_acorns : scurry_res->prev_stolen_acorns;
+
+    scurry_res->rank = (best_acorn < SEED_NOT_MAX) ? SEED_NOT
+        : (best_acorn < ACORN_SNATCHER_MAX) ? ACORN_SNATCHER
+        : (best_acorn < SEED_SNIFFER_MAX) ? SEED_SNIFFER
+        : (best_acorn < OAKFFICIAL_MAX) ? OAKFFICIAL : ROYAL_NUT;
+
+    // default to 1000
+    scurry_res->war_acorn_cap = (PQntuples(members) < SCURRY_MEMBER_REQ) 
+        ? DEFAULT_WAR_STASH : PQntuples(members) * (WAR_STASH_FACTOR * (scurry_res->rank +1));
+    
+    PQclear(members);
   }
 
-  return scurry_res;
 }
 
-void update_player_row(struct sd_player player_res)
+void update_player_row(struct sd_player *player_res)
 {
-  char* sql_str = format_str(SIZEOF_SQL_COMMAND,
-    "BEGIN; \
-    update public.player set \
-      scurry_id = %ld, \
-      color = %d, \
-      squirrel = %d, \
-      energy = %d, \
-      health = %d, \
-      acorns = %d, \
-      acorn_count = %d, \
-      high_acorn_count = %d, \
-      golden_acorns = %d, \
-      conjured_acorns = %d, \
-      war_acorns = %d, \
-      catnip = %d, \
-      encounter = %d, \
-      main_cd = %ld \
-    where user_id = %ld;",
-      player_res.scurry_id, player_res.color, player_res.squirrel, player_res.energy, 
-      player_res.health, player_res.acorns, player_res.acorn_count, player_res.high_acorn_count, 
-      player_res.golden_acorns, player_res.conjured_acorns, player_res.war_acorns, player_res.catnip,
-      player_res.encounter, player_res.main_cd, player_res.user_id);
+  char sql_str[1028] = { };
+
+  u_snprintf(sql_str, sizeof(sql_str),
+      "BEGIN; \n"
+      "update public.player set "
+        "scurry_id = %ld, "
+        "color = %d, "
+        "squirrel = %d, "
+        "energy = %d, "
+        "health = %d, "
+        "acorns = %d, "
+        "acorn_count = %d, "
+        "high_acorn_count = %d, "
+        "golden_acorns = %d, "
+        "conjured_acorns = %d, "
+        "stolen_acorns = %d, "
+        "catnip = %d, "
+        "encounter = %d, "
+        "vengeance_flag = %d, "
+        "main_cd = %ld \n"
+      "where user_id = %ld; \n",
+      player_res->scurry_id, player_res->color, player_res->squirrel, player_res->energy, 
+      player_res->health,player_res->acorns, player_res->acorn_count, player_res->high_acorn_count, 
+      player_res->golden_acorns, player_res->conjured_acorns,player_res->stolen_acorns, player_res->catnip,
+      player_res->encounter, player_res->vengeance_flag, player_res->main_cd,
+      player_res->user_id);
     
-  ADD_TO_BUFFER(sql_str, SIZEOF_SQL_COMMAND,
-    "update public.stats set \
-      proficiency_lv = %d, \
-      strength_lv = %d, \
-      luck_lv = %d \
-    where user_id = %ld;",
-      player_res.stats.proficiency_lv, player_res.stats.strength_lv, player_res.stats.luck_lv,
-      player_res.user_id);
+  u_snprintf(sql_str, sizeof(sql_str),
+      "update public.stats set "
+        "proficiency_lv = %d, "
+        "strength_lv = %d, "
+        "luck_lv = %d \n"
+      "where user_id = %ld; \n",
+      player_res->stats.proficiency_lv, player_res->stats.strength_lv, player_res->stats.luck_lv,
+      player_res->user_id);
   
-  ADD_TO_BUFFER(sql_str, SIZEOF_SQL_COMMAND,
-    "update public.buffs set \
-      defense_acorn = %d, \
-      luck_acorn = %d, \
-      proficiency_acorn = %d, \
-      strength_acorn = %d, \
-      endurance_acorn = %d, \
-      boosted = %d \
-    where user_id = %ld; \
-    COMMIT;",
-      player_res.buffs.defense_acorn, player_res.buffs.luck_acorn,
-      player_res.buffs.proficiency_acorn, player_res.buffs.strength_acorn, 
-      player_res.buffs.endurance_acorn, player_res.buffs.boosted,
-      player_res.user_id);
+  u_snprintf(sql_str, sizeof(sql_str),
+      "update public.buffs set "
+        "luck_acorn = %d, "
+        "proficiency_acorn = %d, "
+        "strength_acorn = %d, "
+        "endurance_acorn = %d, "
+        "boosted = %d \n"
+      "where user_id = %ld; \n"
+      "COMMIT; \n",
+      player_res->buffs.luck_acorn, player_res->buffs.proficiency_acorn, player_res->buffs.strength_acorn, 
+      player_res->buffs.endurance_acorn, player_res->buffs.boosted_acorn, 
+      player_res->user_id);
 
-  SQL_query(DB_ACTION_UPDATE, sql_str);
-
-  free(sql_str);
+  PGresult* player_update = (PGresult*) { 0 };
+  player_update = SQL_query(player_update, sql_str);
+  PQclear(player_update);
 }
 
-void update_scurry_row(struct sd_scurry scurry_res)
+void update_scurry_row(struct sd_scurry *scurry_res)
 {
-  char* sql_str = format_str(SIZEOF_SQL_COMMAND,
-    "update public.scurry set \
-        courage = %d, \
-        war_acorns = %d, \
-        war_flag = %d \
-      where owner_id = %ld",
-        scurry_res.courage, scurry_res.war_acorns, scurry_res.war_flag,
-        scurry_res.scurry_owner_id);
-  
-  SQL_query(DB_ACTION_UPDATE, sql_str);
+  char sql_str[1028] = { };
 
-  free(sql_str);
+  u_snprintf(sql_str, sizeof(sql_str),
+      "update public.scurry set "
+        "total_stolen_acorns = %d, "
+        "prev_stolen_acorns = %d, "
+        "war_acorns = %d, "
+        "war_flag = %d \n"
+      "where owner_id = %ld \n",
+      scurry_res->total_stolen_acorns, scurry_res->prev_stolen_acorns, scurry_res->war_acorns, 
+      scurry_res->war_flag,
+      scurry_res->scurry_owner_id);
+    
+  PGresult* scurry_update = (PGresult*) { 0 };
+  scurry_update = SQL_query(scurry_update, sql_str);
+  PQclear(scurry_update);
 }

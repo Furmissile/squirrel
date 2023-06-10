@@ -8,23 +8,46 @@
     [3] -> Super Encounter progress (BETA)
 */
 
-PGresult* scurry_members;
-
-enum SCURRY_FORMAT 
+struct sd_scurry_data
 {
-  SCURRY_GENERAL,
-  SCURRY_RANKINGS, // always where members are listed
-  SCURRY_SIZE
+  // set data in an array to prevent disorganization
+  // must be calloc'd because size CANNOT be predicted (can be any value <= 10)
+  struct sd_db_info *row_data;
+  int db_rows;
+
+  // how many requests have been completed
+  int response_counter;
+  int is_war_rankings;
 };
 
-struct discord_components* build_info_buttons(const struct discord_interaction *event)
+struct sd_scurry_info 
 {
-  struct discord_components *buttons = calloc(1, sizeof(struct discord_components));
+  // structs must be calloc'd anyway because they are still needed in other functions
+  struct sd_player *player;
+  struct sd_scurry *scurry;
 
-  buttons->size = 3;
-  buttons->array = calloc(buttons->size, sizeof(struct discord_component));
+  struct sd_scurry_data *scurry_data;
+  PGresult* scurry_members;
 
-  int button_idx = 1; // button_idx defaults to showing member list (or 1)
+  struct discord_component buttons[3];
+  char custom_ids[3][64];
+
+  struct discord_embed_field fields[2];
+  char field_names[2][64];
+  char field_values[2][512];
+
+  char footer_text[64];
+  char footer_url[128];
+
+  int is_participation_list; // used to check if participation list should be generated
+};
+
+void build_info_buttons(const struct discord_interaction *event, struct sd_scurry_info *params)
+{
+  struct sd_scurry *scurry = params->scurry;
+
+  // button_idx defaults to member list if scurry is not at war and participation list when at war
+  int button_idx = (params->is_participation_list) ? 2 : 1;
   int is_war_button = 0; // is only set when button_idx == 0
 
   if (event->data->custom_id)
@@ -36,21 +59,22 @@ struct discord_components* build_info_buttons(const struct discord_interaction *
       is_war_button = (is_war_button) ? 0 : 1;
   }
 
-  scurry_members = SQL_query(DB_ACTION_SEARCH, "select * from public.player where scurry_id = %ld", scurry.scurry_owner_id);
+  params->scurry_members = SQL_query(params->scurry_members, 
+      "select * from public.player where scurry_id = %ld", scurry->scurry_owner_id);
 
-  buttons->array[0] = (scurry.war_flag == 0) ?
+  params->buttons[0] = (scurry->war_flag == 0) ?
   (struct discord_component)
   {
     .type = DISCORD_COMPONENT_BUTTON,
     .style = DISCORD_BUTTON_SUCCESS,
     .label = "Join War",
-    .custom_id = format_str(SIZEOF_CUSTOM_ID,
-        "%c0%d_%ld", TYPE_SCURRY_INFO, is_war_button, scurry.scurry_owner_id),
+    .custom_id = u_snprintf(params->custom_ids[0], sizeof(params->custom_ids[0]),
+        "%c0%d_%ld", TYPE_SCURRY_INFO, is_war_button, scurry->scurry_owner_id),
     // if war acorns isnt full or the button was pressed disable button
     .disabled = (is_war_button
-      || scurry.war_acorns < scurry.war_acorn_cap
-      // || PQntuples(scurry_members) < SCURRY_MEMBER_REQ)
-    )
+      || scurry->war_acorns < scurry->war_acorn_cap
+      || PQntuples(params->scurry_members) < SCURRY_MEMBER_REQ
+      )
       ? true : false
   } :
   (struct discord_component)
@@ -58,274 +82,358 @@ struct discord_components* build_info_buttons(const struct discord_interaction *
     .type = DISCORD_COMPONENT_BUTTON,
     .style = DISCORD_BUTTON_DANGER,
     .label = "Retreat",
-    .custom_id = format_str(SIZEOF_CUSTOM_ID,
-        "%c0%d_%ld", TYPE_SCURRY_INFO, is_war_button, scurry.scurry_owner_id),
+    .custom_id = u_snprintf(params->custom_ids[0], sizeof(params->custom_ids[0]),
+        "%c0%d_%ld", TYPE_SCURRY_INFO, is_war_button, scurry->scurry_owner_id),
     // if the button was pressed, disable button
     .disabled = (is_war_button) ? true : false
   };
 
-  PQclear(scurry_members);
+  PQclear(params->scurry_members);
 
-  buttons->array[1] = (struct discord_component)
+  params->buttons[1] = (struct discord_component)
   {
     .type = DISCORD_COMPONENT_BUTTON,
     .style = (button_idx == 1) ? DISCORD_BUTTON_SECONDARY : DISCORD_BUTTON_PRIMARY,
     .label = "Members",
-    .custom_id = format_str(SIZEOF_CUSTOM_ID,
-        "%c1%d_%ld", TYPE_SCURRY_INFO, is_war_button, event->member->user->id),
+    .custom_id = u_snprintf(params->custom_ids[1], sizeof(params->custom_ids[1]),
+        "%c1%d_%ld*%ld", TYPE_SCURRY_INFO, is_war_button, event->member->user->id, scurry->scurry_owner_id),
     .disabled = (button_idx == 1) ? true : false
   };
 
-  buttons->array[2] = (struct discord_component)
+  params->buttons[2] = (struct discord_component)
   {
     .type = DISCORD_COMPONENT_BUTTON,
     .style = (button_idx != 1) ? DISCORD_BUTTON_SECONDARY : DISCORD_BUTTON_PRIMARY,
     .label = "War Ranks",
-    .custom_id = format_str(SIZEOF_CUSTOM_ID,
-        "%c2%d_%ld", TYPE_SCURRY_INFO, is_war_button, event->member->user->id),
+    .custom_id = u_snprintf(params->custom_ids[2], sizeof(params->custom_ids[2]),
+        "%c2%d_%ld*%ld", TYPE_SCURRY_INFO, is_war_button, event->member->user->id, scurry->scurry_owner_id),
     .disabled = (button_idx != 1) ? true : false
   };
-
-  return buttons;
 }
 
-void fill_members_field(
-  struct discord *client,
+void complete_interaction(
   const struct discord_interaction *event,
-  struct sd_user_data *user_data)
+  struct sd_scurry_info *params)
 {
-  struct sd_message *discord_msg = user_data->discord_msg;
-  struct discord_embed *embed = discord_msg->embed;
+  struct sd_scurry *scurry = params->scurry;
+  struct sd_player *player = params->player;
 
-  char scurry_member_list[SIZEOF_FIELD_VALUE] = {};
+  struct sd_header_params header = { 0 };
 
-  if (event->data->custom_id && event->data->custom_id[1] - 48 != 1) // this is generating war rankings
+  header.embed = (struct discord_embed) 
   {
-    for (int idx = 0; idx < user_data->db_rows; idx++)
-        ADD_TO_BUFFER(scurry_member_list, SIZEOF_FIELD_VALUE, "%s **%s** \n", 
-            user_data->row_data[idx].username, num_str(user_data->row_data[idx].value));
-  }
-  else { // this is the members embed
-    // find owner to list first
-    for (int idx = 0; idx < user_data->db_rows; idx++)
-      if (scurry.scurry_owner_id == user_data->row_data[idx].user_id)
-        ADD_TO_BUFFER(scurry_member_list, SIZEOF_FIELD_VALUE, "%s \n", user_data->row_data[idx].username);
+    .color = player->color,
+    .author = &(struct discord_embed_author) {
+      .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
+      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+          "https://cdn.discordapp.com/avatars/%lu/%s.png",
+          event->member->user->id, event->member->user->avatar)
+    },
+    .title = u_snprintf(header.title, sizeof(header.title), scurry->scurry_name),
+    .fields = &(struct discord_embed_fields) {
+      .array = params->fields,
+      .size = 2
+    },
+    .footer = &(struct discord_embed_footer) {
+      .text = u_snprintf(params->footer_text, sizeof(params->footer_text), "/scurry_help | For Scurry details"),
+      .icon_url = u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, item_types[TYPE_NO_ACORNS].file_path)
+    }
+  };
 
-    // scan the rest (make sure the owner isnt added twice!)
-    for (int idx = 0; idx < user_data->db_rows; idx++)
-      if (scurry.scurry_owner_id != user_data->row_data[idx].user_id)
-        ADD_TO_BUFFER(scurry_member_list, SIZEOF_FIELD_VALUE, "%s \n", user_data->row_data[idx].username);
+  build_info_buttons(event, params);
 
-  }
+  struct discord_component action_rows = {
+    .type = DISCORD_COMPONENT_ACTION_ROW,
+    .components = &(struct discord_components) {
+      .array = params->buttons,
+      .size = 3
+    }
+  };
 
-  embed->fields->array[SCURRY_RANKINGS].value = format_str(SIZEOF_FIELD_VALUE, scurry_member_list);
-  complete_interaction(client, event, discord_msg);
+  struct discord_interaction_response interaction = 
+  {
+    .type = (event->data->custom_id) ? DISCORD_INTERACTION_UPDATE_MESSAGE : DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
 
-  update_scurry_row(scurry);
+    .data = &(struct discord_interaction_callback_data) 
+    {
+      .embeds = &(struct discord_embeds) 
+      {
+        .array = &header.embed,
+        .size = 1
+      },
+      .components = &(struct discord_components)
+      {
+        .array = &action_rows,
+        .size = 1
+      }
+    }
 
-  discord_embed_cleanup(discord_msg->embed);
-  free(discord_msg->buttons);
-  free(discord_msg);
+  };
 
-  PQclear(scurry_members);
+  char values[16384];
+  discord_interaction_response_to_json(values, sizeof(values), &interaction);
+  fprintf(stderr, "%s \n", values);
+
+  discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 }
 
-void list_scurry_user(
-  struct discord *client, 
-  struct discord_response *resp, 
-  const struct discord_user *user)
+void list_scurry_user(struct discord *client, struct discord_response *resp, const struct discord_user *user)
 {
-  struct sd_user_data *user_data = resp->data;
+  (void)client;
+  struct sd_scurry_info *params = resp->data;
+  struct sd_scurry *scurry = params->scurry;
+  struct sd_player *player = params->player;
+  struct sd_scurry_data *scurry_data = params->scurry_data;
   const struct discord_interaction *event = resp->keep;
 
-  if (user->id == scurry.scurry_owner_id)
-    user_data->row_data[user_data->response_counter].username = format_str(SIZEOF_TITLE, " "INDENT" "LIST_LEADER" __%s__", user->username);
-  else if (user->id == player.user_id)
-    user_data->row_data[user_data->response_counter].username = format_str(SIZEOF_TITLE, " "INDENT" "LIST_YOU" <@%ld>", user->id);
+  // if owner: UNDERLINE
+  if (user->id == scurry->scurry_owner_id)
+    u_snprintf(scurry_data->row_data[scurry_data->response_counter].username, 
+        sizeof(scurry_data->row_data[scurry_data->response_counter].username), 
+        " "INDENT" "LIST_LEADER" __%s__", 
+        user->username);
+  // if player: highlight
+  else if (user->id == player->user_id)
+    u_snprintf(scurry_data->row_data[scurry_data->response_counter].username, 
+        sizeof(scurry_data->row_data[scurry_data->response_counter].username), 
+        " "INDENT" "LIST_YOU" <@%ld>", 
+        user->id);
+  // use codeblock
   else
-    user_data->row_data[user_data->response_counter].username = format_str(SIZEOF_TITLE, " "INDENT" "LIST_MEMBER" `%s`", user->username);
+    u_snprintf(scurry_data->row_data[scurry_data->response_counter].username, 
+        sizeof(scurry_data->row_data[scurry_data->response_counter].username), 
+        " "INDENT" "LIST_MEMBER" `%s`", 
+        user->username);
   
-  user_data->response_counter++;
+  scurry_data->response_counter++;
 
-  if (user_data->response_counter == user_data->db_rows)
+  if (scurry_data->response_counter == scurry_data->db_rows)
   {
-    fill_members_field(client, event, user_data);
+    // the query is done being used at this point
+    PQclear(params->scurry_members);
+
+    // load scurry_data into scurry_info field
+    if (params->is_participation_list) // this is generating war rankings
+    {
+      for (int idx = 0; idx < scurry_data->db_rows; idx++)
+      {
+        APPLY_NUM_STR(row_value, scurry_data->row_data[idx].value);
+        u_snprintf(params->field_values[1], sizeof(params->field_values[1]), 
+            "%s **%s** \n",
+            scurry_data->row_data[idx].username, row_value);
+      }
+    }
+    else { // this is the members embed
+      // find owner to list first
+      for (int idx = 0; idx < scurry_data->db_rows; idx++)
+        if (scurry->scurry_owner_id == scurry_data->row_data[idx].user_id)
+          u_snprintf(params->field_values[1], sizeof(params->field_values[1]), 
+              "%s \n",
+              scurry_data->row_data[idx].username);
+
+      // scan the rest (make sure the owner isnt added twice!)
+      for (int idx = 0; idx < scurry_data->db_rows; idx++)
+        if (scurry->scurry_owner_id != scurry_data->row_data[idx].user_id)
+          u_snprintf(params->field_values[1], sizeof(params->field_values[1]), 
+              "%s \n",
+              scurry_data->row_data[idx].username);
+    }
+    params->fields[1].value = params->field_values[1];
+
+    complete_interaction(event, params);
+
+    free(params->player);
+    free(params->scurry);
+    free(params->scurry_data);
     free(resp->data);
   }
 }
 
-void create_member_listing(
-  struct discord *client, 
+void create_member_listing( 
   const struct discord_interaction *event, 
-  struct sd_message *discord_msg)
+  struct sd_scurry_info *params)
 {
-  struct sd_user_data *user_data = calloc(1, sizeof(struct sd_user_data));
-  user_data->discord_msg = calloc(1, sizeof(struct sd_message));
+  params->scurry_data = calloc(1, sizeof(struct sd_scurry_data));
+  struct sd_scurry_data *scurry_data = params->scurry_data;
 
-  user_data->db_rows = PQntuples(scurry_members);
-  user_data->row_data = calloc(user_data->db_rows, sizeof(struct DB_Info));
+  scurry_data->db_rows = PQntuples(params->scurry_members);
+  scurry_data->row_data = calloc(scurry_data->db_rows, sizeof(struct sd_db_info));
 
-  user_data->discord_msg = discord_msg;
-
-  for (int idx = 0; idx < user_data->db_rows; idx++)
+  for (int idx = 0; idx < scurry_data->db_rows; idx++)
   {
-    user_data->row_data[idx].user_id = strtobigint(PQgetvalue(scurry_members, idx, 0));
+    scurry_data->row_data[idx].user_id = strtobigint(PQgetvalue(params->scurry_members, idx, 0));
 
-    if (event->data->custom_id && event->data->custom_id[1] - 48 != 1)
-      user_data->row_data[idx].value = strtoint(PQgetvalue(scurry_members, idx, 1));
+    if (params->is_participation_list)
+      scurry_data->row_data[idx].value = strtoint(PQgetvalue(params->scurry_members, idx, 1));
   
     struct discord_ret_user ret_user = {
       .done = &list_scurry_user,
-      .data = user_data,
-      .keep = event
+      .data = params,
+      .keep = event    
     };
 
-    discord_get_user(client, user_data->row_data[idx].user_id, &ret_user);
+    // queue up the users
+    discord_get_user(client, scurry_data->row_data[idx].user_id, &ret_user);
   }
 }
 
-void scurry_info(
-  struct discord *client, 
-  struct discord_response *resp, 
-  const struct discord_interaction_response *ret)
+/*
+To generate the member list, one of the following conditions must be true:
+  > initializing the embed and scurry war IS NOT active
+  > button pressed and idx == 1
+
+To generate the participation list:
+  > initializing the embed and scurry was IS active
+  > button pressed == 2
+*/
+
+void fill_general_info(struct discord *client, struct discord_response *resp, const struct discord_user *user)
 {
-  (void)ret;
+  (void)client;
   const struct discord_interaction *event = resp->keep;
-  struct sd_message *discord_msg = resp->data;
-  struct discord_embed *embed = discord_msg->embed;
+  struct sd_scurry_info *params = resp->data;
+  struct sd_scurry *scurry = params->scurry;
 
-  if (event->data->custom_id && event->data->custom_id[1] -48 == 0 && scurry.war_flag == 0)
-  {
-    scurry.war_flag = 1;
-    SQL_query(DB_ACTION_UPDATE, "update public.player set war_acorns = 0 where scurry_id = %ld", scurry.scurry_owner_id);
-    scurry.courage = 0;
-  }
-  else if (event->data->custom_id && event->data->custom_id[1] -48 == 0 && scurry.war_flag == 1)
-    scurry_war_update(event);
-  
-  embed->color = player.color;
+  params->fields[0].name = u_snprintf(params->field_names[0], sizeof(params->field_names[0]), "Scurry Details");
 
-  embed->title = format_str(SIZEOF_TITLE, scurry.scurry_name);
+  APPLY_NUM_STR(total_stolen_acorns, scurry->total_stolen_acorns);
+  APPLY_NUM_STR(war_acorns, scurry->war_acorns);
+  APPLY_NUM_STR(war_acorn_cap, scurry->war_acorn_cap);
 
-  discord_msg->buttons = build_info_buttons(event);
-
-  embed->fields = calloc(1, sizeof(struct discord_embed_fields));
-  embed->fields->size = SCURRY_SIZE;
-  embed->fields->array = calloc(SCURRY_SIZE, sizeof(struct discord_embed_field));
-
-  /* Fill general scurry stats field */
-  embed->fields->array[SCURRY_GENERAL].name = format_str(SIZEOF_TITLE, "Scurry Details");
-  embed->fields->array[SCURRY_GENERAL].value = format_str(SIZEOF_FIELD_VALUE,
-      " "INDENT" "LEADER" Guild Owner: <@%ld> \n"
-      " "INDENT" "COURAGE" Courage: **%s** \n"
+  params->fields[0].value = u_snprintf(params->field_values[0], sizeof(params->field_values[0]),
+      " "INDENT" "LEADER" Guild Owner: **%s** \n"
+      " "INDENT" "WAR_ACORNS" Stolen Acorns: **%s** \n"
       " "INDENT" "GOLDEN_ACORNS" Current Rank: **%s** (x**%0.1f** "ACORNS" Acorns) \n"
       " "INDENT" "LOST_STASH" War Stash: **%s**/%s \n",
-      scurry.scurry_owner_id, num_str(scurry.courage),
-      (scurry.rank == SEED_NOT) ? "Seed Nots"
-      : (scurry.rank == ACORN_SNATCHER) ? "Acorn Snatchers"
-      : (scurry.rank == SEED_SNIFFER) ? "Seed Sniffers"
-      : (scurry.rank == OAKFFICIAL) ? "Oakfficials" : "Royal Nuts",
-      (BASE_COURAGE_MULT * (scurry.rank +1)) +1,
-      num_str(scurry.war_acorns), num_str(scurry.war_acorn_cap) );
+      user->username, total_stolen_acorns,
+      (scurry->rank == SEED_NOT) ? "Seed Nots"
+      : (scurry->rank == ACORN_SNATCHER) ? "Acorn Snatchers"
+      : (scurry->rank == SEED_SNIFFER) ? "Seed Sniffers"
+      : (scurry->rank == OAKFFICIAL) ? "Oakfficials" : "Royal Nuts",
+      BASE_ACORN_MULT * (scurry->rank +1) +1,
+      war_acorns, war_acorn_cap );
 
-  // if initializing the embed OR the member listing button was pressed: generate the member list
-  if (!event->data->custom_id
-    || (event->data->custom_id && event->data->custom_id[1] - 48 == 1))
+  if ((!event->data->custom_id && scurry->war_flag == 0)
+    || (event->data->custom_id && event->data->custom_id[1] - 48 == 1)) 
+    // this condition is taken by the form of params->is_participation_list
   {
-    embed->fields->array[SCURRY_RANKINGS].name = format_str(SIZEOF_TITLE, "Members");
+    params->fields[1].name = u_snprintf(params->field_names[1], sizeof(params->field_names[1]), "Members");
 
-    scurry_members = SQL_query(DB_ACTION_SEARCH, "select user_id from public.player where scurry_id = %ld", 
-        scurry.scurry_owner_id);
+    // fetch all the scurry members
+    params->scurry_members = SQL_query(params->scurry_members, "select user_id from public.player where scurry_id = %ld", 
+        scurry->scurry_owner_id);
 
-    create_member_listing(client, event, discord_msg);
+    // list them
+    create_member_listing(event, params);
   }
   // if the "Join War" button is pressed, default to the rankings
   else {
-    embed->fields->array[SCURRY_RANKINGS].name = format_str(SIZEOF_TITLE, "Participation");
+    params->fields[1].name = u_snprintf(params->field_names[1], sizeof(params->field_names[1]), "Participation");
+    params->is_participation_list = 1;
 
-    scurry_members = SQL_query(DB_ACTION_SEARCH, "select user_id, war_acorns from public.player where scurry_id = %ld and war_acorns > 0 order by war_acorns desc", 
-        scurry.scurry_owner_id);
+    // fetch all scurry members who have participated
+    params->scurry_members = SQL_query(params->scurry_members, 
+        "select user_id, stolen_acorns from public.player where scurry_id = %ld and stolen_acorns > 0 order by stolen_acorns desc", 
+        scurry->scurry_owner_id);
     
-    if (PQntuples(scurry_members) == 0)
+    // if none, state such
+    if (PQntuples(params->scurry_members) == 0)
     {
-      embed->fields->array[SCURRY_RANKINGS].value = format_str(SIZEOF_FIELD_VALUE, " "OFF_ARROW" No members have participated yet!");
-      complete_interaction(client, event, discord_msg);
-      update_scurry_row(scurry);
-      PQclear(scurry_members);
+      params->fields[1].value = u_snprintf(params->field_values[1], sizeof(params->field_values[1]), " "OFF_ARROW" No members have participated yet!");
+      complete_interaction(event, params);
     }
+    // otherwise, list them
     else
-      create_member_listing(client, event, discord_msg);
+      create_member_listing(event, params);
   }
-
-  embed->footer = calloc(1, sizeof(struct discord_embed_footer));
-  embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "/scurry_help | For Scurry details");
-  embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_types[TYPE_NO_ACORNS].file_path);
 }
 
-/* Called on scurry_invite command */
-int s_info_interaction(
-  const struct discord_interaction *event, 
-  struct sd_message *discord_msg) 
+void scurry_info(const struct discord_interaction *event, struct sd_scurry_info *params)
 {
-  // if the first button is being pressed and this user isnt the owner...
-  ERROR_INTERACTION((event->data->custom_id 
-    && event->data->custom_id[1] == 0
-    && player.user_id != scurry.scurry_owner_id), 
-      "You do not have the permission to press this button!");
+  params->scurry_members = (PGresult*) { 0 };
+  struct sd_scurry *scurry = params->scurry;
 
-  player = load_player_struct(event->member->user->id);
-
-  if (event->data->options) // load a different scurry by name if it exists
+  // if the first button was pressed
+  if (event->data->custom_id && event->data->custom_id[1] -48 == 0)
   {
-    scurry_members = SQL_query(DB_ACTION_SEARCH, "select * from public.scurry where s_name like '%s'", event->data->options->array[0].value);
-    ERROR_DATABASE_RET((PQntuples(scurry_members) == 0), "This scurry doesn't exist!", scurry_members);
-
-    scurry = load_scurry_struct(strtobigint(PQgetvalue(scurry_members, 0, DB_SCURRY_OWNER_ID)));
-    PQclear(scurry_members);
-  }
-  else { // load player scurry if they're in one
-
-    // at this point, the retrieved scurry is already in the custom id if one exists
-    unsigned long scurry_id = 0;
-
-    if (event->data->custom_id)
-      scurry_id = strtobigint(trim_buffer(event->data->custom_id, '_'));
+    if (scurry->war_flag)
+      scurry->war_flag = 0;
     else {
-      // regardless of there being a custom id, the player's scurry should be loaded by default
-      scurry_id = player.scurry_id;
-      ERROR_INTERACTION((scurry_id == 0), "You are not in a scurry yet!");
+      scurry->war_flag = 1;
+
+      PGresult* war_participants = (PGresult*) { 0 };
+      war_participants = SQL_query(war_participants, "update public.player set stolen_acorns = 0 where scurry_id = %ld", 
+          scurry->scurry_owner_id);
+      PQclear(war_participants);
+
+      scurry->prev_stolen_acorns = scurry->total_stolen_acorns;
+      scurry->total_stolen_acorns = 0;
     }
-    
-    scurry = load_scurry_struct(scurry_id);
+
+    update_scurry_row(scurry);
   }
 
-  //Load Author
-  discord_msg->embed->author = sd_msg_embed_author(
-    format_str(SIZEOF_TITLE, event->member->user->username),
-    format_str(SIZEOF_URL, "https://cdn.discordapp.com/avatars/%lu/%s.png", 
-        event->member->user->id, event->member->user->avatar) );
-
-  struct discord_ret_interaction_response ret_response = {
-    .done = &scurry_info,
-    .data = discord_msg,
+  struct discord_ret_user ret_user = {
+    .done = &fill_general_info,
+    .data = params,
     .keep = event
   };
 
-  discord_create_interaction_response(client, event->id, event->token, 
-    &(struct discord_interaction_response)
-    {
-      .type = (event->data->custom_id) ? DISCORD_INTERACTION_DEFERRED_UPDATE_MESSAGE : DISCORD_INTERACTION_DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
+  discord_get_user(client, params->scurry->scurry_owner_id, &ret_user);
+}
 
-      .data = &(struct discord_interaction_callback_data) 
-      {
-        .embeds = &(struct discord_embeds) 
-        {
-          .array = discord_msg->embed,
-          .size = 1
-        }
-      }
-    },
-    &ret_response);
+int s_info_interaction(const struct discord_interaction *event)
+{
+  struct sd_player *player = calloc(1, sizeof(struct sd_player));
+  load_player_struct(player, event->member->user->id);
+
+  struct sd_scurry *scurry = calloc(1, sizeof(struct sd_scurry));
+
+  // this is someone else's scurry
+  if (event->data->options)
+  {
+    PGresult* fetch_scurry = (PGresult*) { 0 };
+    fetch_scurry = SQL_query(fetch_scurry, "select * from public.scurry where s_name like '%s'",
+        event->data->options->array[0].value);
+
+    if (PQntuples(fetch_scurry) == 0)
+    {
+      error_message(event, "Sorry, it looks like this scurry doesn't exist!");
+      free(player);
+      free(scurry);
+      PQclear(fetch_scurry);
+      return ERROR_STATUS;
+    }
+
+    // if the scurry exists, load the scurry
+    load_scurry_struct(scurry, strtobigint(PQgetvalue(fetch_scurry, 0, DB_SCURRY_OWNER_ID)));
+  }
+  // if a button was pressed- use the scurry ID within the custom ID
+  // "Join War" button has been handled by this point!
+  else if (event->data->custom_id && event->data->custom_id[1] -48 != 0)
+  {
+    char scurry_id[64] = { };
+    trim_buffer(scurry_id, sizeof(scurry_id), event->data->custom_id, '*');
+    load_scurry_struct(scurry, strtobigint(scurry_id));
+  }
+  // this is the player's scurry if they are in one
+  else {
+    if (player->scurry_id == 0) 
+    {
+      error_message(event, "You need to be in a scurry!");
+      free(player);
+      free(scurry);
+      return ERROR_STATUS;
+    }
+    // search for scurry by player's scurry ID
+    load_scurry_struct(scurry, player->scurry_id);
+  }
+
+  struct sd_scurry_info *params = calloc(1, sizeof(struct sd_scurry_info));
+  params->player = player;
+  params->scurry = scurry;
+
+  scurry_info(event, params);
 
   return 0;
 }

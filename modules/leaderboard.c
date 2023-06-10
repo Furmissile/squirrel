@@ -1,225 +1,272 @@
-PGresult* player_pos;
-
-struct discord_components* build_leaderboard_buttons(const struct discord_interaction *event)
+struct sd_lb_data
 {
-  struct discord_components *buttons = calloc(1, sizeof(struct discord_components));
+  // set data in an array to prevent disorganization
+  // must be calloc'd because size CANNOT be predicted (can be any value <= 10)
+  struct sd_db_info *row_data;
+  int db_rows;
 
-  buttons->size = 2;
-  buttons->array = calloc(buttons->size, sizeof(struct discord_component));
+  // how many requests have been completed
+  int response_counter;
+
+  int is_top_ten;
+};
+
+struct sd_leaderboard 
+{
+  struct sd_player *player;
+
+  struct sd_lb_data *lb_data;
+
+  PGresult* player_pos;
+
+  struct discord_component buttons[2];
+  char custom_ids[2][64];
+
+  char description[1024];
+};
+
+
+void create_leaderboard_interaction(const struct discord_interaction *event, struct sd_leaderboard *params)
+{
+  struct sd_player *player = params->player;
+
+  struct sd_header_params header = { 0 };
+
+  header.embed = (struct discord_embed) 
+  {
+    .color = player->color,
+    .author = &(struct discord_embed_author) {
+      .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
+      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+          "https://cdn.discordapp.com/avatars/%lu/%s.png",
+          event->member->user->id, event->member->user->avatar)
+    },
+    .thumbnail = &(struct discord_embed_thumbnail) {
+      .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
+          items[ITEM_ACORN_COUNT].file_path)
+    },
+    .title = u_snprintf(header.title, sizeof(header.title), "Acorn Count"),
+    .description = params->description
+  };
 
   int button_idx = (event->data->custom_id) ? event->data->custom_id[1] - 48 : 0;
 
-  buttons->array[0] = (struct discord_component)
+  params->buttons[0] = (struct discord_component)
   {
     .type = DISCORD_COMPONENT_BUTTON,
     .style = (button_idx == 0) ? DISCORD_BUTTON_SECONDARY : DISCORD_BUTTON_PRIMARY,
     .label = "Acorn Count",
-    .custom_id = format_str(SIZEOF_CUSTOM_ID,
+    .custom_id = u_snprintf(params->custom_ids[0], sizeof(params->custom_ids[0]),
         "%c0_%ld", TYPE_LEADERBOARD, event->member->user->id),
     .disabled = (button_idx == 0) ? true : false
   };
 
-  buttons->array[1] = (struct discord_component)
+  params->buttons[1] = (struct discord_component)
   {
     .type = DISCORD_COMPONENT_BUTTON,
     .style = (button_idx == 1) ? DISCORD_BUTTON_SECONDARY : DISCORD_BUTTON_PRIMARY,
-    .label = "Courage",
-    .custom_id = format_str(SIZEOF_CUSTOM_ID,
+    .label = "War Acorns",
+    .custom_id = u_snprintf(params->custom_ids[1], sizeof(params->custom_ids[1]),
         "%c1_%ld", TYPE_LEADERBOARD, event->member->user->id),
     .disabled = (button_idx == 1) ? true : false
   };
 
-  return buttons;
-}
-
-void create_leaderboard_interaction(struct discord *client, const struct discord_interaction *event, struct sd_user_data *user_data) 
-{
-  struct sd_message *discord_msg = user_data->discord_msg;
-  struct discord_embed *embed = discord_msg->embed;
-
-  embed->description = calloc(SIZEOF_DESCRIPTION, sizeof(char));
-
-  for (int idx = 0; idx < user_data->db_rows; idx++)
-  {
-    struct DB_Info info = user_data->row_data[idx];
-    if (player.user_id == info.user_id)
-    {
-      ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, 
-        "**%d**. <@%ld> **%s** \n",
-        info.db_idx, info.user_id, num_str(info.value) );
-
-      user_data->is_top_ten = 1;
+  struct discord_component action_rows = {
+    .type = DISCORD_COMPONENT_ACTION_ROW,
+    .components = &(struct discord_components) {
+      .array = params->buttons,
+      .size = 2
     }
-    else
-      ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, 
-        "**%d**. `%s` **%s** \n",
-        info.db_idx, info.username, num_str(info.value) );
-  }
+  };
 
-  PQclear(player_pos);
-  player_pos = SQL_query(DB_ACTION_SEARCH, "select rank_idx, user_id, best_acorn \
-        from ( \
-          select user_id, \
-          (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) AS best_acorn, \
-          dense_rank() over (order by (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) desc) as rank_idx \
-        from public.player) as lb where lb.user_id = %ld and lb.best_acorn > 0",
-      player.user_id);
-
-  if (user_data->is_top_ten == 0
-    && PQntuples(player_pos) == 1) 
+  struct discord_edit_original_interaction_response interaction = 
   {
-    // player position in leaderboard
-    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION,
-      "\n**%d**. <@%ld> **%s** \n",
-      strtoint(PQgetvalue(player_pos, 0, 0)),
-      strtobigint(PQgetvalue(player_pos, 0, 1)), 
-      num_str(strtoint(PQgetvalue(player_pos, 0, 2))) );
+    .embeds = &(struct discord_embeds) 
+    {
+      .array = &header.embed,
+      .size = 1
+    },
+    .components = &(struct discord_components) {
+      .array = &action_rows,
+      .size = 1
+    }
+  };
+
+  discord_edit_original_interaction_response(client, APPLICATION_ID, event->token, &interaction, NULL);
+
+  char values[16384];
+  CCORDcode code = discord_edit_original_interaction_response_to_json(values, sizeof(values), &interaction);
+  fprintf(stderr, "%s \nCCODE: %d \n", values, code);
+
+  free(params->player);
+  // not needed for the total war acorns leaderboard
+  if (params->lb_data)
+  {
+    free(params->lb_data->row_data);
+    free(params->lb_data);
   }
-
-  complete_interaction(client, event, discord_msg);
-
-  discord_embed_cleanup(embed);
-  free(discord_msg);
-  PQclear(player_pos);
+  free(params);
 }
 
 void is_user(struct discord *client, struct discord_response *resp, const struct discord_user *user)
 {
-  struct sd_user_data *user_data = resp->data;
+  (void)client;
+  struct sd_leaderboard *params = resp->data;
+  struct sd_lb_data *lb_data = params->lb_data;
   const struct discord_interaction *event = resp->keep;
 
-  int idx = 0;
-  // wait to match the id
-  while (user_data->row_data[idx].user_id != user->id)
+  struct sd_player *player = params->player;
+
+  u_snprintf(lb_data->row_data[lb_data->response_counter].username, 
+      sizeof(lb_data->row_data[lb_data->response_counter].username), 
+      user->username);
+
+  lb_data->response_counter++;
+
+  if (lb_data->response_counter == lb_data->db_rows)
   {
-    idx++;
-    continue;
+    for (int lb_idx = 0; lb_idx < lb_data->db_rows; lb_idx++)
+    {
+      struct sd_db_info info = lb_data->row_data[lb_idx];
+      APPLY_NUM_STR(value, info.value);
+
+      if (player->user_id == info.user_id)
+      {
+        u_snprintf(params->description, sizeof(params->description),
+            "**%d**. <@%ld> **%s** \n",
+            info.db_idx, info.user_id, value);
+        
+        lb_data->is_top_ten = 1;
+      }
+      else {
+        u_snprintf(params->description, sizeof(params->description),
+        "**%d**. `%s` **%s** \n",
+        info.db_idx, info.username, value);
+      }
+    }
+
+    PQclear(params->player_pos);
+    params->player_pos = SQL_query(params->player_pos, 
+        "select rank_idx, user_id, best_acorn "
+        "from ( "
+        "select user_id, "
+        "(CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) AS best_acorn, "
+        "dense_rank() over (order by (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) desc) as rank_idx "
+        "from public.player) as lb where lb.user_id = %ld and lb.best_acorn > 0",
+        player->user_id);
+    
+    if (lb_data->is_top_ten == 0
+      && PQntuples(params->player_pos) == 1)
+    {
+      APPLY_NUM_STR( value, strtoint(PQgetvalue(params->player_pos, 0, 2)) );
+      u_snprintf(params->description, sizeof(params->description),
+          "\n**%d**. <@%ld> **%s** \n",
+          strtoint(PQgetvalue(params->player_pos, 0, 0)),
+          strtobigint(PQgetvalue(params->player_pos, 0, 1)), value);
+    }
+    create_leaderboard_interaction(event, params);
   }
-
-  user_data->row_data[idx].username = format_str(SIZEOF_TITLE, user->username);
-
-  user_data->response_counter++;
-
-  if (user_data->response_counter == user_data->db_rows)
-  {
-    create_leaderboard_interaction(client, event, user_data);
-    free(resp->data);
-  }
-
 }
 
 void acorn_count_leaderboard(struct discord *client, struct discord_response *resp, const struct discord_interaction_response *ret)
 {
   (void)ret;
   const struct discord_interaction *event = resp->keep;
-  struct sd_message *discord_msg = resp->data;
+  struct sd_leaderboard *params = resp->data;
 
-  struct discord_embed *embed = discord_msg->embed;
+  // calloc leaderboard data
+  params->lb_data = calloc(1, sizeof(struct sd_lb_data));
+  struct sd_lb_data *lb_data = params->lb_data;
 
-  embed->title = format_str(SIZEOF_TITLE, "Acorn Leaderboard");
+  // calloc individual rows
+  int row_count = PQntuples(params->player_pos);
+  lb_data->db_rows = (row_count < 10) ? row_count : 10;
+  lb_data->row_data = calloc(lb_data->db_rows, sizeof(struct sd_db_info));
 
-  discord_msg->buttons = build_leaderboard_buttons(event);
-
-  embed->color = player.color;
-
-  embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
-  embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, items[ITEM_ACORN_COUNT].item.file_path);
-
-  struct sd_user_data *user_data = calloc(1, sizeof(struct sd_user_data));
-  user_data->discord_msg = calloc(1, sizeof(struct sd_message));
-
-  user_data->db_rows = PQntuples(player_pos);
-  user_data->row_data = calloc(user_data->db_rows, sizeof(struct DB_Info));
-
-  user_data->discord_msg = discord_msg;
-
-  for (int idx = 0; idx < user_data->db_rows; idx++)
+  for (int user_idx = 0; user_idx < lb_data->db_rows; user_idx++)
   {
-    user_data->row_data[idx].db_idx = strtoint(PQgetvalue(player_pos, idx, 0));
-    user_data->row_data[idx].user_id = strtobigint(PQgetvalue(player_pos, idx, 1));
-    user_data->row_data[idx].value = strtoint(PQgetvalue(player_pos, idx, 2));
-  
+    lb_data->row_data[user_idx].db_idx = strtoint(PQgetvalue(params->player_pos, user_idx, 0));
+    lb_data->row_data[user_idx].user_id = strtobigint(PQgetvalue(params->player_pos, user_idx, 1));
+    lb_data->row_data[user_idx].value = strtoint(PQgetvalue(params->player_pos, user_idx, 2));
+
     struct discord_ret_user ret_user = {
       .done = &is_user,
-      .data = user_data,
+      .data = params,
       .keep = event
     };
 
-    discord_get_user(client, user_data->row_data[idx].user_id, &ret_user);
+    discord_get_user(client, lb_data->row_data[user_idx].user_id, &ret_user);
   }
-
 }
 
-
-void courage_leaderboard(struct discord *client, struct discord_response *resp, const struct discord_interaction_response *ret)
+void war_leaderboard(struct discord *client, struct discord_response *resp, const struct discord_interaction_response *ret)
 {
+  (void)client;
   (void)ret;
-  struct sd_message *discord_msg = resp->data;
   const struct discord_interaction *event = resp->keep;
+  struct sd_leaderboard *params = resp->data;
 
-  struct discord_embed *embed = discord_msg->embed;
+  struct sd_player *player = params->player;
 
-  embed->title = format_str(SIZEOF_TITLE, "Courage Leaderboard");
-
-  discord_msg->buttons = build_leaderboard_buttons(event);
-
-  embed->color = player.color;
-
-  embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
-  embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, scurry_items[SCURRY_ITEM_COURAGE].item.file_path);
-
-  embed->description = calloc(SIZEOF_DESCRIPTION, sizeof(char));
-
-  int db_rows = PQntuples(player_pos);
-
-  for (int idx = 0; idx < db_rows; idx++)
-    ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION,
-      (player.scurry_id == strtobigint(PQgetvalue(player_pos, idx, 1))) 
-          ? "%d. "GUILD_ICON" %s **%s** \n" : "%d. `%s` **%s** \n",
-      strtoint(PQgetvalue(player_pos, idx, 0)), 
-      PQgetvalue(player_pos, idx, 2), 
-      num_str(strtoint(PQgetvalue(player_pos, idx, 3))) );
-
-  complete_interaction(client, event, discord_msg);
-
-  discord_embed_cleanup(embed);
-  free(discord_msg);
+  int db_rows = PQntuples(params->player_pos);
+  for (int user_idx = 0; user_idx < db_rows; user_idx++)
+  {
+    APPLY_NUM_STR( value, strtoint(PQgetvalue(params->player_pos, user_idx, 3)) );
+    u_snprintf(params->description, sizeof(params->description),
+      ( player->scurry_id == strtobigint(PQgetvalue(params->player_pos, user_idx, 1)) ) 
+          ? "**%d**. "GUILD_ICON" %s **%s** \n"
+          : "**%d**. `%s` **%s** \n",
+      strtoint(PQgetvalue(params->player_pos, user_idx, 0)), 
+      PQgetvalue(params->player_pos, user_idx, 2), value);
+  }
+  create_leaderboard_interaction(event, params);
 }
 
-int get_leaderboard(
-  const struct discord_interaction *event, 
-  struct sd_message *discord_msg)
+int fetch_leaderboard(const struct discord_interaction *event)
 {
-  player = load_player_struct(event->member->user->id);
-  scurry = load_scurry_struct(player.scurry_id);
+  struct sd_leaderboard *params = calloc(1, sizeof(struct sd_leaderboard));
 
-  // discord_msg gets passed along regardless of leaderboard type
+  params->player = calloc(1, sizeof(struct sd_player));
+  load_player_struct(params->player, event->member->user->id);
+
+  // sd_leaderboard gets passed along regardless of leaderboard type
   struct discord_ret_interaction_response ret_response = { 
-    .data = discord_msg, 
-    .keep = event 
+    .data = params,
+    .keep = event
   };
 
+  params->player_pos = (PGresult*) { 0 };
   if (event->data->custom_id && event->data->custom_id[1] -48 == 1)
   {
-    player_pos = SQL_query(DB_ACTION_SEARCH, "select dense_rank() over (order by courage desc) as rank_idx, owner_id, s_name, courage \
-        from (select dense_rank() over (order by courage desc) as rank_idx, owner_id, s_name, courage from public.scurry) as lb \
-        where rank_idx <= 10 and courage > 0");
+    params->player_pos = SQL_query(params->player_pos,
+      "select rank_idx, owner_id, s_name, best_acorn "
+      "from ("
+      "select owner_id, s_name, "
+      "(CASE WHEN prev_stolen_acorns > total_stolen_acorns THEN prev_stolen_acorns ELSE total_stolen_acorns END) AS best_acorn, "
+      "dense_rank() over (order by (CASE WHEN prev_stolen_acorns > total_stolen_acorns THEN prev_stolen_acorns ELSE total_stolen_acorns END) desc) as rank_idx "
+      "from public.scurry) as lb where rank_idx <= 10 and best_acorn > 0");
 
-    ERROR_DATABASE_RET((PQntuples(player_pos) == 0), "There aren't enough entries yet!", player_pos);
-
-    ret_response.done = &courage_leaderboard;
+    ret_response.done = &war_leaderboard;
   }
   else {
-    player_pos = SQL_query(DB_ACTION_SEARCH, "select rank_idx, user_id, best_acorn \
-        from ( \
-          select user_id, \
-          (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) AS best_acorn, \
-          dense_rank() over (order by (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) desc) as rank_idx \
-        from public.player) as lb where rank_idx <= 10 and best_acorn > 0");
-
-    ERROR_DATABASE_RET((PQntuples(player_pos) == 0), "There aren't enough entries yet!", player_pos);
+    params->player_pos = SQL_query(params->player_pos, 
+      "select rank_idx, user_id, best_acorn "
+      "from ("
+      "select user_id, "
+      "(CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) AS best_acorn, "
+      "dense_rank() over (order by (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) desc) as rank_idx "
+      "from public.player) as lb where rank_idx <= 10 and best_acorn > 0");
 
     ret_response.done = &acorn_count_leaderboard;
+  }
+
+  if (PQntuples(params->player_pos) == 0)
+  {
+    error_message(event, "There aren't enough entries yet!");
+    PQclear(params->player_pos);
+    free(params->player);
+    free(params);
+    return ERROR_STATUS;
   }
 
   discord_create_interaction_response(client, event->id, event->token, 
@@ -229,10 +276,10 @@ int get_leaderboard(
 
       .data = &(struct discord_interaction_callback_data) 
       {
-        .content = format_str(SIZEOF_DESCRIPTION, "Loading leaderboard...")
+        .content = "Loading leaderboard..."
       }
     },
     &ret_response);
-
+  
   return 0;
 }

@@ -1,101 +1,98 @@
-/*
-
-  This file builds the guild help embed for guild owners
-
-  Topics to include are:
-    * Scurry Utils
-      - Invites, kicking, leaving
-    * Scurry Wars 
-      - Courage and ranks, Prereqs, Retreating
-    * Scurry War Aftermath
-      - Acorn Benefit, reseting of the Courage score
-
-  * Send on scurry creation!
-
-*/
-
-void s_help(const struct discord_interaction *event, struct sd_message *discord_msg) 
+int scurry_help_interaction(const struct discord_interaction *event)
 {
-  struct discord_embed *embed = discord_msg->embed;
+  struct sd_player player = { 0 };
+  load_player_struct(&player, event->member->user->id);
+
+  struct sd_help_info params = { 0 };
 
   int page_num = (event->data->custom_id) ? (event->data->custom_id[1] -48) +1 : 1;
 
-  embed->title = format_str(SIZEOF_TITLE, "Scurry Help (%d of %d)", page_num, S_TOPIC_SIZE);
-
-  embed->color = player.color;
-
-  embed->description = format_str(SIZEOF_DESCRIPTION,
-      "Looking for help on what scurries are about? Check out the info below \n"
-      "to see if they answer your questions!");
-
-  struct discord_embed_field *scurry_help_pages = (struct discord_embed_field[])
+  switch (page_num -1)
   {
-    {
-      .name = format_str(SIZEOF_TITLE, ""GUILD_ICON" Scurry Utils"),
-      .value = format_str(SIZEOF_FIELD_VALUE, 
-          " "OFF_ARROW" Member invites come in through DM. Press a button to accept or decline. Plan accordingly because invites expire in **2** minutes! \n"
-          " "OFF_ARROW" Only the "LEADER" owner can kick a member. Simply follow up `/scurry_kick` with the user mention to kick! \n"
-          " "OFF_ARROW" Members can leave on their own prerogative too using `/scurry_leave`. \n"
-          "**Please know that your stats related to the scurry will not carry over!**")
+    case S_TOPIC_UTILS:
+      params.field = (struct discord_embed_field) {
+        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+            ""GUILD_ICON" Scurry Utils"),
+        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+            " "OFF_ARROW" Member invites come in through DM. Plan accordingly because invites expire in **2** minutes! \n"
+            " "OFF_ARROW" Only the "LEADER" owner can kick a member! Simply follow up </scurry_kick:1089664058225066155> with the user mention to kick. \n"
+            " "OFF_ARROW" Members can leave on their own prerogative too by using </scurry_leave:1089664058879377548>. \n"
+            "**Please know that your stats related to the scurry will not be retained!**")
+      };
+      break;
+    case S_TOPIC_WARS:
+      params.field = (struct discord_embed_field) {
+        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+            ""GUILD_ICON" Scurry Wars"),
+        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+            " "OFF_ARROW" "WAR_ACORNS" *Total stolen acorn* is the scurry war currency that is obtained from stealing other scurries' war acorns. \n"
+            " "OFF_ARROW" Any scurry currently in the arena has the chance to steal from your "LOST_STASH" *war stash*! \n"
+            " "OFF_ARROW" To join the arena found in </scurry_info:1089664056320852000>, scurries need their war stash full and have at least **4** members present!")
+      };
+      break;
+    case S_TOPIC_AFTERMATH:
+      params.field = (struct discord_embed_field) {
+        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+            ""GUILD_ICON" Arena Aftermath"),
+        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+            " "OFF_ARROW" Every scurry is dropped from the arena upon running out of "WAR_ACORNS" *war acorns*. \n"
+            " "OFF_ARROW" Every time you re-enter the arena, your "WAR_ACORNS" *total stolen acorn* is reset. \n"
+            " "OFF_ARROW" Scurries have the option to retreat at any point, but be aware your rank will match your new stolen acorn score! \n"
+            " "OFF_ARROW" Scurry ranks provide passive "ACORNS" *acorn* boosts!")
+      };
+      break;
+    case S_TOPIC_RANKS:
+      APPLY_NUM_STR(seed_not_max, SEED_NOT_MAX);
+      APPLY_NUM_STR(acorn_snatcher_max, ACORN_SNATCHER_MAX);
+      APPLY_NUM_STR(seed_sniffer_max, SEED_SNIFFER_MAX);
+      APPLY_NUM_STR(oakfficial_max, OAKFFICIAL_MAX);
+      params.field = (struct discord_embed_field) {
+        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+            ""GUILD_ICON" War Ranks"),
+        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+            " "OFF_ARROW" "WAR_ACORNS" *Stolen acorns* determines scurry rank as follows: \n"
+            " "INDENT" "ACORNS" Seed-Nots (*Base*) \n"
+            " "INDENT" "ACORNS" Acorn Snatchers (> **%s** "WAR_ACORNS" *Stolen Acorns*): x**1.05** \n"
+            " "INDENT" "GOLDEN_ACORNS" Seed Sniffers (> **%s** "WAR_ACORNS" *Stolen Acorns*) x**1.1** \n"
+            " "INDENT" "GOLDEN_ACORNS" Oakfficials (> **%s** "WAR_ACORNS" *Stolen Acorns*) x**1.15** \n"
+            " "INDENT" "CONJURED_ACORNS" Royal Nuts (**%s**+ "WAR_ACORNS" *Stolen Acorns*) x**1.2**",
+            seed_not_max, acorn_snatcher_max, seed_sniffer_max, oakfficial_max)
+      };
+      break;
+  }
+
+  init_help_buttons(event, &params, page_num -1, TYPE_SCURRY_HELP, S_TOPIC_SIZE -1);
+
+  struct sd_header_params header = { 0 };
+
+  header.embed = (struct discord_embed) 
+  {
+    .color = player.color,
+    .author = &(struct discord_embed_author) {
+      .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
+      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+          "https://cdn.discordapp.com/avatars/%lu/%s.png",
+          event->member->user->id, event->member->user->avatar)
     },
-    {
-      .name = format_str(SIZEOF_TITLE, ""GUILD_ICON" Scurry Wars"),
-      .value = format_str(SIZEOF_FIELD_VALUE,
-          " "OFF_ARROW" "COURAGE" Courage is the main scurry war currency that is obtained from stealing other scurries' war acorns. \n"
-          " "OFF_ARROW" Any scurry current in the arena has the chance to steal from your war stash! \n"
-          " "OFF_ARROW" To join the arena (found in scurry info), scurries need their "LOST_STASH" war stash full and have at least 5 members present! \n")
+    .title = u_snprintf(header.title, sizeof(header.title), "Scurry Help (%d of %d)", 
+        page_num, S_TOPIC_SIZE),
+
+    .fields = &(struct discord_embed_fields) {
+      .array = &params.field,
+      .size = 1
     },
-    {
-      .name = format_str(SIZEOF_TITLE, ""GUILD_ICON" Arena Aftermath"),
-      .value = format_str(SIZEOF_FIELD_VALUE,
-          " "OFF_ARROW" Every scurry is dropped from the arena upon running out of war acorns. \n"
-          " "OFF_ARROW" Every time you re-enter the arena, your courage is reset. \n"
-          " "OFF_ARROW" Scurries have the option to retreat at any point, but be aware your rank will match your new courage score! \n"
-          " "OFF_ARROW" Scurry ranks provide passive acorn boosts!")
-    },
-    {
-      .name = format_str(SIZEOF_TITLE, ""GUILD_ICON" War Ranks"),
-      .value = format_str(SIZEOF_FIELD_VALUE,
-          " "OFF_ARROW" Courage determines scurry rank as follows: \n"
-          INDENT BRONZE_STAHR "Seed-Nots (*Base*) \n"
-          INDENT BRONZE_STAHR "Acorn Snatchers (> **%s** "COURAGE" Courage): x**1.05** \n"
-          INDENT BRONZE_STAHR "Seed Sniffers (> **%s** "COURAGE" Courage) x**1.1** \n"
-          INDENT SILVER_STAHR "Oakfficials (> **%s** "COURAGE" Courage) x**1.15** \n"
-          INDENT STAHR "Royal Nuts (**%s**+ "COURAGE" Courage) x**1.2**",
-          num_str(SEED_NOT_MAX), num_str(ACORN_SNATCHER_MAX), num_str(SEED_SNIFFER_MAX), num_str(OAKFFICIAL_MAX) )
+    .footer = &(struct discord_embed_footer) {
+      .text = u_snprintf(params.footer_text, sizeof(params.footer_text), "Happy Foraging!"),
+      .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, items[ITEM_ACORNS].file_path)
     }
   };
 
-  discord_msg->buttons = build_help_buttons(event, page_num -1, TYPE_SCURRY_HELP, S_TOPIC_SIZE -1);
-
-  embed->fields = calloc(1, sizeof(struct discord_embed_fields));
-  embed->fields->size = 1;
-  embed->fields->array = calloc(1, sizeof(struct discord_embed_field));
-  embed->fields->array[0] = scurry_help_pages[page_num -1];
-  
-  embed->footer = calloc(1, sizeof(struct discord_embed_footer));
-  embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "Happy Foraging!");
-  embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, items[ITEM_ACORNS].item.file_path);
-}
-
-/* Listens for slash command interactions */
-int scurry_help_interaction(
-  const struct discord_interaction *event, 
-  struct sd_message *discord_msg) 
-{
-  player = load_player_struct(event->member->user->id);
-
-  //Load Author
-  discord_msg->embed->author = sd_msg_embed_author(
-    format_str(SIZEOF_TITLE, event->member->user->username),
-    format_str(SIZEOF_URL, "https://cdn.discordapp.com/avatars/%lu/%s.png", 
-        event->member->user->id, event->member->user->avatar) );
-
-  s_help(event, discord_msg);
-
   struct discord_component action_rows = {
     .type = DISCORD_COMPONENT_ACTION_ROW,
-    .components = discord_msg->buttons
+    .components = &(struct discord_components) {
+      .array = params.buttons,
+      .size = 4
+    }
   };
 
   struct discord_interaction_response interaction = 
@@ -106,7 +103,7 @@ int scurry_help_interaction(
     {
       .embeds = &(struct discord_embeds) 
       {
-        .array = discord_msg->embed,
+        .array = &header.embed,
         .size = 1
       },
       .components = &(struct discord_components) {
@@ -117,11 +114,11 @@ int scurry_help_interaction(
 
   };
 
-  discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+  char values[16384];
+  CCORDcode code = discord_interaction_response_to_json(values, sizeof(values), &interaction);
+  fprintf(stderr, "%s \nCCODE: %d \n", values, code);
 
-  discord_embed_cleanup(discord_msg->embed);
-  free(discord_msg->buttons);
-  free(discord_msg);
+  discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
   return 0;
 }

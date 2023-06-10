@@ -9,36 +9,11 @@ struct sd_file_data
   unsigned long emoji_id;
 };
 
-// items that hold an independent position in player data
-// includes items, enchanted acorns, and scurry items
-struct sd_obj_items
-{
-  struct sd_file_data item;
-  int *stat_ptr;
-};
-
 struct sd_squirrel
 {
   int acorn_count_req;
   struct sd_file_data squirrel;
   struct sd_file_data evo_squirrel;
-};
-
-struct sd_obj_stats
-{
-  struct sd_file_data stat;
-  int* stat_ptr;
-
-  float price_mult;
-  float value_mult;
-};
-
-struct sd_victuals
-{
-  struct sd_file_data item;
-  int* stat_ptr;
-
-  struct sd_obj_items *item_ref;
 };
 
 struct sd_encounter
@@ -59,12 +34,21 @@ struct sd_biome
   int encounter_size;
 };
 
+struct sd_obj_stats
+{
+  struct sd_file_data stat;
+
+  float price_mult;
+  float value_mult;
+};
+
 struct sd_scurry 
 {
   unsigned long scurry_owner_id;
-  char* scurry_name;
+  char scurry_name[64];
 
-  int courage; // most recent score
+  int total_stolen_acorns;
+  int prev_stolen_acorns;
   int war_acorns;
 
   int war_flag;
@@ -88,7 +72,7 @@ struct sd_buffs
   int luck_acorn;
   int strength_acorn;
   int endurance_acorn;
-  int boosted; // boosted squirrel duration
+  int boosted_acorn; // boosted squirrel duration
 };
 
 struct sd_buff_status
@@ -96,6 +80,7 @@ struct sd_buff_status
   bool proficiency_acorn;
   bool defense_acorn;
   bool luck_acorn;
+  bool boosted_acorn;
 };
 
 struct sd_player 
@@ -114,9 +99,10 @@ struct sd_player
   int high_acorn_count;
   int golden_acorns;
   int conjured_acorns;
-  int war_acorns;
+  int stolen_acorns;
   int catnip;
   
+  int vengeance_flag;
   int encounter;
   int biome;
   int biome_num;
@@ -127,64 +113,69 @@ struct sd_player
   struct sd_buffs buffs;
 };
 
-struct sd_rewards
-{
-  int item_type;
-  int has_responded;
-  int acorns;
-  int acorn_count;
-  int health_loss;
-  int failure; // responds to all 3 encounter buttons being TYPE_HEALTH_LOSS
-  int health_regen;
-
-  int courage;
-  int war_acorns;
-
-  int golden_acorns;
-  int conjured_acorns;
-  
-  int catnip;
-  int victuals;
-  int victual_type;
-
-  int buff_duration;
-};
-
 struct sd_store
 {
-  struct sd_file_data *item;
-  int* stat_ptr;
-
+  int item_idx;
   int cost;
   int quantity;
 };
 
-struct sd_message
+struct sd_rewards
 {
-  struct discord_embed *embed;
-  struct discord_components *buttons;
+  int item_type;
 
-  char* content;
+  int acorns;
+  int acorn_count;
+  int golden_acorns;
+  int conjured_acorns;
+
+  int war_acorns; // for building scurry stash
+  int stolen_acorns;
+
+  int seasoned_golden_acorns;
+  int catnip;
+  int victual_amt;
+  int victual_type;
+  int ref_resource;
 };
 
 // For listing members...
-struct DB_Info {
+struct sd_db_info {
   int db_idx;
-  char* username;
+  char username[128];
   unsigned long user_id;
   int value;
 };
 
-struct sd_user_data {
-  struct sd_message *discord_msg;
-  int db_rows;
+struct sd_header_params {
+  struct discord_embed embed;
+  char username[64];
+  char avatar_url[128];
+  char title[64];
+  char thumbnail_url[128];
+};
 
-  // how many requests have been completed
-  int response_counter;
+struct sd_help_info 
+{
+  struct discord_component buttons[4];
+  char custom_ids[4][64];
 
-  // set data in an array to prevent disorganization
-  struct DB_Info *row_data;
+  struct discord_emoji emojis[4];
+  char emoji_names[4][64];
 
-  int is_top_ten;
-  int is_war_rankings;
+  struct discord_embed_field field;
+  char field_name[64];
+  char field_value[1024];
+
+  char footer_text[64];
+  char footer_url[128];
+};
+
+struct sd_welcome_info 
+{
+  char description[512];
+  char image_url[128];
+
+  char footer_text[256];
+  char footer_url[128];
 };

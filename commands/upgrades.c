@@ -1,168 +1,164 @@
-struct sd_store *upgrades;
+struct sd_upgrade_shop {
+  struct discord_component buttons[STAT_SIZE];
+  char custom_ids[STAT_SIZE][64];
+  char labels[STAT_SIZE][64];
 
-struct discord_components* build_upgrade_buttons(
-  const struct discord_interaction *event,
-  int button_size)
-{
-  struct discord_components *buttons = calloc(1, sizeof(struct discord_components));
+  struct discord_emoji emojis[STAT_SIZE];
+  char emoji_names[STAT_SIZE][64];
 
-  buttons->size = button_size;
-  buttons->array = calloc(button_size, sizeof(struct discord_component));
+  struct discord_embed_field fields[STAT_SIZE];
+  char field_names[STAT_SIZE][64];
+  char field_values[STAT_SIZE][256];
 
-  if (event->data->custom_id)
-  {
-    int current_stat = event->data->custom_id[1] - 48;
-    int* stat_lv_ptr = upgrades[current_stat].stat_ptr;
+  char description[512];
 
-    if (player.acorns >= upgrades[current_stat].cost)
-    {
-      player.acorns -= upgrades[current_stat].cost;
-      rewards.item_type = current_stat;
-      (*stat_lv_ptr)++;
-
-      if (current_stat == STAT_STRENGTH)
-        player.health += STRENGTH_VALUE;
-    }
-    else
-      rewards.item_type = ERROR_STATUS;
-  }
-
-  for (int i = 0; i < buttons->size; i++)
-  {
-    struct discord_emoji *emoji = calloc(1, sizeof(struct discord_emoji));
-
-    int is_evolution = ((*upgrades[i].stat_ptr +1) % STAT_EVOLUTION == 0) ? 1 : 0;
-
-    if (is_evolution) {
-      emoji->name = squirrels[player.squirrel].evo_squirrel.emoji_name;
-      emoji->id = squirrels[player.squirrel].evo_squirrel.emoji_id;
-    } else {
-      emoji->name = squirrels[player.squirrel].squirrel.emoji_name;
-      emoji->id = squirrels[player.squirrel].squirrel.emoji_id;
-    }
-
-    buttons->array[i] = (struct discord_component)
-    {
-      .type = DISCORD_COMPONENT_BUTTON,
-      .style = (player.acorns >= upgrades[i].cost) 
-                ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
-      .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%d_%ld", TYPE_UPGRADE, i, event->member->user->id),
-      .label = upgrades[i].item->formal_name,
-      .emoji = emoji,
-      .disabled = (player.acorns < upgrades[i].cost) ? true : false
-    };
-  }
-
-  return buttons;
-}
-
-enum STORE_FORMAT
-{
-  STORE_GENERAL = 0,
-  STORE_SIZE = 1,
+  char footer_text[64];
+  char footer_url[128];
 };
 
-void player_shop(
-  const struct discord_interaction *event,
-  struct sd_message *discord_msg)
+void init_upgrade_fields(struct sd_upgrade_shop *params, struct sd_player *player)
 {
-  struct discord_embed *embed = discord_msg->embed;
-  embed->color = player.color;
+  int* stat_ptrs[3] = { &player->stats.proficiency_lv, &player->stats.luck_lv, &player->stats.strength_lv };
 
-  discord_msg->buttons = build_upgrade_buttons(event, STAT_SIZE);
+  for (int button_idx = 0; button_idx < 3; button_idx++) 
+  {
+    struct sd_file_data stat_data = stats[button_idx].stat;
 
-  if (event->data->custom_id)
-    for (int i = 0; i < STAT_SIZE; i++)
-      upgrades[i] = (struct sd_store)
-      {
-        .item = &stats[i].stat,
-        .cost = generate_price(*stats[i].stat_ptr, stats[i].price_mult),
-        .stat_ptr = stats[i].stat_ptr
-      };
+    APPLY_NUM_STR(stat_cost, generate_price(*stat_ptrs[button_idx], stats[button_idx].price_mult));
 
-  embed->title = format_str(SIZEOF_TITLE, "Upgrades");
+    params->fields[button_idx] = (struct discord_embed_field) {
+      .name = u_snprintf(params->field_names[button_idx], sizeof(params->field_names[button_idx]), " <:%s:%ld> %s (Lv. %d)",
+          stat_data.emoji_name, stat_data.emoji_id, stat_data.formal_name, *stat_ptrs[button_idx]),
 
-  embed->fields = calloc(1, sizeof(struct discord_embed_fields));
-  embed->fields->size = STORE_SIZE + STAT_SIZE;
-  embed->fields->array = calloc(STORE_SIZE + STAT_SIZE, sizeof(struct discord_embed_field));
+      .value = u_snprintf(params->field_values[button_idx], sizeof(params->field_values[button_idx]), 
+          (button_idx == STAT_STRENGTH) 
+              ? " "OFF_ARROW" %s (+**%0.0f**) \n" " *Costs* **%s** "ACORNS" Acorns"
+              : " "OFF_ARROW" %s (x**%0.1f**) \n" " *Costs* **%s** "ACORNS" Acorns",
+          stat_data.description, generate_factor(*stat_ptrs[button_idx], stats[button_idx].value_mult), stat_cost)
+    };
 
-  /* Fill in player balance */
-  embed->fields->array[STORE_GENERAL].name = format_str(SIZEOF_TITLE, "Balance");
-  embed->fields->array[STORE_GENERAL].value = format_str(SIZEOF_FIELD_VALUE, "> "ACORNS" Acorns: **%s** \n", num_str(player.acorns) );
-
-  /* Fill in upgade information in separate fields */
-  for (int i = STORE_SIZE; i < STORE_SIZE + STAT_SIZE; i++)
-  {  
-    int stat_idx = i - STORE_SIZE;
-    //References
-    char* stahr_type = (*stats[stat_idx].stat_ptr < BRONZE_BRACKET) ? BRONZE_STAHR
-      : (*stats[stat_idx].stat_ptr < SILVER_BRACKET) ? SILVER_STAHR : STAHR;
-
-    embed->fields->array[i].name = format_str(SIZEOF_TITLE, 
-        "%s (%s **%d**)", 
-        stats[stat_idx].stat.formal_name, stahr_type, *stats[stat_idx].stat_ptr);
-
-    embed->fields->array[i].value = format_str(SIZEOF_FIELD_VALUE,
-        (stat_idx == STAT_STRENGTH) ? " "OFF_ARROW" %s (+**%0.0f**) \n" : " "OFF_ARROW" %s (x**%0.1f**) \n",
-        stats[stat_idx].stat.description, 
-        generate_factor(*stats[stat_idx].stat_ptr, stats[stat_idx].value_mult) );
-
-    ADD_TO_BUFFER(embed->fields->array[i].value, SIZEOF_FIELD_VALUE,
-        "*Costs* **%s** "ACORNS" Acorns",
-        num_str( upgrades[stat_idx].cost ) );
-  }
-
-  embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
-  embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, squirrels[player.squirrel].squirrel.file_path);
-  embed->footer = calloc(1, sizeof(struct discord_embed_footer));
-
-  if (event->data->custom_id)
-  { // button index is rewards.item_type
-    if (rewards.item_type == ERROR_STATUS)
-    {
-      embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You need more acorns!");
-      embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_types[TYPE_NO_ACORNS].file_path);
-    }
-    else {
-      struct sd_file_data *stat_index = &stats[rewards.item_type].stat;
-      embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You received the stat of %s!", stat_index->formal_name);
-      embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, stat_index->file_path);
-    }
-  } // error status can only be the case with a custom id
-  else {
-    embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "Welcome to the Upgrades Shop!");
-    embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_types[TYPE_ENCOUNTER].file_path);
   }
 }
 
-/* Listens for slash command interactions */
-int store_interaction(
-  const struct discord_interaction *event, 
-  struct sd_message *discord_msg)
+void init_upgrade_buttons(const struct discord_interaction *event, struct sd_upgrade_shop *params, struct sd_player *player)
 {
-  player = load_player_struct(event->member->user->id);
+  int* stat_ptrs[STAT_SIZE] = { &player->stats.proficiency_lv, &player->stats.luck_lv, &player->stats.strength_lv };
 
-  upgrades = calloc(STAT_SIZE, sizeof(struct sd_store));
+  for (int button_idx = 0; button_idx < STAT_SIZE; button_idx++) 
+  {    
+    if ((*stat_ptrs[button_idx] +1) % STAT_EVOLUTION == 0)
+      params->emojis[button_idx] = (struct discord_emoji) {
+          .name = u_snprintf(params->emoji_names[button_idx], sizeof(params->emoji_names[button_idx]), 
+                  squirrels[player->squirrel].evo_squirrel.emoji_name),
+          .id = squirrels[player->squirrel].evo_squirrel.emoji_id
+      };
+    else
+      params->emojis[button_idx] = (struct discord_emoji) {
+          .name = u_snprintf(params->emoji_names[button_idx], sizeof(params->emoji_names[button_idx]), 
+                  squirrels[player->squirrel].squirrel.emoji_name),
+          .id = squirrels[player->squirrel].squirrel.emoji_id
+      };
 
-  for (int i = 0; i < STAT_SIZE; i++)
-    upgrades[i] = (struct sd_store)
-    {
-      .item = &stats[i].stat,
-      .cost = generate_price(*stats[i].stat_ptr, stats[i].price_mult),
-      .stat_ptr = stats[i].stat_ptr
+    params->buttons[button_idx] = (struct discord_component) 
+    { 
+      .type = DISCORD_COMPONENT_BUTTON,
+      .emoji = &params->emojis[button_idx],
+      .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), stats[button_idx].stat.formal_name),
+      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c_%ld",
+                    TYPE_UPGRADE, button_idx, ERROR_STATUS + 96, event->member->user->id)
     };
 
-  //Load Author
-  discord_msg->embed->author = sd_msg_embed_author(
-    format_str(SIZEOF_TITLE, event->member->user->username),
-    format_str(SIZEOF_URL, "https://cdn.discordapp.com/avatars/%lu/%s.png", 
-        event->member->user->id, event->member->user->avatar) );
+    if (player->acorns >= generate_price(*stat_ptrs[button_idx], stats[button_idx].price_mult))
+    {
+      params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
+    }
+    else {
+      params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
+      params->buttons[button_idx].disabled = true;
+    }
+  }
+}
 
-  player_shop(event, discord_msg);
+void upgrade_command_state(const struct discord_interaction *event, struct sd_upgrade_shop *params, struct sd_player *player)
+{
+  if (event->data->custom_id) 
+  {
+    int button_idx = event->data->custom_id[1] -48;
+    int* stat_ptrs[STAT_SIZE] = { &player->stats.proficiency_lv, &player->stats.luck_lv, &player->stats.strength_lv };
+  
+    for (int stat_idx = 0; stat_idx < STAT_SIZE; stat_idx++) 
+    {
+      if (button_idx == stat_idx) {
+				player->acorns -= generate_price(*(stat_ptrs[stat_idx]), stats[stat_idx].price_mult);
+				(*stat_ptrs[stat_idx])++;
+
+        struct sd_file_data stat_data = stats[stat_idx].stat;
+        u_snprintf(params->footer_text, sizeof(params->footer_text), "You received the stat of %s", stat_data.formal_name);
+        u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, stat_data.file_path);
+        
+        if (stat_idx == STAT_STRENGTH)
+          player->health += STRENGTH_FACTOR;
+        
+        break;
+      }
+    }
+    // update player only on purchase
+    update_player_row(player);
+  }
+  else {
+    u_snprintf(params->footer_text, sizeof(params->footer_text), "Welcome to the Upgrades Shop!");
+    u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, item_types[TYPE_ENCOUNTER].file_path);
+  }
+}
+
+int init_upgrade_shop(const struct discord_interaction *event)
+{
+  struct sd_player player = { 0 };
+  load_player_struct(&player, event->member->user->id);
+
+  struct sd_upgrade_shop params = { 0 };
+
+  upgrade_command_state(event, &params, &player);
+
+  init_upgrade_buttons(event, &params, &player);
 
   struct discord_component action_rows = {
     .type = DISCORD_COMPONENT_ACTION_ROW,
-    .components = discord_msg->buttons
+    .components = &(struct discord_components) {
+      .array = params.buttons,
+      .size = STAT_SIZE
+    }
+  };
+
+  init_upgrade_fields(&params, &player);
+
+  APPLY_NUM_STR(acorns, player.acorns);
+  struct sd_header_params header = { 0 };
+
+  header.embed = (struct discord_embed) 
+  {
+    .color = player.color,
+    .author = &(struct discord_embed_author) {
+      .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
+      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+          "https://cdn.discordapp.com/avatars/%lu/%s.png",
+          event->member->user->id, event->member->user->avatar)
+    },
+    .title = u_snprintf(header.title, sizeof(header.title), "Upgrades Shop"),
+    .description = u_snprintf(params.description, sizeof(params.description), 
+        "**Balance**: \n "INDENT" "ACORNS" Acorns: **%s**", acorns),
+    .thumbnail = &(struct discord_embed_thumbnail) {
+      .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
+          squirrels[player.squirrel].squirrel.file_path)
+    },
+    .fields = &(struct discord_embed_fields) {
+      .array = params.fields,
+      .size = STAT_SIZE
+    },
+    .footer = &(struct discord_embed_footer) {
+      .text = params.footer_text,
+      .icon_url = params.footer_url
+    }
   };
 
   struct discord_interaction_response interaction = 
@@ -173,7 +169,7 @@ int store_interaction(
     {
       .embeds = &(struct discord_embeds) 
       {
-        .array = discord_msg->embed,
+        .array = &header.embed,
         .size = 1
       },
       .components = &(struct discord_components) {
@@ -184,14 +180,11 @@ int store_interaction(
 
   };
 
+  char values[16384];
+  discord_interaction_response_to_json(values, sizeof(values), &interaction);
+  fprintf(stderr, "%s \n", values);
+
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
-
-  discord_embed_cleanup(discord_msg->embed);
-  free(discord_msg->buttons);
-  free(discord_msg);
-
-  update_player_row(player);
-  rewards = (struct sd_rewards) { 0 };
 
   return 0;
 }

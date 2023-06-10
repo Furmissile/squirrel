@@ -1,228 +1,244 @@
-struct discord_components* build_buff_buttons(const struct discord_interaction *event)
-{
-  struct discord_components *buttons = calloc(1, sizeof(struct discord_components));
+struct sd_buffs_shop {
+  struct discord_component buttons[BUFFS_SIZE];
+  char custom_ids[BUFFS_SIZE][64];
+  char labels[BUFFS_SIZE][64];
 
-  buttons->size = BUFFS_SIZE;
-  buttons->array = calloc(buttons->size, sizeof(struct discord_component));
+  struct discord_emoji emojis[BUFFS_SIZE];
+  char emoji_names[BUFFS_SIZE][64];
 
-  int golden_acorn_cost = GOLDEN_ACORN_BUFF_COST * generate_factor(player.stats.luck_lv, LUCK_VALUE);
+  struct discord_embed_field fields[BUFFS_SIZE +2]; // +2 for balance and cost
+  char field_names[BUFFS_SIZE +2][128];
+  char field_values[BUFFS_SIZE +2][256];
 
-  if (event->data->custom_id)
-  {
-    int button_idx = event->data->custom_id[1] -48;
-    if (button_idx == SQUIRREL_BOOST_INDEX)
-    {
-      player.conjured_acorns -= SQUIRREL_BOOST_COST;
-      *boosted_acorn.stat_ptr += genrand(15, 10);
-      rewards.item_type = SQUIRREL_BOOST_INDEX;
-    }
-    else if (player.golden_acorns >= golden_acorn_cost)
-    {
-      switch (button_idx) {
-        case BUFF_DEFENSE_ACORN:
-          player.buffs.defense_acorn += genrand(5, 5);
-          break;
-        case BUFF_STRENGTH_ACORN:
-          int acorn_duration = genrand(15, 5) * player.stats.strength_lv;
+  char thumbnail_url[128];
+  char description[512];
 
-          player.buffs.strength_acorn += (acorn_duration > player.max_health - player.health) 
-              ? player.max_health - player.health : acorn_duration;
-
-          player.health += player.buffs.strength_acorn;
-          break;
-        default:
-          (*enchanted_acorns[button_idx].stat_ptr) += genrand(15, 5);
-      }
-      rewards.item_type = button_idx;
-      player.golden_acorns -= golden_acorn_cost;
-    }
-    else
-      rewards.item_type = ERROR_STATUS;
-  }
-
-  int is_disabled = false;
-  int button_style;
-
-  if (player.golden_acorns >= golden_acorn_cost)
-  {
-    button_style = DISCORD_BUTTON_PRIMARY;
-  }
-  else {
-    button_style = DISCORD_BUTTON_SECONDARY;
-    is_disabled = true;
-  }
-
-  for (int i = 0; i < buttons->size; i++)
-  {
-    struct discord_emoji *emoji = calloc(1, sizeof(struct discord_emoji));
-    emoji->name = enchanted_acorns[i].item.emoji_name;
-    emoji->id = enchanted_acorns[i].item.emoji_id;
-
-    buttons->array[i] = (struct discord_component)
-    {
-      .type = DISCORD_COMPONENT_BUTTON,
-      .style = button_style,
-      .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%d_%ld", TYPE_E_ACORN, i, event->member->user->id),
-      .label = enchanted_acorns[i].item.formal_name,
-      .emoji = emoji,
-      .disabled = is_disabled
-    };
-
-  }
-
-  if (player.health >= player.max_health) {
-    buttons->array[BUFF_STRENGTH_ACORN].disabled = true;
-    buttons->array[BUFF_STRENGTH_ACORN].style = DISCORD_BUTTON_SECONDARY;
-  }
-
-  return buttons;
-}
-
-enum POWER_FORMAT {
-  POWER_GENERAL = 0,
-  POWER_PRICES = 1,
-  BOOST_PRICE = 2,
-  POWER_SIZE = 3
+  char footer_text[64];
+  char footer_url[128];
 };
 
-void power_shop(
-  const struct discord_interaction *event,
-  struct sd_message *discord_msg)
+void init_buffs_fields(struct sd_buffs_shop *params, struct sd_player *player)
 {
-  struct discord_embed *embed = discord_msg->embed;
-  embed->color = player.color;
+  APPLY_NUM_STR(golden_acorns, player->golden_acorns);
+  APPLY_NUM_STR(conjured_acorns, player->conjured_acorns);
 
-  discord_msg->buttons = build_buff_buttons(event);
+  params->fields[0] = (struct discord_embed_field) {
+    .name = u_snprintf(params->field_names[0], sizeof(params->field_names[0]), "Balance"),
+    .value = u_snprintf(params->field_values[0], sizeof(params->field_values[0]), 
+        " "INDENT" "GOLDEN_ACORNS" Golden Acorns: **%s** \n"
+        " "INDENT" "CONJURED_ACORNS" Conjured Acorns: **%s**",
+        golden_acorns, conjured_acorns)
+  };
 
-  embed->title = format_str(SIZEOF_TITLE, "Buffs Shop");
+  APPLY_NUM_STR(buff_cost, GOLDEN_ACORN_BUFF_COST * player->stats.luck_lv);
+  params->fields[1] = (struct discord_embed_field) {
+    .name = u_snprintf(params->field_names[1], sizeof(params->field_names[1]), "Enchanted Acorn Cost"),
+    .value = u_snprintf(params->field_values[1], sizeof(params->field_values[1]), 
+        " "INDENT" **%s** "GOLDEN_ACORNS" Golden Acorns \n"
+        " "INDENT" **%d** "CONJURED_ACORNS" Conjured Acorns",
+        buff_cost, SQUIRREL_BOOST_COST)
+  };
 
-  embed->description = format_str(SIZEOF_DESCRIPTION,
-    ""OFF_ARROW" Buffs are stackable and are only used when applied. \n"
-    ""OFF_ARROW" Active buffs show up with a "QUEST_MARKER" and its duration. \n");
+  int* stat_ptrs[5] = { 
+    &player->buffs.proficiency_acorn, 
+    &player->buffs.luck_acorn, 
+    &player->buffs.strength_acorn, 
+    &player->buffs.endurance_acorn, 
+    &player->buffs.boosted_acorn 
+  };
 
-  embed->fields = calloc(1, sizeof(struct discord_embed_fields));
-  embed->fields->size = POWER_SIZE + BUFFS_SIZE +1;
-  embed->fields->array = calloc(POWER_SIZE + BUFFS_SIZE + 1, sizeof(struct discord_embed_field));
-
-  embed->fields->array[POWER_GENERAL].name = format_str(SIZEOF_TITLE, "Balance");
-  embed->fields->array[POWER_GENERAL].value = format_str(SIZEOF_FIELD_VALUE,
-      " "INDENT" "GOLDEN_ACORNS" Golden Acorns: **%s** \n"
-      " "INDENT" "CONJURED_ACORNS" Conjured Acorns: **%s**",
-      num_str(player.golden_acorns), num_str(player.conjured_acorns) );
-
-  embed->fields->array[POWER_PRICES].name = format_str(SIZEOF_TITLE, "Enchanted Acorn Cost");
-  embed->fields->array[POWER_PRICES].value = format_str(SIZEOF_FIELD_VALUE, 
-      " "INDENT" **%s** "GOLDEN_ACORNS" Golden Acorns", 
-      num_str(GOLDEN_ACORN_BUFF_COST * generate_factor(player.stats.luck_lv, LUCK_VALUE)) );
-
-  embed->fields->array[BOOST_PRICE].name = format_str(SIZEOF_TITLE, "Squirrel Boost Cost");
-  embed->fields->array[BOOST_PRICE].value = format_str(SIZEOF_FIELD_VALUE, 
-      " "INDENT" **%d** "CONJURED_ACORNS" Conjured Acorns", SQUIRREL_BOOST_COST );
-
-  for (int i = POWER_SIZE; i < POWER_SIZE + BUFFS_SIZE; i++)
+  for (int field_idx = 0 +2; field_idx < BUFFS_SIZE +2; field_idx++)
   {
-    int buffs_idx = i - POWER_SIZE;
-  
-    if (*enchanted_acorns[buffs_idx].stat_ptr > 0)
-      embed->fields->array[i].name = format_str(SIZEOF_TITLE,
-          "<:%s:%ld> %s ("QUEST_MARKER" **%s**) \n", 
-          enchanted_acorns[buffs_idx].item.emoji_name, enchanted_acorns[buffs_idx].item.emoji_id, 
-          enchanted_acorns[buffs_idx].item.formal_name, num_str(*enchanted_acorns[buffs_idx].stat_ptr) );
-    else
-      embed->fields->array[i].name = format_str(SIZEOF_TITLE,
-          "<:%s:%ld> %s \n", 
-          enchanted_acorns[buffs_idx].item.emoji_name, enchanted_acorns[buffs_idx].item.emoji_id, 
-          enchanted_acorns[buffs_idx].item.formal_name);
-    
-    embed->fields->array[i].value = format_str(SIZEOF_FIELD_VALUE,
-        " "OFF_ARROW" %s \n", enchanted_acorns[buffs_idx].item.description);
-  }
+    struct sd_file_data e_acorn_data = enchanted_acorns[field_idx -2];
+    APPLY_NUM_STR(buff_count, *stat_ptrs[field_idx -2]);
 
-  if (*boosted_acorn.stat_ptr > 0)
-    embed->fields->array[SQUIRREL_BOOST_INDEX + POWER_SIZE].name = format_str(SIZEOF_TITLE,
-        "<:%s:%ld> %s ("QUEST_MARKER" **%s**) \n", 
-        boosted_acorn.item.emoji_name, boosted_acorn.item.emoji_id, 
-        boosted_acorn.item.formal_name, num_str(*boosted_acorn.stat_ptr) );
-  else
-    embed->fields->array[SQUIRREL_BOOST_INDEX + POWER_SIZE].name = format_str(SIZEOF_TITLE,
-        "<:%s:%ld> %s \n", 
-        boosted_acorn.item.emoji_name, boosted_acorn.item.emoji_id, 
-        boosted_acorn.item.formal_name);
-  
-  embed->fields->array[SQUIRREL_BOOST_INDEX + POWER_SIZE].value = format_str(SIZEOF_FIELD_VALUE,
-      " "OFF_ARROW" %s \n", boosted_acorn.item.description);
-
-  embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
-  embed->footer = calloc(1, sizeof(struct discord_embed_footer));
-
-  if (event->data->custom_id)
-  { // button index is rewards.item_type
-    if (rewards.item_type == ERROR_STATUS)
-    {
-      embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, SQ_CHEM_PATH);
-      embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You need more acorn!");
-      embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_types[TYPE_NO_ACORNS].file_path);
+    if (*stat_ptrs[field_idx -2] > 0)
+      params->fields[field_idx] = (struct discord_embed_field) {
+        .name = u_snprintf(params->field_names[field_idx], sizeof(params->field_names[field_idx]), 
+            "<:%s:%ld> %s ("QUEST_MARKER" **%s**)", 
+            e_acorn_data.emoji_name, e_acorn_data.emoji_id, e_acorn_data.formal_name, buff_count),
+        .value = u_snprintf(params->field_values[field_idx], sizeof(params->field_values[field_idx]), 
+            " "OFF_ARROW" %s", e_acorn_data.description)
+      };
+    else {
+      params->fields[field_idx] = (struct discord_embed_field) {
+        .name = u_snprintf(params->field_names[field_idx], sizeof(params->field_names[field_idx]), 
+            "<:%s:%ld> %s", 
+            e_acorn_data.emoji_name, e_acorn_data.emoji_id, e_acorn_data.formal_name, buff_count),
+        .value = u_snprintf(params->field_values[field_idx], sizeof(params->field_values[field_idx]), 
+            " "OFF_ARROW" %s", e_acorn_data.description)
+      };
     }
-    else if (rewards.item_type == SQUIRREL_BOOST_INDEX)
+  }
+  
+}
+
+void init_buffs_buttons(const struct discord_interaction *event, struct sd_buffs_shop *params, struct sd_player *player)
+{
+  for (int button_idx = 0; button_idx < BUFFS_SIZE; button_idx++)
+  {
+    struct sd_file_data e_acorn_data = enchanted_acorns[button_idx];
+
+    params->emojis[button_idx] = (struct discord_emoji) {
+        .name = u_snprintf(params->emoji_names[button_idx], sizeof(params->emoji_names[button_idx]), 
+                e_acorn_data.emoji_name),
+        .id = e_acorn_data.emoji_id
+    };
+    
+    params->buttons[button_idx] = (struct discord_component) 
+    { 
+      .type = DISCORD_COMPONENT_BUTTON,
+      .emoji = &params->emojis[button_idx],
+      .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), e_acorn_data.formal_name),
+      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d_%ld",
+                    TYPE_E_ACORN, button_idx, event->member->user->id)
+    };
+
+    if (button_idx == BUFF_BOOSTED_ACORN)
     {
-      embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, boosted_acorn.item.file_path);
-      embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You received the %s!", boosted_acorn.item.formal_name);
-      embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, boosted_acorn.item.file_path);
+      if (player->conjured_acorns >= SQUIRREL_BOOST_COST)
+      {
+        params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
+      }
+      else {
+        params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
+        params->buttons[button_idx].disabled = true;
+      }
     }
     else {
-      embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, enchanted_acorns[rewards.item_type].item.file_path);
-      embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You received the %s!", enchanted_acorns[rewards.item_type].item.formal_name);
-      embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, enchanted_acorns[rewards.item_type].item.file_path);
+      if (button_idx == BUFF_STRENGTH_ACORN && player->health >= player->max_health)
+      {
+        params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
+        params->buttons[button_idx].disabled = true;
+      }
+      else if (player->golden_acorns >= GOLDEN_ACORN_BUFF_COST * player->stats.luck_lv)
+      {
+        params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
+      }
+      else {
+        params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
+        params->buttons[button_idx].disabled = true;
+      }
     }
-  }
-  else {
-    embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, SQ_CHEM_PATH);
-    embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "/help | Details on how enchanted acorns work!");
-    embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_types[TYPE_NO_ACORNS].file_path);
   }
 
 }
 
-/* Listens for slash command interactions */
-int buffs_interaction(
-  const struct discord_interaction *event, 
-  struct sd_message *discord_msg) 
+void buffs_command_state(const struct discord_interaction *event, struct sd_buffs_shop *params, struct sd_player *player)
 {
-  player = load_player_struct(event->member->user->id);
+  if (event->data->custom_id) 
+  {
+    int* stat_ptrs[5] = { 
+      &player->buffs.proficiency_acorn, 
+      &player->buffs.luck_acorn, 
+      &player->buffs.strength_acorn, 
+      &player->buffs.endurance_acorn, 
+      &player->buffs.boosted_acorn 
+    };
 
-  //Load Author
-  discord_msg->embed->author = sd_msg_embed_author(
-    format_str(SIZEOF_TITLE, event->member->user->username),
-    format_str(SIZEOF_URL, "https://cdn.discordapp.com/avatars/%lu/%s.png", 
-        event->member->user->id, event->member->user->avatar) );
+    int button_idx = event->data->custom_id[1] -48;
 
-  power_shop(event, discord_msg);
+    // if an enchanted acorn and not enough golden acorn
+    if (button_idx != BUFF_BOOSTED_ACORN && player->golden_acorns < GOLDEN_ACORN_BUFF_COST * player->stats.luck_lv)
+    {
+      u_snprintf(params->footer_text, sizeof(params->footer_text), "You need more golden acorns!");
+      u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, item_types[TYPE_NO_ACORNS].file_path);
+    }
+    // or the boosted acorn and not enough conjured acorn
+    else if (button_idx == BUFF_BOOSTED_ACORN && player->conjured_acorns < SQUIRREL_BOOST_COST)
+    {
+      u_snprintf(params->footer_text, sizeof(params->footer_text), "You need more conjured acorns!");
+      u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, item_types[TYPE_NO_ACORNS].file_path);
+    }
+    // or the strength acorn with full health
+    else if (button_idx == BUFF_STRENGTH_ACORN && player->health >= player->max_health)
+    {
+      u_snprintf(params->footer_text, sizeof(params->footer_text), "Your health is already full!");
+      u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, item_types[TYPE_NO_ACORNS].file_path);
+    }
+    else {
+      for (int buff_idx = 0; buff_idx < BUFFS_SIZE; buff_idx++) 
+      {
+        if (button_idx == buff_idx) // on match
+        {
+          if (button_idx == BUFF_BOOSTED_ACORN) // take conjured acorns if boosted acorn is bought
+            player->conjured_acorns -= SQUIRREL_BOOST_COST;
+          else 
+            player->golden_acorns -= (GOLDEN_ACORN_BUFF_COST * player->stats.luck_lv);
+
+          if (button_idx == BUFF_STRENGTH_ACORN) // exception with strength acorn
+          {
+            int acorn_duration = genrand(15, 5) * player->stats.strength_lv;
+            player->buffs.strength_acorn += acorn_duration;
+            player->health += acorn_duration;
+          }
+          else {
+            (*stat_ptrs[button_idx]) += genrand(15, 5);
+          }
+
+          u_snprintf(params->footer_text, sizeof(params->footer_text), "You received the %s!", enchanted_acorns[button_idx].formal_name);
+          u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, enchanted_acorns[button_idx].file_path);
+          update_player_row(player);
+          break;
+        }
+      }
+    }
+  }
+  else {
+    // reset buff to only show what player bought in that moment
+    player->buffs.strength_acorn = 0;
+    u_snprintf(params->footer_text, sizeof(params->footer_text), "Welcome to the Buffs Shop!");
+    u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, item_types[TYPE_ENCOUNTER].file_path);
+  }
+}
+
+int buffs_interaction(const struct discord_interaction *event)
+{
+  struct sd_player player = { 0 };
+  load_player_struct(&player, event->member->user->id);
+
+  struct sd_buffs_shop params = { 0 };
+
+  buffs_command_state(event, &params, &player);
+
+  init_buffs_buttons(event, &params, &player);
 
   struct discord_component action_rows = {
     .type = DISCORD_COMPONENT_ACTION_ROW,
-    .components = discord_msg->buttons
+    .components = &(struct discord_components) {
+      .array = params.buttons,
+      .size = BUFFS_SIZE
+    }
   };
 
-  struct discord_component boost_row = 
+  init_buffs_fields(&params, &player);
+
+  struct sd_header_params header = { 0 };
+
+  header.embed = (struct discord_embed) 
   {
-    .type = DISCORD_COMPONENT_ACTION_ROW,
+    .color = player.color,
+    .author = &(struct discord_embed_author) {
+      .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
+      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+          "https://cdn.discordapp.com/avatars/%lu/%s.png",
+          event->member->user->id, event->member->user->avatar)
+    },
+    .title = u_snprintf(header.title, sizeof(header.title), "Buffs Shop"),
+    .description = u_snprintf(params.description, sizeof(params.description), 
+        " "OFF_ARROW" Buffs are stackable and are only used when applicable. \n"
+        " "OFF_ARROW" Active buffs show up with a "QUEST_MARKER" and its duration."),
 
-    .components = &(struct discord_components)
-    {
-      .array = &(struct discord_component) 
-      {
-        .type = DISCORD_COMPONENT_BUTTON,
-        .label = boosted_acorn.item.formal_name,
-        .emoji = &(struct discord_emoji) {
-          .name = boosted_acorn.item.emoji_name,
-          .id = boosted_acorn.item.emoji_id
-        },
-        .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c5_%ld", TYPE_E_ACORN, event->member->user->id),
-        .style = (player.conjured_acorns >= 5) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
-        .disabled = (player.conjured_acorns >= 5) ? false : true
-      },
-
-      .size = 1
+    .thumbnail = &(struct discord_embed_thumbnail) {
+      .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH, SQ_CHEM_PATH)
+    },
+    .fields = &(struct discord_embed_fields) {
+      .array = params.fields,
+      .size = BUFFS_SIZE +2
+    },
+    .footer = &(struct discord_embed_footer) {
+      .text = params.footer_text,
+      .icon_url = params.footer_url
     }
   };
 
@@ -234,25 +250,22 @@ int buffs_interaction(
     {
       .embeds = &(struct discord_embeds) 
       {
-        .array = discord_msg->embed,
+        .array = &header.embed,
         .size = 1
       },
       .components = &(struct discord_components) {
-        .array = (struct discord_component[]) {action_rows, boost_row},
-        .size = 2
+        .array = &action_rows,
+        .size = 1
       }
     }
 
   };
 
+  char values[16384];
+  discord_interaction_response_to_json(values, sizeof(values), &interaction);
+  fprintf(stderr, "%s \n", values);
+
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
-
-  discord_embed_cleanup(discord_msg->embed);
-  free(discord_msg->buttons);
-  free(discord_msg);
-
-  update_player_row(player);
-  rewards = (struct sd_rewards) { 0 };
 
   return 0;
 }

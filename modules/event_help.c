@@ -1,103 +1,110 @@
-/*
-
-  This file handles the event help embed.
-
-    - Displays info regarding events
-
-*/
-
-void e_help(const struct discord_interaction *event, struct sd_message *discord_msg) 
+int event_help_interaction(const struct discord_interaction *event)
 {
-  struct discord_embed *embed = discord_msg->embed;
+  struct sd_player player = { 0 };
+  load_player_struct(&player, event->member->user->id);
+
+  struct sd_help_info params = { 0 };
 
   int page_num = (event->data->custom_id) ? (event->data->custom_id[1] -48) +1 : 1;
 
-  embed->title = format_str(SIZEOF_TITLE, "Event Help (%d of %d)", page_num, E_TOPIC_SIZE);
-
-  embed->color = player.color;
-
-  embed->description = format_str(SIZEOF_DESCRIPTION,
-      "Looking for help on how events work? Check out the info below \n"
-      "to see if they answer your questions!");
-
-  struct discord_embed_field *event_help_pages = (struct discord_embed_field[])
+  switch (page_num -1)
   {
-    {
-      .name = format_str(SIZEOF_TITLE, ""ACORNS" Acorn Count Event"),
-      .value = format_str(SIZEOF_FIELD_VALUE,
-          " "OFF_ARROW" This is an ongoing event where players compete based on the amount of acorns they've collected! \n"
-          " "OFF_ARROW" The count is uneffected by your stats and buffs, so be sure to have your luck in your right pocket! \n"
-          " "OFF_ARROW" The count is increased by `/forage` and successful steals! \n")
+    case E_TOPIC_SEASONS:
+      params.field = (struct discord_embed_field) {
+        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+            ""ACORNS" Acorn Count Event"),
+        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+            " "OFF_ARROW" This is an ongoing event where players compete based on "ACORN_COUNT" *acorn count*. \n"
+            " "OFF_ARROW" Acorn count is uneffected by your stats and buffs, so be sure to have your luck in your right pocket! \n"
+            " "OFF_ARROW" You can increase your score by </forage:1089663881959460926>, successful steals, and applying the "PROFICIENCY_ACORN" *proficiency acorn*. \n")
+      };
+      break;
+    case E_TOPIC_ACORN_COUNT:
+      params.field = (struct discord_embed_field) {
+        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+            ""ACORNS" Seasons"),
+        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+            " "OFF_ARROW" Seasons change every week and passively occur. Each season gives a different boost to "ACORNS" *acorns* earnings. \n"
+            " "OFF_ARROW" Seasons include Spring (+**20**%%), Summer (+**10**%%), Fall (+**5**%%), and Winter (No boost). \n"
+            " "OFF_ARROW" Send </season_info:1089664143419768972> to find out when the current season ends! \n")
+      };
+      break;
+    case E_TOPIC_SPRING:
+      params.field = (struct discord_embed_field) {
+        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+            ""ACORNS" Spring Chicken Event (Spring)"),
+        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+            " "OFF_ARROW" Trees everywhere are dropping "GOLDEN_ACORNS" *golden acorns*! \n"
+            " "OFF_ARROW" Lasts throughout the in-game Spring season. \n"
+            " "OFF_ARROW" "GOLDEN_ACORNS" *Golden acorns* have a chance to be included in every </forage:1089663881959460926> instead of just "
+                "from </steal:1089663966520819865> or "LOST_STASH" *lost stashes*! \n")
+      };
+      break;
+    case E_TOPIC_SUMMER:
+      params.field = (struct discord_embed_field) {
+        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+            ""ACORNS" Garden Raid Event (Summer)"),
+        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+            " "OFF_ARROW" Everyone is growing all sorts of useful victuals! *RaId ThEiR gArDeNsSs!* \n"
+            " "OFF_ARROW" Lasts throughout the in-game Summer season. \n"
+            " "OFF_ARROW" Look for all sorts of victuals including "BLUEBERRY_VICTUALS" *blueberries*, "SEED_VICTUALS" *seeds*, and "CHERRY_VICTUALS" *cherries* for bonus rewards! \n"
+            " "OFF_ARROW" Victuals are __NOT__ resources. They are not added to your inventory! What they give appear in parentheses right after.")
+      };
+      break;
+    case E_TOPIC_FALL:
+      params.field = (struct discord_embed_field) {
+        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+            ""ACORNS" Hibernation Event (Fall)"),
+        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+            " "OFF_ARROW" Winter is coming! Take this time to snatch all the "ACORNS" *acorns* you can before hibernation! \n"
+            " "OFF_ARROW" Lasts throughout the in-game Fall season. \n"
+            " "OFF_ARROW" Energy regeneration for all players is halved! \n")
+      };
+      break;
+    case E_TOPIC_WINTER:
+      params.field = (struct discord_embed_field) {
+        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+            ""ACORNS" Bunny's Endeavor (Winter)"),
+        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+            " "OFF_ARROW" Resources are depleting! Bunny is looking for able-bodies who can fetch him "CATNIP" *catnip*. He'll pay handsomely for it too. \n"
+            " "OFF_ARROW" Lasts throughout the in-game Winter season! Check it out with </bunny_endeavor:1089664142203424769>! \n"
+            " "OFF_ARROW" Catnip has a chance to be included in every </forage:1089663881959460926>! \n")
+      };
+      break;
+  }
+
+  init_help_buttons(event, &params, page_num -1, TYPE_EVENT_HELP, E_TOPIC_SIZE -1);
+
+  struct sd_header_params header = { 0 };
+
+  header.embed = (struct discord_embed) 
+  {
+    .color = player.color,
+    .author = &(struct discord_embed_author) {
+      .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
+      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+          "https://cdn.discordapp.com/avatars/%lu/%s.png",
+          event->member->user->id, event->member->user->avatar)
     },
-    {
-      .name = format_str(SIZEOF_TITLE, ""ACORNS" Seasons"),
-      .value = format_str(SIZEOF_FIELD_VALUE,
-          " "OFF_ARROW" Seasons change every week and passively occur. Each season gives a different boost to acorn gains. \n"
-          " "OFF_ARROW" Seasons include Spring (+**20**%%), Summer (+**10**%%), Fall (+**5**%%), and Winter (No boost). \n"
-          " "OFF_ARROW" Send `/season_info` to find out when the current season ends! \n")
+    .title = u_snprintf(header.title, sizeof(header.title), "Event Help (%d of %d)", 
+        page_num, E_TOPIC_SIZE),
+
+    .fields = &(struct discord_embed_fields) {
+      .array = &params.field,
+      .size = 1
     },
-    {
-      .name = format_str(SIZEOF_TITLE, ""ACORNS" Spring Chicken Event (Spring)"),
-      .value = format_str(SIZEOF_FIELD_VALUE,
-          " "OFF_ARROW" Trees everywhere are dropping "GOLDEN_ACORNS" Golden Acorns! \n"
-          " "OFF_ARROW" Lasts throughout the in-game Spring season! \n"
-          " "OFF_ARROW" Golden acorns have a chance to be included in every `/forage` instead of just from `/steal` or lost stashes! \n")
-    },
-    {
-      .name = format_str(SIZEOF_TITLE, ""ACORNS" Garden Raid Event (Summer)"),
-      .value = format_str(SIZEOF_FIELD_VALUE,
-          " "OFF_ARROW" Everyone is growing all sorts of useful victuals! *RaId ThEiR gArDeNsSs!* \n"
-          " "OFF_ARROW" Lasts throughout the in-game Summer season! \n"
-          " "OFF_ARROW" Look for all sorts of victuals including blueberries, seeds, and cherries for bonus rewards! \n"
-          " "OFF_ARROW" These victuals *are not resources*. They are not added to your inventory! What they give is what's in parentheses.")
-    },
-    {
-      .name = format_str(SIZEOF_TITLE, ""ACORNS" Winter Prep Event (Fall)"),
-      .value = format_str(SIZEOF_FIELD_VALUE,
-          " "OFF_ARROW" Winter is coming! Take this time to snatch all the acorns you can before hibernation! \n"
-          " "OFF_ARROW" Lasts throughout the in-game Fall season! \n"
-          " "OFF_ARROW" Energy regeneration for all players is halved! \n")
-    },
-    {
-      .name = format_str(SIZEOF_TITLE, ""ACORNS" Bunny's Endeavor (Winter)"),
-      .value = format_str(SIZEOF_FIELD_VALUE,
-          " "OFF_ARROW" Resources are depleting! Bunny is looking for able-bodies who can fetch him "CATNIP" catnip. He'll pay handsomely for it, too. \n"
-          " "OFF_ARROW" Lasts throughout the in-game Winter season! Check out `/bunny_endeavor`! \n"
-          " "OFF_ARROW" Catnip has a chance to be included in every `/forage`! \n")
+    .footer = &(struct discord_embed_footer) {
+      .text = u_snprintf(params.footer_text, sizeof(params.footer_text), "Happy Foraging!"),
+      .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, items[ITEM_ACORNS].file_path)
     }
   };
 
-  discord_msg->buttons = build_help_buttons(event, page_num -1, TYPE_EVENT_HELP, E_TOPIC_SIZE -1);
-
-  embed->fields = calloc(1, sizeof(struct discord_embed_fields));
-  embed->fields->size = 1;
-  embed->fields->array = calloc(1, sizeof(struct discord_embed_field));
-  embed->fields->array[0] = event_help_pages[page_num -1];
-  
-  embed->footer = calloc(1, sizeof(struct discord_embed_footer));
-  embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "Happy Foraging!");
-  embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, items[ITEM_ACORNS].item.file_path);
-}
-
-
-/* Listens for slash command interactions */
-int event_help_interaction(
-  const struct discord_interaction *event, 
-  struct sd_message *discord_msg) 
-{
-  player = load_player_struct(event->member->user->id);
-
-  //Load Author
-  discord_msg->embed->author = sd_msg_embed_author(
-    format_str(SIZEOF_TITLE, event->member->user->username),
-    format_str(SIZEOF_URL, "https://cdn.discordapp.com/avatars/%lu/%s.png", 
-        event->member->user->id, event->member->user->avatar) );
-
-  e_help(event, discord_msg);
-
   struct discord_component action_rows = {
     .type = DISCORD_COMPONENT_ACTION_ROW,
-    .components = discord_msg->buttons
+    .components = &(struct discord_components) {
+      .array = params.buttons,
+      .size = 4
+    }
   };
 
   struct discord_interaction_response interaction = 
@@ -108,7 +115,7 @@ int event_help_interaction(
     {
       .embeds = &(struct discord_embeds) 
       {
-        .array = discord_msg->embed,
+        .array = &header.embed,
         .size = 1
       },
       .components = &(struct discord_components) {
@@ -119,11 +126,11 @@ int event_help_interaction(
 
   };
 
-  discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+  char values[16384];
+  CCORDcode code = discord_interaction_response_to_json(values, sizeof(values), &interaction);
+  fprintf(stderr, "%s \nCCODE: %d \n", values, code);
 
-  discord_embed_cleanup(discord_msg->embed);
-  free(discord_msg->buttons);
-  free(discord_msg);
+  discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
   return 0;
 }

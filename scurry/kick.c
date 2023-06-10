@@ -7,116 +7,151 @@
   - not their self
   - have scurry not at war
 
+  - A DM is sent to the user who has been kicked with a mention
 */
 
 struct sd_kick_info {
-  struct sd_message *discord_msg;
+  struct sd_player *player;
+  struct sd_scurry *scurry;
+
   unsigned long t_user_id;
-  char* username;
 };
 
-void create_kick_interaction(
-  struct discord *client, 
-  const struct discord_interaction *event, 
-  struct sd_kick_info *kick_info)
+// frees ALL pointers
+void kick_info_cleanup(struct sd_kick_info *params)
 {
-  struct sd_message *discord_msg = kick_info->discord_msg;
-  // kick user by setting id = 0
-  SQL_query(DB_ACTION_UPDATE, "update public.player set scurry_id = 0 where user_id = %ld", kick_info->t_user_id);
+  free(params->player);
+  free(params->scurry);
+  free(params);
+}
 
-  discord_msg->content = format_str(SIZEOF_DESCRIPTION, 
-      "%s, you have been kicked from **%s**!", kick_info->username, scurry.scurry_name);
+// respond to owner's kick request
+void create_kick_interaction(struct discord *client, struct discord_response *resp, const struct discord_user *user)
+{
+  struct sd_kick_info *params = resp->data;
+  const struct discord_interaction *event = resp->keep;
+
+  // kick user by setting id = 0
+  PGresult* kick_scurry_member = (PGresult*) { 0 };
+  kick_scurry_member = SQL_query(kick_scurry_member, 
+      "update public.player set scurry_id = 0, stolen_acorns = 0 where user_id = %ld", 
+      params->t_user_id);
+  PQclear(kick_scurry_member);
+
+  char msg_content[256] = { };
 
   struct discord_interaction_response interaction = 
   {
-    // function will always generate a new message
     .type = DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
 
     .data = &(struct discord_interaction_callback_data) 
     {
-      .content = discord_msg->content,
+      .content = u_snprintf(msg_content, sizeof(msg_content), 
+          "**%s** has been kicked from **%s**!", 
+          user->username, params->scurry->scurry_name),
     }
 
   };
 
+  char values[16384];
+  discord_interaction_response_to_json(values, sizeof(values), &interaction);
+  fprintf(stderr, "%s \n", values);
+
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
-  free(discord_msg);
-  free(kick_info);
+  kick_info_cleanup(params);
 }
 
-void kick_user(struct discord *client, struct discord_response *resp, const struct discord_user *user)
+// send the kick message to the user via DM
+void send_kick_dm(struct discord *client, struct discord_response *resp, const struct discord_channel *channel)
 {
-  struct sd_kick_info *kick_info = resp->data;
+  struct sd_kick_info *params = resp->data;
   const struct discord_interaction *event = resp->keep;
 
-  kick_info->username = format_str(SIZEOF_TITLE, "**%s**", user->username);
+  char msg_content[256] = { };
 
-  create_kick_interaction(client, event, kick_info);
-}
+  // creates message at dm channel
+  discord_create_message(client, channel->id,
+    &(struct discord_create_message)
+    {
+      .content = u_snprintf(msg_content, sizeof(msg_content), "<@%ld>, you have been kicked from **%s**!", 
+          params->t_user_id, params->scurry->scurry_name),
+    }, 
+    NULL);
 
-void kick_member(struct discord *client, struct discord_response *resp, const struct discord_guild_member *member)
-{
-  struct sd_kick_info *kick_info = resp->data;
-  const struct discord_interaction *event = resp->keep;
-
-  kick_info->username = format_str(SIZEOF_TITLE, "<@%ld>", member->user->id);
-
-  create_kick_interaction(client, event, kick_info);
-}
-
-void kick_not_member(struct discord *client, struct discord_response *resp)
-{
-  struct sd_kick_info *kick_info = resp->data;
-  const struct discord_interaction *event = resp->keep;
-
+  // request user data for username
   struct discord_ret_user ret_user = {
-    .done = &kick_user,
-    .data = kick_info,
+    .done = &create_kick_interaction,
+    .fail = &not_user,
+    .data = params,
     .keep = event
   };
 
-  discord_get_user(client, kick_info->t_user_id, &ret_user);
+  discord_get_user(client, params->t_user_id, &ret_user);
 }
 
-/* Called on scurry_invite command */
-int kick_interaction( 
-  const struct discord_interaction *event, 
-  struct sd_message *discord_msg) 
+int kick_interaction(const struct discord_interaction *event)
 {
-  player = load_player_struct(event->member->user->id);
-  scurry = load_scurry_struct(player.scurry_id);
+  struct sd_kick_info *params = calloc(1, sizeof(struct sd_kick_info));
 
-  struct sd_kick_info *kick_info = calloc(1, sizeof(struct sd_kick_info));
+  params->player = calloc(1, sizeof(struct sd_player));
+  load_player_struct(params->player, event->member->user->id);
 
-  kick_info->discord_msg = discord_msg;
-  kick_info->t_user_id = strtobigint(trim_user_id(event->data->options->array[0].value));
+  struct sd_player *player = params->player;
 
-  // check if scurry is at war
-  ERROR_INTERACTION((scurry.war_flag == 1), "You cannot kick a member while at war! Please retreat or finish the war first.");
+  if (event->member->user->id != player->scurry_id)
+  {
+    error_message(event, "You don't have the permission to use this command!");
+    free(params->player);
+    free(params);
+    return ERROR_STATUS;
+  }
 
-  // check if owner
-  ERROR_INTERACTION((event->member->user->id != player.scurry_id), "You don't have the permission to use this command!");
+  params->scurry = calloc(1, sizeof(struct sd_scurry));
+  load_scurry_struct(params->scurry, player->scurry_id);
 
-  //check if target user is trying to kick self
-  ERROR_INTERACTION((kick_info->t_user_id == event->member->user->id), "You can't kick yourself silly!");
+  char user_id_buffer[64] = { };
+  trim_user_id(user_id_buffer, sizeof(user_id_buffer), event->data->options->array[0].value);
+  params->t_user_id = strtobigint(user_id_buffer);
 
-  PGresult* target_user = SQL_query(DB_ACTION_SEARCH, "select * from public.player where user_id = %ld and scurry_id = %ld", 
-      kick_info->t_user_id, event->member->user->id);
+  // if error, specify
+  if (params->scurry->war_flag == 1)
+  {
+    error_message(event, "You cannot kick a member while at war! Please retreat or finish the war first.");
+    kick_info_cleanup(params);
+    return ERROR_STATUS;
+  } 
+  else if (params->t_user_id == event->member->user->id)
+  {
+    error_message(event, "You can't kick yourself, silly!");
+    kick_info_cleanup(params);
+    return ERROR_STATUS;
+  }
 
-  // make sure scurry id matches owner id so you cant kick other scurry's members
-  ERROR_DATABASE_RET((PQntuples(target_user) == 0), "That user isn't a part of your scurry!", target_user);
+  PGresult* target_user = (PGresult*) { 0 };
+  target_user = SQL_query(target_user, "select * from public.player where user_id = %ld and scurry_id = %ld", 
+      params->t_user_id, event->member->user->id);
+
+  if (PQntuples(target_user) == 0)
+  {
+    error_message(event, "That user isn't a part of your scurry!");
+    PQclear(target_user);
+    kick_info_cleanup(params);
+    return ERROR_STATUS;
+  }
 
   PQclear(target_user);
 
-  struct discord_ret_guild_member ret_member = {
-    .done = &kick_member,
-    .fail = &kick_not_member,
-    .data = kick_info,
+  // get owner id for DM channel
+  struct discord_create_dm dm_params = { .recipient_id = params->t_user_id };
+  struct discord_ret_channel dm_ret = { 
+    .done = &send_kick_dm,
+    .data = params,
     .keep = event
   };
 
-  discord_get_guild_member(client, event->guild_id, kick_info->t_user_id, &ret_member);
+  // Return channel context for DM channel id
+  discord_create_dm(client, &dm_params, &dm_ret);
 
   return 0;
 }

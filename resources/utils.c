@@ -1,62 +1,11 @@
-char* format_str(int size, char* format, ...)
-{
-  char* buffer = calloc(size, sizeof(char));
-
-  va_list args;
-
-  va_start(args, format);
-
-  vsnprintf(buffer, size, format, args);
-
-  va_end(args);
-
-  return buffer;
-}
-
-PGresult* SQL_query(enum ACTION_TYPE action, char* format, ...)
-{
-  char* buffer = calloc(SIZEOF_SQL_COMMAND, sizeof(char));
-
-  va_list args;
-
-  va_start(args, format);
-
-  vsnprintf(buffer, SIZEOF_SQL_COMMAND, format, args);
-
-  va_end(args);
-
-  PGresult* query = PQexec(conn, buffer);
-
-  // also make the call to update the backup DB ONLY if it's not a search (so essentially an update)
-  // (this way, we arent searching two matching databases)
-  if (action != DB_ACTION_SEARCH)
-    PQexec(backup_conn, buffer);
-
-  free(buffer);
-
-  return query;
-}
-
-struct discord_embed_author* sd_msg_embed_author(char* name, char* icon_url)
-{
-  struct discord_embed_author *author = calloc(1, sizeof(struct discord_embed_author));
-
-  author->name = calloc(SIZEOF_TITLE, sizeof(char));
-  author->icon_url = calloc(SIZEOF_URL, sizeof(char));
-
-  author->name = name;
-  author->icon_url = icon_url;
-
-  return author;
-}
 
 /* Returns total factor based on stat level and if it's a multiplier or incrementer */
-float generate_factor(int stat_lv, double base_value)
+float generate_factor(int stat_lv, double value_factor)
 {
-  if (base_value == STRENGTH_VALUE)
-    return base_value * (stat_lv -1);
+  if (value_factor == STRENGTH_FACTOR)
+    return value_factor * (stat_lv -1);
   else
-    return (base_value * (stat_lv -1)) + (base_value * (stat_lv/STAT_EVOLUTION)) +1;
+    return (value_factor * (stat_lv -1)) + (value_factor * (stat_lv/STAT_EVOLUTION)) +1;
 }
 
 /* Returns a total price based on stat level, currency unit, and a value multiplier */
@@ -66,291 +15,295 @@ int generate_price(int stat_lv, double value_mult)
   return ((stat_lv +1)/STAT_EVOLUTION * value_mult + value_mult) * stat_lv;
 }
 
-/* Checks for matching ids to make sure the player that sent the embed is the one pressing a button */
-void error_message(const struct discord_interaction *event, char* message) {
-  struct discord_interaction_response error_message = {
-    .type = DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
-
-    .data = &(struct discord_interaction_callback_data) { 
-      .flags = DISCORD_MESSAGE_EPHEMERAL,
-      .content = message
-    }
-  };
-
-  discord_create_interaction_response(client, event->id, event->token, &error_message, NULL);
-}
-
-unsigned long strtobigint(const char* str)
+int energy_status(char* sd_description, size_t description_size, struct sd_player *player, int energy_loss)
 {
-  if (!str)
-    return -1;
-
-  for (size_t i = 0; i < strlen(str); i++)
-    if (str[i] -48 < 0
-      || str[i] -48 > 9)
-      return ERROR_STATUS;
-
-  return strtol(str, NULL, 10);
-}
-
-char* trim_user_id(char* input)
-{
-  char* user_id = calloc(32, sizeof(char));
-
-  char tmp_buffer[32] = {};
-  if (!strstr(input, "<@") && input[strlen(input) -1] != '>')
-    snprintf(tmp_buffer, sizeof(tmp_buffer), "<@%s>", input);
-  else if (!strstr(input, "<@") || input[strlen(input) -1] != '>')
-    return NULL;
-  else 
-    snprintf(tmp_buffer, sizeof(tmp_buffer), "%s", input);
-
-  int user_id_i = 2;
-  while (tmp_buffer[user_id_i] != '>' && tmp_buffer[user_id_i])
+  if (player->squirrel == GRAY_SQUIRREL
+    && rand() % MAX_CHANCE > 60
+    && energy_loss == MAIN_ENERGY_COST) 
   {
-    user_id[user_id_i -2] = tmp_buffer[user_id_i];
-    user_id_i++;
+    u_snprintf(sd_description, description_size, "\n "ENERGY" No energy was lost! \n");
+    return 0;
   }
 
-  return user_id;
+  player->energy -= energy_loss;
+
+  u_snprintf(sd_description, description_size, "\n-**%d** "ENERGY" Energy \n", energy_loss);
+
+  return energy_loss;
 }
 
-char* trim_buffer(char* input, char separator)
+void energy_regen(struct sd_player *player) 
 {
-  char* user_id = calloc(SIZEOF_TITLE, sizeof(char));
-
-  char tmp_buffer[SIZEOF_TITLE] = {};
-  snprintf(tmp_buffer, sizeof(tmp_buffer), input);
-  int tmp_buffer_size = strlen(tmp_buffer);
-
-  int tmp_buffer_idx = 0;
-  while (tmp_buffer[tmp_buffer_idx] != separator)
-    tmp_buffer_idx++;
-  tmp_buffer_idx++;
-
-  int buffer_idx = 0;
-  while (tmp_buffer[tmp_buffer_idx] != separator)
+  if (player->buffs.endurance_acorn > 0)
   {
-    if (tmp_buffer_idx == tmp_buffer_size)
-      break;
-    user_id[buffer_idx++] = tmp_buffer[tmp_buffer_idx++];
+    player->energy += player->buffs.endurance_acorn;
+    player->buffs.endurance_acorn = 0;
   }
-
-  return user_id;
-}
-
-int strtoint(const char* str)
-{
-  int num = 0;
-  size_t max_len = strlen(str);
-
-  size_t is_negative = (str[0] == '-') ? 1 : 0;
-
-  for (size_t str_idx = is_negative; str_idx < max_len; str_idx++)
-  {
-    size_t pos = max_len - str_idx - 1;
-    int base_multiplier = 1;
-    for (size_t x = 0; x < pos; x++)
-      base_multiplier *= 10;
-
-    num += ((str[str_idx] - 48) * base_multiplier);
-  }
-
-  if (is_negative)
-    num *= -1;
-
-  return num;
-}
-
-char* num_str(long long num) 
-{
-  char tmp_buffer[32];
-  snprintf(tmp_buffer, sizeof(tmp_buffer), "%lld", num);
-
-  char* buffer = calloc(32, sizeof(char));
-
-  // if num is less than 1000, return number
-  if (strlen(tmp_buffer) < 4) {
-    snprintf(buffer, 32, "%s", tmp_buffer);
-    return buffer;
-  }
-  //define number offset by remainder of 3
-  size_t first_set_n = (strlen(tmp_buffer) % 3 == 0) ? 3 : strlen(tmp_buffer) % 3;
-
-  size_t buffer_offset = strlen(buffer);
-
-  //apply offset and add comma
-  for (size_t tmp_offset = 0; tmp_offset < first_set_n; tmp_offset++)
-    buffer[buffer_offset++] = tmp_buffer[tmp_offset];
-  buffer[buffer_offset++] = ',';
-
-  //while there are still characters, add 3 numbers and a comma
-  for (size_t tmp_offset = 0; tmp_offset < strlen(tmp_buffer) -first_set_n; tmp_offset++) {
-    buffer[buffer_offset++] = tmp_buffer[tmp_offset + first_set_n];
-
-    //do not apply comma if at end of string
-    if (((tmp_offset +1) % 3 == 0) && (tmp_offset + first_set_n != strlen(tmp_buffer) -1))
-      buffer[buffer_offset++] = ',';
-  }
-
-  return buffer;
-}
-
-char* lowercase(const char* str)
-{
-  char* buffer = calloc(strlen(str) +1, sizeof(char));
-
-  for (size_t i = 0; i < strlen(str); i++)
-    buffer[i] = (str[i] < 91 && str[i] > 64) ? str[i] + 32 : str[i];
-
-  return buffer;
-}
-
-void energy_status(struct sd_message *discord_msg, int energy_loss)
-{
-  struct discord_embed *embed = discord_msg->embed;
-  int final_energy_loss = energy_loss;
-  
-  if (final_energy_loss == MAIN_ENERGY_COST
-    && player.squirrel == GRAY_SQUIRREL)
-  {
-    int energy_loss_chance = (player.buffs.boosted > 0) ? 35 : 70;
-    
-    if ((rand() % MAX_CHANCE) > energy_loss_chance)
-    {
-      // only reduce on condition that the boost is used
-      if (player.buffs.boosted > 0) player.buffs.boosted--;
-      ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION, "\n"ENERGY" No energy was lost! \n");
-      return;
-      }
-  }
-
-  player.energy -= final_energy_loss;
-
-  embed->footer = calloc(1, sizeof(struct discord_embed_footer));
-  embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You have %d energy left!", player.energy),
-  embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, items[ITEM_ENERGY].item.file_path);
-  
-  ADD_TO_BUFFER(embed->description, SIZEOF_DESCRIPTION,
-      "\n-**%d** "ENERGY" Energy \n", final_energy_loss);
-}
-
-struct tm* get_UTC()
-{
-  time_t rawtime;
-  struct tm *info;
-  time(&rawtime);
-  info = gmtime(&rawtime);
-
-  return info;
-}
-
-void energy_regen() 
-{
-  if (player.buffs.endurance_acorn > 0)
-  {
-    player.energy += player.buffs.endurance_acorn;
-    player.buffs.endurance_acorn = 0;
-  }
-  if (player.buffs.strength_acorn > 0)
-    player.buffs.strength_acorn = 0;
+  if (player->buffs.strength_acorn > 0)
+    player->buffs.strength_acorn = 0;
 
   struct tm *info = get_UTC();
 
   int energy_cd = (info->tm_mday > 14 && info->tm_mday < 21) ? 90 : 180;
 
-  int add_energy = (player.energy < MAX_ENERGY) ? (time(NULL) - player.main_cd)/ energy_cd : 0;
+  int add_energy = (player->energy < MAX_ENERGY) ? (time(NULL) - player->main_cd)/ energy_cd : 0;
 
-  if (player.energy + add_energy > MAX_ENERGY)
-    player.energy += (player.energy > MAX_ENERGY) ? 0 : add_energy - (add_energy - (MAX_ENERGY - player.energy));
+  if (player->energy + add_energy > MAX_ENERGY)
+    player->energy += (player->energy > MAX_ENERGY) ? 0 : add_energy - (add_energy - (MAX_ENERGY - player->energy));
   else
-    player.energy += add_energy;
+    player->energy += add_energy;
 
   // wont disturb cooldown when info embed is sent
-  player.main_cd = time(NULL) - ((time(NULL) - player.main_cd) % energy_cd);
+  player->main_cd = time(NULL) - ((time(NULL) - player->main_cd) % energy_cd);
 }
 
-void not_user(struct discord *client, struct discord_response *resp)
+int factor_season(struct sd_player *player, struct sd_rewards *rewards)
 {
-  (void)client;
-  const struct discord_interaction *event = resp->keep;
+  struct tm *info = get_UTC();
 
-  error_message(event, "This is not a valid user!");
+  if (info->tm_mday < 7) 
+  {
+    if (rand() % MAX_CHANCE > 80)
+    {
+      rewards->seasoned_golden_acorns = (rewards->item_type < TYPE_ACORN_MOUTHFUL) ? genrand(10, 5)
+          : (rewards->item_type < TYPE_LOST_STASH) ? genrand(15, 10) : genrand(25, 10);
+
+      rewards->seasoned_golden_acorns *= generate_factor(player->stats.luck_lv, LUCK_FACTOR);
+      
+      player->golden_acorns += rewards->seasoned_golden_acorns;
+    }
+    return SPRING_MULT;
+  }
+  else if (info->tm_mday < 14) 
+  {
+    if (rand() % MAX_CHANCE > 80)
+    {
+      // resource overflow is acceptable in this case since the chance is so low
+      int victuals_chance = rand() % MAX_CHANCE;
+
+      if (victuals_chance < BLUEBERRY_CHANCE) 
+      {
+        rewards->victual_amt = (rewards->item_type < TYPE_ACORN_MOUTHFUL) ? genrand(75, 25)
+            : (rewards->item_type < TYPE_LOST_STASH) ? genrand(125, 25) : genrand(150, 50);
+        
+        rewards->victual_type = VICTUALS_BLUEBERRY;
+        rewards->ref_resource = ITEM_ACORN_COUNT;
+        player->acorn_count += rewards->victual_amt;
+      }
+      else if (victuals_chance < CHERRY_CHANCE) 
+      {
+        rewards->victual_amt = genrand(BASE_HEALTH_REGEN, BASE_HEALTH_REGEN) * player->stats.strength_lv;
+        rewards->victual_type = VICTUALS_CHERRY;
+        rewards->ref_resource = ITEM_HEALTH;
+        player->health += rewards->victual_amt;
+      }
+      else {
+        rewards->victual_amt = (rewards->item_type < TYPE_ACORN_MOUTHFUL) ? genrand(10, 5)
+            : (rewards->item_type < TYPE_LOST_STASH) ? genrand(15, 10) : genrand(25, 10);
+        rewards->victual_type = VICTUALS_SEED;
+        rewards->ref_resource = ITEM_ENERGY;
+        player->energy += rewards->victual_amt;
+      }
+    }
+    return SUMMER_MULT;
+  }
+  else if (info->tm_mday < 21)
+    return FALL_MULT;
+
+  if (rand() % MAX_CHANCE > 80)
+  {
+    rewards->catnip = (rewards->item_type < TYPE_ACORN_MOUTHFUL) ? genrand(10, 5)
+        : (rewards->item_type < TYPE_LOST_STASH) ? genrand(15, 10) : genrand(25, 10);
+
+    player->catnip += rewards->catnip;
+  }
+  return WINTER_MULT;
 }
 
-struct discord_components* build_help_buttons(const struct discord_interaction *event, int page_idx, char help_type, int last_topic)
+// retain priority order
+void print_rewards(char* sd_description, size_t description_size, struct sd_player *player, struct sd_rewards *rewards, struct sd_buff_status *buff_status)
 {
-  struct discord_components* buttons = calloc(1, sizeof(struct discord_components));
-  buttons->size = 4;
-  buttons->array = calloc(buttons->size, sizeof(struct discord_component));
+  // ACORNS
+  APPLY_NUM_STR(acorns, rewards->acorns);
+  APPLY_NUM_STR(acorn_count, rewards->acorn_count);
+  u_snprintf(sd_description, description_size, "\n+**%s** "ACORNS" Acorns (+**%s** "ACORN_COUNT" Acorn Count) \n%s", 
+      acorns, acorn_count, (buff_status->proficiency_acorn) ? "-**1** "PROFICIENCY_ACORN" Acorn of Proficiency \n" : " " );
 
-  buttons->array[0] = (struct discord_component) {
+  // GOLDEN ACORNS
+  if (rewards->golden_acorns) 
+  {
+    APPLY_NUM_STR(reward, rewards->golden_acorns);
+
+    u_snprintf(sd_description, description_size, "\n+**%s** "GOLDEN_ACORNS" Golden Acorns \n%s", 
+        reward, (buff_status->luck_acorn) ? "-**1** "LUCK_ACORN" Acorn of Luck \n" : " " );
+  }
+
+  // EVENT REWARDS (only one can occur)
+  if (rewards->catnip)
+  {
+    u_snprintf(sd_description, description_size, "\n+**%d** "CATNIP" Catnip \n", rewards->catnip);
+  }
+  else if (rewards->victual_amt)
+  {
+    struct sd_file_data victual_data = victuals[rewards->victual_type];
+    struct sd_file_data item_ref = items[rewards->ref_resource];
+    
+    APPLY_NUM_STR(victuals_amt, rewards->victual_amt);
+    u_snprintf(sd_description, description_size, "\n+**%s** <:%s:%ld> %s (+**%s** <:%s:%ld> %s) \n",
+        victuals_amt, victual_data.emoji_name, victual_data.emoji_id, victual_data.formal_name,
+        victuals_amt, item_ref.emoji_name, item_ref.emoji_id, item_ref.formal_name);
+  }
+  else if (rewards->seasoned_golden_acorns)
+  {
+    u_snprintf(sd_description, description_size, "\n+**%d** "LUCK_ICON" Seasonal Golden Acorns \n", rewards->seasoned_golden_acorns);
+  }
+
+  // conjured acorns OR war acorns can be true
+  if (rewards->conjured_acorns)
+    u_snprintf(sd_description, description_size, "\n+**%d** "CONJURED_ACORNS" Conjured Acorns \n", rewards->conjured_acorns);
+  // if there's war acorns, there's courage
+  else if (rewards->stolen_acorns)
+  {
+    APPLY_NUM_STR(stolen_acorns, rewards->stolen_acorns);
+    u_snprintf(sd_description, description_size, "\n+**%s** "WAR_ACORNS" Stolen Acorns! \n", stolen_acorns);
+  }
+  else if (rewards->war_acorns)
+    u_snprintf(sd_description, description_size, "\n+**%d** "WAR_ACORNS" War Acorns \n", rewards->war_acorns);
+
+  // acorn count is updated before biome_num and can be used to predict when the biome will change at this stage
+  if (player->acorn_count/BIOME_INTERVAL > player->biome_num)
+  {
+    struct sd_file_data next_biome_data = biomes[(player->biome_num +1) % BIOME_SIZE].biome_icon;
+    u_snprintf(sd_description, description_size, "\n "QUEST_MARKER" You have reached <:%s:%ld> **%s**!\n",
+        next_biome_data.emoji_name, next_biome_data.emoji_id, next_biome_data.formal_name);
+  }
+}
+
+// base rewards includes acorns and golden acorns (if any)
+void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, struct sd_buff_status *buff_status)
+{
+  rewards->acorns += (BIOME_ACORN_INC * player->biome_num);
+
+  if (player->vengeance_flag)
+    rewards->acorns *= 2;
+
+  // apply proficiency acorn before setting acorn count!
+  if (player->buffs.proficiency_acorn) {
+    player->buffs.proficiency_acorn--;
+    rewards->acorns *= 2;
+    buff_status->proficiency_acorn = true;
+  }
+
+  rewards->acorn_count = rewards->acorns;
+  player->acorn_count += rewards->acorn_count;
+
+  // stat is not included in acorn count
+  rewards->acorns *= generate_factor(player->stats.proficiency_lv, PROFICIENCY_FACTOR);
+
+  // season bonus always applies to acorns -- golden acorns are handled separately
+  // season bonuses must always be displayed last on rewards
+  if (rewards->item_type != TYPE_NO_ACORNS
+    && rewards->item_type != TYPE_HEALTH_LOSS)
+  {
+    int season_factor = factor_season(player, rewards);
+    rewards->acorns *= season_factor;
+  }
+
+  player->acorns += rewards->acorns;
+
+  // GOLDEN ACORNS
+  if (rewards->golden_acorns) {
+    rewards->golden_acorns += (BIOME_GOLDEN_ACORN_INC * player->biome_num);
+  
+    if (player->vengeance_flag)
+      rewards->golden_acorns *= 2;
+
+    rewards->golden_acorns *= generate_factor(player->stats.luck_lv, LUCK_FACTOR);
+
+    if (player->buffs.luck_acorn > 0) {
+      player->buffs.luck_acorn--;
+      rewards->golden_acorns *= 2;
+      buff_status->luck_acorn = true;
+    }
+
+    player->golden_acorns += rewards->golden_acorns;
+  }
+
+}
+
+int get_season_event(const struct discord_interaction *event)
+{
+  struct tm *info = get_UTC();
+
+  char* months[12] = {"Jan", "Feb", "Mar", "April", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
+  char* seasons[4] = {"Spring (Spring Chicken Live!)", "Summer (Garden Raid Season!)", "Fall (Winter Prep Live!)", "Winter (Bunny's Endeavor Live!)"};
+
+  char event_season[128] = { };
+
+  char* season = seasons[(info->tm_mday/7 < 4) ? info->tm_mday/7 : 3];
+  char* month = months[(info->tm_mday < 21) ? info->tm_mon : (info->tm_mon +1 == 12) ? 0 : info->tm_mon +1];
+  int end_day = (info->tm_mday < 7) ? 7 : (info->tm_mday < 14) ? 14 : (info->tm_mday < 21) ? 21 : 1;
+
+  // end_day can only be 1, otherwise it's greater than 3
+  char* suffix = (end_day == 1) ? "st" : "th";
+
+  u_snprintf(event_season, sizeof(event_season), "Current Season: **%s** (Ends on %s **%d%s**)", 
+      season, month, end_day, suffix);
+
+  discord_create_interaction_response(client, event->id, event->token, 
+  &(struct discord_interaction_response)
+  {
+    .type = DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
+
+    .data = &(struct discord_interaction_callback_data) { 
+      .flags = DISCORD_MESSAGE_EPHEMERAL,
+      .content = event_season
+    }
+  },
+  NULL);
+
+  return 0;
+}
+
+void init_help_buttons(const struct discord_interaction *event, struct sd_help_info *params, int page_idx, char help_type, int last_topic)
+{
+  params->buttons[0] = (struct discord_component) {
     .type = DISCORD_COMPONENT_BUTTON,
     .label = "⏮️",
-    .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c0a_%ld", help_type, event->member->user->id),
+    .custom_id = u_snprintf(params->custom_ids[0], sizeof(params->custom_ids[0]), 
+        "%c0a_%ld", help_type, event->member->user->id),
     .style = (page_idx > 0) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
     .disabled = (page_idx == 0) ? true : false
   };
 
-  buttons->array[1] = (struct discord_component) {
+  params->buttons[1] = (struct discord_component) {
     .type = DISCORD_COMPONENT_BUTTON,
     .label = "⏪",
-    .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%db_%ld", help_type, (page_idx > 0) ? page_idx -1 : 0, event->member->user->id),
+    .custom_id = u_snprintf(params->custom_ids[1], sizeof(params->custom_ids[1]), 
+        "%c%db_%ld", help_type, (page_idx > 0) ? page_idx -1 : 0, event->member->user->id),
     .style = (page_idx > 0) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
     .disabled = (page_idx == 0) ? true : false
   };
 
-  buttons->array[2] = (struct discord_component) {
+  params->buttons[2] = (struct discord_component) {
     .type = DISCORD_COMPONENT_BUTTON,
     .label = "⏩",
-    .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%dc_%ld", help_type, (page_idx < last_topic) ? page_idx +1 : last_topic, event->member->user->id),
+    .custom_id = u_snprintf(params->custom_ids[2], sizeof(params->custom_ids[2]), 
+        "%c%dc_%ld", help_type, (page_idx < last_topic) ? page_idx +1 : last_topic, event->member->user->id),
     .style = (page_idx < last_topic) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
     .disabled = (page_idx == last_topic) ? true : false
   };
 
-  buttons->array[3] = (struct discord_component) {
+  params->buttons[3] = (struct discord_component) {
     .type = DISCORD_COMPONENT_BUTTON,
     .label = "⏭️",
-    .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%dd_%ld", help_type, last_topic, event->member->user->id),
+    .custom_id = u_snprintf(params->custom_ids[3], sizeof(params->custom_ids[3]),
+        "%c%dd_%ld", help_type, last_topic, event->member->user->id),
     .style = (page_idx < last_topic) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
     .disabled = (page_idx == last_topic) ? true : false
   };
-
-  return buttons;
 }
-
-// For member listing embeds where multiple requests are needed
-void complete_interaction(
-  struct discord *client,
-  const struct discord_interaction *event,
-  struct sd_message *discord_msg)
-{
-  struct discord_embed *embed = discord_msg->embed;
-
-  struct discord_component action_rows = {
-    .type = DISCORD_COMPONENT_ACTION_ROW,
-    .components = discord_msg->buttons
-  };
-
-  discord_edit_original_interaction_response(client, APPLICATION_ID, event->token, 
-    &(struct discord_edit_original_interaction_response)
-    {
-      .embeds = &(struct discord_embeds) 
-      {
-        .array = embed,
-        .size = 1
-      },
-      .components = &(struct discord_components) {
-        .array = &action_rows,
-        .size = 1
-      }
-    }, 
-    NULL);
-}
-
-/*
-  The following functions are only utilized in the support server!
-*/
 
 // mechanic for reaction verification
 void verify(struct discord *client, const struct discord_message_reaction_add *event)
@@ -363,7 +316,7 @@ void verify(struct discord *client, const struct discord_message_reaction_add *e
       event->emoji->id, event->emoji->name, NULL);
 
   // only assign member role if they reacted with the acorn
-  if (event->emoji->id != items[ITEM_ACORNS].item.emoji_id)
+  if (event->emoji->id != items[ITEM_ACORNS].emoji_id)
     return;
 
   discord_add_guild_member_role(client, GUILD_ID, event->member->user->id, MEMBER_ROLE_ID, 
@@ -371,47 +324,54 @@ void verify(struct discord *client, const struct discord_message_reaction_add *e
   NULL);
 }
 
-void welcome_embed(struct discord *client, const struct discord_guild_member *event)
+// welcome embed when a user joins the support server
+void welcome_embed(struct discord *client, const struct discord_guild_member *member)
 {
-  if (event->guild_id != GUILD_ID) return;
+  if (member->guild_id != GUILD_ID) return;
 
-  struct discord_embed *embed = calloc(1, sizeof(struct discord_embed));
+  struct sd_header_params header = { 0 };
 
-  //Load Author
-  embed->author = sd_msg_embed_author(
-      format_str(SIZEOF_TITLE, event->user->username),
-      format_str(SIZEOF_URL, "https://cdn.discordapp.com/avatars/%lu/%s.png", 
-          event->user->id, event->user->avatar) );
+  struct sd_welcome_info params = { 0 };
 
-  // color must be flat since this is a module
-  embed->color = (int)strtol("00eeff", NULL, 16);
+  char embed_description[512] = { };
 
-  embed->title = format_str(SIZEOF_TITLE, "Welcome to Squirrel Dash!");
+  header.embed = (struct discord_embed)
+  {
+    .color = (int)strtol("00eeff", NULL, 16),
+    .author = &(struct discord_embed_author) {
+      .name = u_snprintf(header.username, sizeof(header.username), member->user->username),
+      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+          "https://cdn.discordapp.com/avatars/%lu/%s.png",
+          member->user->id, member->user->avatar)
+    },
+    .title = u_snprintf(header.title, sizeof(header.title), "Welcome to Squirrel Dash!"),
+    .thumbnail = &(struct discord_embed_thumbnail) {
+      .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
+          squirrels[GRAY_SQUIRREL].squirrel.file_path)
+    },
+    .description = u_snprintf(embed_description, sizeof(embed_description),
+        " "OFF_ARROW" Read the <#1046640388456321126> to <#1046813534790635550>! \n"
+        " "OFF_ARROW" Begin your adventure in <#1046635264883294259>! \n"
+        " "OFF_ARROW" Chat with fellow squirrel advocators in <#1046628380222685255> \n"
+        " "OFF_ARROW" Looking for extra help? Ask away in <#1047233819201261748>!"),
+    .image = &(struct discord_embed_image) {
+      .url = u_snprintf(params.image_url, sizeof(params.image_url), GIT_PATH, WELCOME_MSG_PATH)
+    },
+    .footer = &(struct discord_embed_footer) {
+        .text = u_snprintf(params.footer_text, sizeof(params.footer_text), "Happy Foraging!"),
+        .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, items[ITEM_ACORNS].file_path)
+      }
+  };
 
-  embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
-  embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, squirrels[GRAY_SQUIRREL].squirrel.file_path);
-
-  embed->description = format_str(SIZEOF_DESCRIPTION,
-      " "OFF_ARROW" Read the <#1046640388456321126> to <#1046813534790635550>! \n"
-      " "OFF_ARROW" Begin your adventure in <#1046635264883294259>! \n"
-      " "OFF_ARROW" Chat with fellow squirrel advocators in <#1046628380222685255> \n"
-      " "OFF_ARROW" Looking for extra help? Ask away in <#1047233819201261748>!");
-
-  embed->image = calloc(1, sizeof(struct discord_embed_image));
-  embed->image->url = format_str(SIZEOF_URL, GIT_PATH, WELCOME_MSG_PATH);
-
-  embed->footer = calloc(1, sizeof(struct discord_embed_footer));
-  embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "Happy Foraging!");
-  embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, items[ITEM_ACORNS].item.file_path);
+  char msg_content[256] = { };
 
   struct discord_create_message intro_message = (struct discord_create_message) {
-    .content = format_str(SIZEOF_DESCRIPTION, "*<@%ld> is looking for acorns...*", event->user->id),
+    .content = u_snprintf(msg_content, sizeof(msg_content), " "ACORNS" *<@%ld> is looking for acorns...* "ACORNS" ", member->user->id),
     .embeds = &(struct discord_embeds) {
-      .array = embed,
+      .array = &header.embed,
       .size = 1
     }
   };
 
   discord_create_message(client, WELCOME_CHANNEL_ID, &intro_message, NULL);
-  free(embed);
 }

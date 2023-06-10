@@ -4,13 +4,14 @@ struct sd_command
   char command_id; // custom id prefix (if one exists)
   char* error_msg;
 
-  int (*func_cb)(const struct discord_interaction *event, struct sd_message *discord_msg);
+  int (*func_cb)(const struct discord_interaction *event);
 };
 
 enum CMD_TYPE
 {
   CMD_PLAYER_HELP,
   CMD_BIOME_STORY,
+  CMD_INIT_FORAGE,
   CMD_MAIN_FORAGE,
   CMD_ENCOUNTER_FORAGE,
   CMD_UPGRADE,
@@ -19,6 +20,7 @@ enum CMD_TYPE
   CMD_COLOR,
   CMD_STEAL,
   CMD_SQUIRREL,
+  CMD_VENGEANCE_MODE,
 
   CMD_EVENT_HELP,
   CMD_SEASON_INFO,
@@ -29,12 +31,11 @@ enum CMD_TYPE
   CMD_SCURRY_HELP,
   CMD_SCURRY_INFO,
   CMD_SCURRY_INVITE,
+  CMD_SCURRY_INVITE_RESP,
   CMD_SCURRY_KICK,
   CMD_SCURRY_LEAVE,
   CMD_SCURRY_CREATE,
 
-  CMD_RULES,
-  CMD_VERIFY,
   CMD_SIZE
 };
 
@@ -56,26 +57,33 @@ struct sd_command *cmds = (struct sd_command[])
 
     .func_cb = &biome_story_interaction
   },
+  { // CMD_INIT_FORAGE -- in case "forage again" is pressed
+    .name = "forage",
+    .command_id = TYPE_FORAGE_INIT,
+    .error_msg = "This is someone else's adventure! Please send `/forage` to start your own adventure!",
+
+    .func_cb = &init_forage_interaction
+  },
   { // CMD_MAIN_FORAGE
-    .name = "forage", // can be skipped when comparing names
-    .command_id = TYPE_ENCOUNTER_MSG,
+    .name = "forage",
+    .command_id = TYPE_FORAGE_RESP,
     .error_msg = "This is someone else's adventure! Please send `/forage` to start your own adventure!",
 
     .func_cb = &forage_interaction
   },
   { // CMD_ENCOUNTER_FORAGE
     .name = "forage",
-    .command_id = TYPE_MAIN_MSG,
+    .command_id = TYPE_ENCOUNTER_RESP,
     .error_msg = "This is someone else's adventure! Please send `/forage` to start your own adventure!",
 
-    .func_cb = &forage_interaction
+    .func_cb = &encounter_interaction
   },
   { // CMD_UPGRADE
     .name = "upgrade",
     .command_id = TYPE_UPGRADE,
     .error_msg = "You cannot upgrade your stats with this embed! Please send `/upgrade` to access upgrades.",
 
-    .func_cb = &store_interaction
+    .func_cb = &init_upgrade_shop
   },
   { // CMD_BUFFS
     .name = "buffs",
@@ -86,6 +94,9 @@ struct sd_command *cmds = (struct sd_command[])
   },
   { // CMD_INFO
     .name = "info",
+    .command_id = TYPE_VENGEANCE_MODE,
+    .error_msg = "You cannot enable/disable Vengeance mode with this button! Please send `/info` to enable/disable.",
+    
     .func_cb = &info_interaction
   },
   { // CMD_COLOR
@@ -96,22 +107,24 @@ struct sd_command *cmds = (struct sd_command[])
     .name = "steal",
     .func_cb = &steal_interaction
   },
-  {
+  { // CMD_SQUIRREL
     .name = "squirrels",
     .command_id = TYPE_SQUIRREL,
     .error_msg = "You cannot swap squirrels with this embed! Please send `/squirrels` to change your current squirrel.",
 
     .func_cb = &squirrels_interaction
   },
-
+  { // CMD_VENGEANCE_MODE
+    .name = "vengeance_mode",
+    .func_cb = &vengeance_interaction
+  },
   { // CMD_LEADERBOARD
     .name = "leaderboard",
     .command_id = TYPE_LEADERBOARD,
     .error_msg = "This leaderboard belongs to someone else! Please send `/leaderboard` to interact.",
 
-    .func_cb = &get_leaderboard
+    .func_cb = &fetch_leaderboard
   },
-
   // EVENT COMMANDS
   { // CMD_EVENT_HELP
     .name = "event_help",
@@ -131,7 +144,6 @@ struct sd_command *cmds = (struct sd_command[])
 
     .func_cb = &bunny_interaction
   },
-
   // SCURRY COMMANDS
   { // CMD_SCURRY_HELP
     .name = "scurry_help",
@@ -143,16 +155,20 @@ struct sd_command *cmds = (struct sd_command[])
   { // CMD_SCURRY_INFO
     .name = "scurry_info",
     .command_id = TYPE_SCURRY_INFO,
-    .error_msg = "You are not part of this guild! Please send `/scurry_info` to check this scurry out.",
+    .error_msg = "You either do not have permission to press this button or this embed belongs to someone else!",
 
     .func_cb = &s_info_interaction
   },
   { // CMD_SCURRY_INVITE
     .name = "scurry_invite",
+    .func_cb = &init_invite_interaction,
+  },
+  { // CMD_SCURRY_INVITE_RESP
+    .name = "scurry_invite",
     .func_cb = &invite_interaction,
     // no match is needed since this is done through DM with the bot
 
-    .command_id = TYPE_INVITE,
+    .command_id = TYPE_INVITE
   },
   { // CMD_SCURRY_KICK
     .name = "scurry_kick",
@@ -165,38 +181,8 @@ struct sd_command *cmds = (struct sd_command[])
   { // CMD_SCURRY_CREATE
     .name = "scurry_create",
     .func_cb = &create_interaction
-  },
-
-  // UTIL COMMANDS...
-  { // CMD_RULES
-    .name = "rules",
-    .func_cb = &rules_interaction
-  },
-  { // CMD_VERIFY
-    .name = "verify",
-    .func_cb = &create_verify_interaction
   }
 };
-
-void create_util_commands(struct discord *client)
-{
-  struct discord_create_guild_application_command commands[] =
-  {
-    { // rules
-      .name = "rules",
-      .description = "Load the rules embed",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
-    },
-    { // verify
-      .name = "verify",
-      .description = "Load the verify embed",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
-    }
-  };
-
-  for (int i = 0; i < (int)(sizeof(commands)/sizeof(*commands)); i++)
-    discord_create_guild_application_command(client, APPLICATION_ID, GUILD_ID, &commands[i], NULL);
-}
 
 void create_commands(struct discord *client, const struct discord_ready *event)
 {
@@ -244,9 +230,7 @@ void create_commands(struct discord *client, const struct discord_ready *event)
     },
     { // color
       .name = "color",
-      .description = format_str(SIZEOF_DESCRIPTION, 
-          "Change the color of your embed tab for %s acorns.", 
-          num_str(COLOR_COST)),
+      .description = "Change the color of your embed tab.",
       .type = DISCORD_APPLICATION_CHAT_INPUT,
       
       .options = &(struct discord_application_command_options)
@@ -265,15 +249,17 @@ void create_commands(struct discord *client, const struct discord_ready *event)
     },
     { // steal
       .name = "steal",
-      .description = format_str(SIZEOF_DESCRIPTION, 
-          "Steal someone's acorns. (Costs %s energy)", 
-          num_str(STEAL_ENERGY_COST)),
+      .description = "Steal someone's acorns. (Costs 20 energy)",
       .type = DISCORD_APPLICATION_CHAT_INPUT
     },
     { // squirrels
       .name = "squirrels",
-      .description = format_str(SIZEOF_DESCRIPTION,
-          "Swap to a different squirrel!"),
+      .description = "Swap to a different squirrel!",
+      .type = DISCORD_APPLICATION_CHAT_INPUT
+    },
+    { // vengeance_mode
+      .name = "vengeance_mode",
+      .description = "Enable or disable Vengeance Mode!",
       .type = DISCORD_APPLICATION_CHAT_INPUT
     },
 
@@ -375,9 +361,7 @@ void create_commands(struct discord *client, const struct discord_ready *event)
 
     { // scurry_create
       .name = "scurry_create",
-      .description = format_str(SIZEOF_DESCRIPTION, 
-          "Create a scurry for %s acorns.", 
-          num_str(SCURRY_CREATION_COST) ),
+      .description = "Create a scurry for 50,000 acorns.",
 
       .type = DISCORD_APPLICATION_CHAT_INPUT,
       .options = &(struct discord_application_command_options)
@@ -410,9 +394,4 @@ void create_commands(struct discord *client, const struct discord_ready *event)
 
   for (int i = 0; i < (int)(sizeof(commands)/sizeof(*commands)); i++)
     discord_create_global_application_command(client, APPLICATION_ID, &commands[i], NULL);
-
-  // depending on version, application id can vary!
-  // only constant for the duration of the program
-  if (APPLICATION_ID == 1048439491607674930)
-    create_util_commands(client);
 }

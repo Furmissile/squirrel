@@ -1,74 +1,75 @@
 /* Checks user input for hex value accuracy */
-char* is_color(const struct discord_interaction *event, char* input)
+int is_color(char* input, struct sd_player *player)
 {
   if (strlen(input) != 6) {
-    return NULL;
+    return ERROR_STATUS;
   } 
   else {
-  for (int i = 0; i < 6; i++)
-    switch (input[i])
-    {
-      case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': case '0':
-      case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-        continue;
-      default:
-        error_message(event, "Invalid input. Please try again!");
-        return NULL;
-    }
+    for (int i = 0; i < 6; i++)
+      switch (input[i])
+      {
+        case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': case '0':
+        case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+          continue;
+        default:
+          return ERROR_STATUS;
+      }
   }
 
-  player.color = (int)strtol(input, NULL, 16);
-  player.acorns -= COLOR_COST;
+  player->color = (int)strtol(input, NULL, 16);
 
-  return input;
+  return 0;
 }
 
 /* Listens for slash command interactions */
-int color_interaction(
-  const struct discord_interaction *event, 
-  struct sd_message *discord_msg) 
+int color_interaction(const struct discord_interaction *event) 
 {
-  player = load_player_struct(event->member->user->id);
+  struct sd_player player = { 0 };
+  load_player_struct(&player, event->member->user->id); 
 
   char* input = event->data->options->array[0].value;
+  char fmtted_input[64] = { }; 
+  lowercase(fmtted_input, sizeof(fmtted_input), input);
 
-  ERROR_INTERACTION((player.acorns < COLOR_COST), 
-      format_str(SIZEOF_DESCRIPTION, 
-          "This action requires %d acorns. You need %d more acorns!", 
-          COLOR_COST, COLOR_COST - player.acorns) );
+  ERROR_INTERACTION( ( is_color(fmtted_input, &player) == ERROR_STATUS ), "Invalid input. Please try again!");
 
-  ERROR_INTERACTION( ( !is_color(event, lowercase(input)) ), "Invalid input. Please try again!");
+  struct sd_header_params header = { 0 };
 
-  discord_msg->embed->title = format_str(SIZEOF_TITLE, "Color successfully changed!");
-  discord_msg->embed->color = player.color;
+  header.embed = (struct discord_embed) 
+  {
+    .color = player.color,
+    .author = &(struct discord_embed_author) {
+      .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
+      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+          "https://cdn.discordapp.com/avatars/%lu/%s.png",
+          event->member->user->id, event->member->user->avatar)
+    },
 
-  //Load Author
-  discord_msg->embed->author = sd_msg_embed_author(
-    format_str(SIZEOF_TITLE, event->member->user->username),
-    format_str(SIZEOF_URL, "https://cdn.discordapp.com/avatars/%lu/%s.png", 
-        event->member->user->id, event->member->user->avatar) );
+    .title = u_snprintf(header.title, sizeof(header.title), "Color successfully changed!"),
+  };
 
   struct discord_interaction_response interaction = 
   {
-    .type = (event->data->custom_id) ? DISCORD_INTERACTION_UPDATE_MESSAGE : DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
+    .type = DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
 
     .data = &(struct discord_interaction_callback_data) 
     {
       .embeds = &(struct discord_embeds) 
       {
-        .array = discord_msg->embed,
+        .array = &header.embed,
         .size = 1
       }
     }
 
   };
 
+  char values[16384];
+  discord_interaction_response_to_json(values, sizeof(values), &interaction);
+  fprintf(stderr, "%s \n", values);
+
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
-  discord_embed_cleanup(discord_msg->embed);
-  free(discord_msg);
-
-  update_player_row(player);
+  update_player_row(&player);
 
   return 0;
 }

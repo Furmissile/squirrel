@@ -1,135 +1,160 @@
-struct discord_components* build_squirrel_buttons(const struct discord_interaction *event)
+struct sd_squirrel_shop {
+  struct discord_component buttons[SQUIRREL_SIZE];
+  char custom_ids[SQUIRREL_SIZE][64];
+  char labels[SQUIRREL_SIZE][64];
+
+  struct discord_emoji emojis[SQUIRREL_SIZE];
+  char emoji_names[SQUIRREL_SIZE][64];
+
+  struct discord_embed_field fields[SQUIRREL_SIZE +1]; // +1 offset for score field
+  char field_names[SQUIRREL_SIZE +1][64];
+  char field_values[SQUIRREL_SIZE +1][256];
+
+  char description[512];
+
+  char footer_text[64];
+  char footer_url[128];
+};
+
+void init_squirrel_fields(struct sd_squirrel_shop *params, struct sd_player *player)
 {
-  struct discord_components *buttons = calloc(1, sizeof(struct discord_components));
+  APPLY_NUM_STR(acorn_count, player->acorn_count);
 
-  buttons->size = SQUIRREL_SIZE;
-  buttons->array = calloc(buttons->size, sizeof(struct discord_component));
+  params->fields[0] = (struct discord_embed_field) {
+    .name = u_snprintf(params->field_names[0], sizeof(params->field_names[0]), "Current Score"),
+    .value = u_snprintf(params->field_values[0], sizeof(params->field_values[0]), 
+        ""INDENT" "ACORN_COUNT" Acorn Count: **%s**", acorn_count)
+  };
+  
+  for (int field_idx = 1; field_idx < SQUIRREL_SIZE +1; field_idx++)
+  {
+    struct sd_file_data squirrel_data = squirrels[field_idx -1].squirrel;
+    APPLY_NUM_STR(squirrel_req, squirrels[field_idx -1].acorn_count_req);
 
+    params->fields[field_idx] = (struct discord_embed_field) {
+      .name = u_snprintf(params->field_names[field_idx], sizeof(params->field_names[field_idx]), 
+          "<:%s:%ld> %s",
+          squirrel_data.emoji_name, squirrel_data.emoji_id, squirrel_data.formal_name),
+      .value = u_snprintf(params->field_values[field_idx], sizeof(params->field_values[field_idx]), 
+          " "OFF_ARROW" %s \n"
+          " *Requires* **%s** "ACORN_COUNT" Acorn Count",
+          squirrel_data.description, squirrel_req)
+    };
+
+  }
+}
+
+void init_squirrel_buttons(const struct discord_interaction *event, struct sd_squirrel_shop *params, struct sd_player *player)
+{
+  for (int button_idx = 0; button_idx < SQUIRREL_SIZE; button_idx++) 
+  {
+    struct sd_file_data squirrel_data = squirrels[button_idx].squirrel;
+
+    params->emojis[button_idx] = (struct discord_emoji) {
+        .name = u_snprintf(params->emoji_names[button_idx], sizeof(params->emoji_names[button_idx]), 
+                squirrel_data.emoji_name),
+        .id = squirrel_data.emoji_id
+    };
+
+    params->buttons[button_idx] = (struct discord_component) 
+    { 
+      .type = DISCORD_COMPONENT_BUTTON,
+      .emoji = &params->emojis[button_idx],
+      .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), squirrel_data.formal_name),
+      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c_%ld",
+                    TYPE_SQUIRREL, button_idx, ERROR_STATUS + 96, event->member->user->id)
+    };
+
+    if (player->acorn_count >= squirrels[button_idx].acorn_count_req
+      && button_idx != player->squirrel)
+    {
+      params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
+    }
+    else if (button_idx == player->squirrel)
+    {
+      params->buttons[button_idx].style = DISCORD_BUTTON_SUCCESS;
+      params->buttons[button_idx].disabled = true;
+    }
+    else {
+      params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
+      params->buttons[button_idx].disabled = true;
+    }
+  }
+}
+
+void squirrel_cmd_state(const struct discord_interaction *event, struct sd_squirrel_shop *params, struct sd_player *player)
+{
   if (event->data->custom_id)
   {
     int button_idx = event->data->custom_id[1] -48;
-
-    if (player.acorn_count >= squirrels[button_idx].acorn_count_req)
+    for (int squirrel_idx = 0; squirrel_idx < SQUIRREL_SIZE; squirrel_idx++)
     {
-      rewards.item_type = button_idx;
-      player.squirrel = button_idx;
+      if (button_idx == squirrel_idx)
+      {
+        player->squirrel = squirrel_idx;
+        u_snprintf(params->footer_text, sizeof(params->footer_text), "You selected the %s!", squirrels[squirrel_idx].squirrel.formal_name);
+        u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, squirrels[squirrel_idx].squirrel.file_path);
+        break;
+      }
     }
-    else
-      rewards.item_type = ERROR_STATUS;
+    // update player only on selection
+    update_player_row(player);
   }
-
-  for (int i = 0; i < buttons->size; i++)
-  {
-    struct discord_emoji *emoji = calloc(1, sizeof(struct discord_emoji));
-
-    emoji->name = squirrels[i].squirrel.emoji_name;
-    emoji->id = squirrels[i].squirrel.emoji_id;
-
-    buttons->array[i] = (struct discord_component)
-    {
-      .type = DISCORD_COMPONENT_BUTTON,
-      /*
-        if no custom id && enough acorn count && this squirrel is not the selected squirrel
-        OR
-        custom id && enough acorn count && this squirrel is the selected squirrel
-      */
-      .style = ( (!event->data->custom_id && player.acorn_count >= squirrels[i].acorn_count_req && player.squirrel != i)
-        || (event->data->custom_id && player.acorn_count >= squirrels[i].acorn_count_req && player.squirrel == i) ) 
-          ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
-      .custom_id = format_str(SIZEOF_CUSTOM_ID, "%c%d_%ld", TYPE_SQUIRREL, i, event->member->user->id),
-      .label = squirrels[i].squirrel.formal_name,
-      .emoji = emoji,
-      .disabled = (event->data->custom_id || player.acorn_count < squirrels[i].acorn_count_req
-        || player.squirrel == i) ? true : false
-    };
-  }
-
-  return buttons;
-}
-
-enum SQ_SHOP_FORMAT {
-  SQ_SHOP_GENERAL,
-  SQ_SHOP_SIZE
-};
-
-void squirrel_shop(
-  const struct discord_interaction *event,
-  struct sd_message *discord_msg)
-{
-  struct discord_embed *embed = discord_msg->embed;
-  embed->color = player.color;
-
-  discord_msg->buttons = build_squirrel_buttons(event);
-
-  embed->title = format_str(SIZEOF_TITLE, "Squirrels");
-
-  embed->description = format_str(SIZEOF_DESCRIPTION,
-      ""OFF_ARROW" Squirrels are unlocked based on your *current* "ACORN_COUNT" acorn count! \n"
-      ""OFF_ARROW" Squirrels are lost upon health resetting.");
-
-  embed->fields = calloc(1, sizeof(struct discord_embed_fields));
-  embed->fields->size = SQ_SHOP_SIZE + SQUIRREL_SIZE;
-  embed->fields->array = calloc(embed->fields->size, sizeof(struct discord_embed_field));
-
-  embed->fields->array[SQ_SHOP_GENERAL].name = format_str(SIZEOF_TITLE, "Balance");
-  embed->fields->array[SQ_SHOP_GENERAL].value = format_str(SIZEOF_FIELD_VALUE, " "ACORN_COUNT" Acorn Count: **%s**", num_str(player.acorn_count) );
-
-  for (int i = SQ_SHOP_SIZE; i < SQ_SHOP_SIZE + SQUIRREL_SIZE; i++)
-  {
-    int squirrel_idx = i - SQ_SHOP_SIZE;
-    embed->fields->array[i].name = format_str(SIZEOF_TITLE, "<:%s:%ld> %s",
-        squirrels[squirrel_idx].squirrel.emoji_name, squirrels[squirrel_idx].squirrel.emoji_id, squirrels[squirrel_idx].squirrel.formal_name);
-    
-    embed->fields->array[i].value = format_str(SIZEOF_FIELD_VALUE, " "OFF_ARROW" %s \n", 
-        squirrels[squirrel_idx].squirrel.description);
-    
-    ADD_TO_BUFFER(embed->fields->array[i].value, SIZEOF_FIELD_VALUE,
-        "*Requires* **%s** "ACORN_COUNT" acorn count",
-        num_str( squirrels[squirrel_idx].acorn_count_req ) );
-  }
-
-  embed->thumbnail = calloc(1, sizeof(struct discord_embed_thumbnail));
-  embed->thumbnail->url = format_str(SIZEOF_URL, GIT_PATH, squirrels[player.squirrel].squirrel.file_path);
-  embed->footer = calloc(1, sizeof(struct discord_embed_footer));
-
-  if (event->data->custom_id)
-  { // button index is rewards.item_type
-    if (rewards.item_type == ERROR_STATUS)
-    {
-      embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You need a higher acorn count!");
-      embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_types[TYPE_NO_ACORNS].file_path);
-    }
-    else {
-      struct sd_file_data *squirrel = &squirrels[rewards.item_type].squirrel;
-      embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "You are now the %s!", squirrel->formal_name);
-      embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, squirrel->file_path);
-    }
-  } // error status can only be the case with a custom id
   else {
-    embed->footer->text = format_str(SIZEOF_FOOTER_TEXT, "Welcome to the Squirrel Shop!");
-    embed->footer->icon_url = format_str(SIZEOF_URL, GIT_PATH, item_types[TYPE_ENCOUNTER].file_path);
+    u_snprintf(params->footer_text, sizeof(params->footer_text), "Welcome to the Squirrel Shop!");
+    u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, item_types[TYPE_ENCOUNTER].file_path);
   }
-
 }
 
-int squirrels_interaction(
-  const struct discord_interaction *event,
-  struct sd_message *discord_msg)
+int squirrels_interaction(const struct discord_interaction *event)
 {
-  player = load_player_struct(event->member->user->id);
-  energy_regen();
+  struct sd_player player = { 0 };
+  load_player_struct(&player, event->member->user->id);
+  
+  struct sd_squirrel_shop params = { 0 };
 
-  //Load Author
-  discord_msg->embed->author = sd_msg_embed_author(
-    format_str(SIZEOF_TITLE, event->member->user->username),
-    format_str(SIZEOF_URL, "https://cdn.discordapp.com/avatars/%lu/%s.png", 
-        event->member->user->id, event->member->user->avatar) );
+  squirrel_cmd_state(event, &params, &player);
 
-  squirrel_shop(event, discord_msg);
+  init_squirrel_buttons(event, &params, &player);
 
   struct discord_component action_rows = {
     .type = DISCORD_COMPONENT_ACTION_ROW,
-    .components = discord_msg->buttons
+    .components = &(struct discord_components) {
+      .array = params.buttons,
+      .size = SQUIRREL_SIZE
+    }
+  };
+
+  init_squirrel_fields(&params, &player);
+
+  struct sd_header_params header = { 0 };
+
+  header.embed = (struct discord_embed) 
+  {
+    .color = player.color,
+    .author = &(struct discord_embed_author) {
+      .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
+      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+          "https://cdn.discordapp.com/avatars/%lu/%s.png",
+          event->member->user->id, event->member->user->avatar)
+    },
+    .title = u_snprintf(header.title, sizeof(header.title), "Squirrel Shop"),
+    .description = u_snprintf(params.description, sizeof(params.description), 
+        " "OFF_ARROW" Squirrels are unlocked based on your current "ACORN_COUNT" *acorn count*! \n"
+        " "OFF_ARROW" Your squirrel is reset if your new acorn count doesn't make the requirement."),
+    
+    .thumbnail = &(struct discord_embed_thumbnail) {
+      .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
+          squirrels[player.squirrel].squirrel.file_path)
+    },
+    .fields = &(struct discord_embed_fields) {
+      .array = params.fields,
+      .size = SQUIRREL_SIZE +1
+    },
+    .footer = &(struct discord_embed_footer) {
+      .text = params.footer_text,
+      .icon_url = params.footer_url
+    }
   };
 
   struct discord_interaction_response interaction = 
@@ -140,7 +165,7 @@ int squirrels_interaction(
     {
       .embeds = &(struct discord_embeds) 
       {
-        .array = discord_msg->embed,
+        .array = &header.embed,
         .size = 1
       },
       .components = &(struct discord_components) {
@@ -151,14 +176,11 @@ int squirrels_interaction(
 
   };
 
+  char values[16384];
+  discord_interaction_response_to_json(values, sizeof(values), &interaction);
+  fprintf(stderr, "%s \n", values);
+
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
-
-  discord_embed_cleanup(discord_msg->embed);
-  free(discord_msg->buttons);
-  free(discord_msg);
-
-  update_player_row(player);
-  rewards = (struct sd_rewards) { 0 };
 
   return 0;
 }
