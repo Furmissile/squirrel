@@ -30,7 +30,7 @@ void init_buffs_fields(struct sd_buffs_shop *params, struct sd_player *player)
         golden_acorns, conjured_acorns)
   };
 
-  APPLY_NUM_STR(buff_cost, GOLDEN_ACORN_BUFF_COST * player->stats.luck_lv);
+  APPLY_NUM_STR(buff_cost, GOLDEN_ACORN_BUFF_COST * generate_factor(player->stats.luck_lv, LUCK_FACTOR));
   params->fields[1] = (struct discord_embed_field) {
     .name = u_snprintf(params->field_names[1], sizeof(params->field_names[1]), "Enchanted Acorn Cost"),
     .value = u_snprintf(params->field_values[1], sizeof(params->field_values[1]), 
@@ -111,7 +111,7 @@ void init_buffs_buttons(const struct discord_interaction *event, struct sd_buffs
         params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
         params->buttons[button_idx].disabled = true;
       }
-      else if (player->golden_acorns >= GOLDEN_ACORN_BUFF_COST * player->stats.luck_lv)
+      else if (player->golden_acorns >= GOLDEN_ACORN_BUFF_COST * generate_factor(player->stats.luck_lv, LUCK_FACTOR))
       {
         params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
       }
@@ -139,7 +139,7 @@ void buffs_command_state(const struct discord_interaction *event, struct sd_buff
     int button_idx = event->data->custom_id[1] -48;
 
     // if an enchanted acorn and not enough golden acorn
-    if (button_idx != BUFF_BOOSTED_ACORN && player->golden_acorns < GOLDEN_ACORN_BUFF_COST * player->stats.luck_lv)
+    if (button_idx != BUFF_BOOSTED_ACORN && player->golden_acorns < GOLDEN_ACORN_BUFF_COST * generate_factor(player->stats.luck_lv, LUCK_FACTOR))
     {
       u_snprintf(params->footer_text, sizeof(params->footer_text), "You need more golden acorns!");
       u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, item_types[TYPE_NO_ACORNS].file_path);
@@ -164,7 +164,7 @@ void buffs_command_state(const struct discord_interaction *event, struct sd_buff
           if (button_idx == BUFF_BOOSTED_ACORN) // take conjured acorns if boosted acorn is bought
             player->conjured_acorns -= SQUIRREL_BOOST_COST;
           else 
-            player->golden_acorns -= (GOLDEN_ACORN_BUFF_COST * player->stats.luck_lv);
+            player->golden_acorns -= (GOLDEN_ACORN_BUFF_COST * generate_factor(player->stats.luck_lv, LUCK_FACTOR));
 
           if (button_idx == BUFF_STRENGTH_ACORN) // exception with strength acorn
           {
