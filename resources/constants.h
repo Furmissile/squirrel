@@ -57,7 +57,7 @@
   #define CHERRY_CHANCE 90    // Gives health
   #define SEED_CHANCE 100     // Gives energy
 
-  #define WAR_STEAL_CHANCE 35
+  #define WAR_STEAL_CHANCE 50
 
 // GENERAL PROGRESSION
   #define BIOME_INTERVAL 5000
