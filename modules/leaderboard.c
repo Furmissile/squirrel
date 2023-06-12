@@ -35,21 +35,22 @@ void create_leaderboard_interaction(const struct discord_interaction *event, str
   header.embed = (struct discord_embed) 
   {
     .color = player->color,
+    .title = "Leaderboard",
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
       .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
-    .thumbnail = &(struct discord_embed_thumbnail) {
-      .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
-          items[ITEM_ACORN_COUNT].file_path)
-    },
-    .title = u_snprintf(header.title, sizeof(header.title), "Acorn Count"),
     .description = params->description
   };
 
   int button_idx = (event->data->custom_id) ? event->data->custom_id[1] - 48 : 0;
+
+  header.embed.thumbnail = &(struct discord_embed_thumbnail) {
+    .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
+        (button_idx == 0) ? items[ITEM_ACORN_COUNT].file_path : scurry_items[SCURRY_ITEM_WAR_ACORNS].file_path)
+  };
 
   params->buttons[0] = (struct discord_component)
   {
