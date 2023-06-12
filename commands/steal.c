@@ -42,7 +42,8 @@ void steal_acorns(
         "**%s**, someone failed to snatch your acorns!", params->username);
     
     u_snprintf(params->description, sizeof(params->description),
-        "<@%ld> failed to steal **%s** "ACORNS" acorns! \n", 
+        "<@%ld> failed to steal **%s** "ACORNS" acorns! \n"
+        "\n-**20** "ENERGY" Energy \n", 
         event->member->user->id, steal_amt);
   }
   else {

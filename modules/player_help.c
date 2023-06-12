@@ -101,7 +101,7 @@ int player_help_interaction(const struct discord_interaction *event)
                 " and the chance to find an encounter is also increased. \n"
             " "OFF_ARROW" In turn, you receive *double* the base value of "ACORNS" *acorn*, "ACORN_COUNT" *acorn count*, and "GOLDEN_ACORNS" *golden acorn* earnings! \n"
             " "OFF_ARROW" You must have been through the biome cycle at least once in your current run to be able to enable this mode! \n"
-            " "OFF_ARROW" This mode can be enabled by the button in </info:1089663884673167440>! This mode is automatically disabled upon dying.")
+            " "OFF_ARROW" This mode can be enabled or disabled with </vengeance_mode:1117141905776595054> and is automatically disabled upon dying.")
       };
       break;
     case P_TOPIC_HELP:

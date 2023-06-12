@@ -88,7 +88,7 @@ int biome_story_interaction(const struct discord_interaction *event)
             ""ACORNS" Origins of Squirrel Dash"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
             " "INDENT" Before the question starts popping up everywhere, you as a player might be wondering where did the idea come from? \n"
-            " "INDENT" It was once a fishing game where you explore the same biomes while fishing. The problem I had here was that there wasn't any"
+            " "INDENT" The idea started off as a fishing game where you explore the same biomes while fishing. The problem I had here was that there wasn't any"
             " rationality behind how you progress through biomes by fishing; it just sounds like pond hopping. That's dull. I wanted more out of it. \n"
 
             " "INDENT" There has been an ongoing joke with some online friends and even within my family that one of my cats, Bunny, is running a catnip business and he uses the local squirrels to carry out his dirty work."
