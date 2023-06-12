@@ -28,8 +28,6 @@ void steal_acorns(
 
   struct sd_header_params header = { 0 };
 
-  printf("At steal_acorns(): %d \n\n", player->encounter);
-
   int color = 0;
   APPLY_NUM_STR(steal_amt, params->steal_amt);
 

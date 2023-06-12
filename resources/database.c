@@ -20,9 +20,6 @@ void load_player_struct(struct sd_player *player_res, unsigned long user_id)
   search_player = SQL_query(search_player, 
       "select * from public.player where user_id = %ld",
       user_id);
-  
-  if (PQntuples(search_player) == 0)
-    printf("There is no player of ID %ld \n\n", user_id);
 
   if (PQntuples(search_player) == 0)
   {
