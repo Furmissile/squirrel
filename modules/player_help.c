@@ -75,7 +75,7 @@ int player_help_interaction(const struct discord_interaction *event)
                 " "INDENT" "NATURE_END_ICON" *Breached Woods*, \n"
                 " "INDENT" "DEATH_GRIP_ICON" *Necrotic Lakes*, \n"
                 " "INDENT" "LAST_ACORN_ICON" *Death's Locus* \n"
-            " "OFF_ARROW" Conjured acorns are used to boost your current squirrel's effect and are transferrable between squirrels. \n"
+            " "OFF_ARROW" Conjured acorns are used to buy the "BOOSTED_ACORN" *boosted acorn* buff that will boost your current squirrel's effect and are transferrable between squirrels. \n"
             " "OFF_ARROW" Check out the buff in </buffs:1089663883876257833>!")
       };
       break;

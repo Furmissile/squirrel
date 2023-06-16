@@ -126,8 +126,13 @@ void print_rewards(char* sd_description, size_t description_size, struct sd_play
   // ACORNS
   APPLY_NUM_STR(acorns, rewards->acorns);
   APPLY_NUM_STR(acorn_count, rewards->acorn_count);
-  u_snprintf(sd_description, description_size, "\n+**%s** "ACORNS" Acorns (+**%s** "ACORN_COUNT" Acorn Count) \n%s", 
-      acorns, acorn_count, (buff_status->proficiency_acorn) ? "-**1** "PROFICIENCY_ACORN" Acorn of Proficiency \n" : " " );
+  u_snprintf(sd_description, description_size, "\n+**%s** "ACORNS" Acorns \n%s",
+      acorns, (buff_status->boosted_acorn && player->squirrel == SQUIRREL_BOOKIE) ? "\n-**1** "BOOSTED_ACORN" Boosted Acorn \n" : " ");
+
+  // PT 2 to ACORNS
+  u_snprintf(sd_description, description_size, "+**%s** "ACORN_COUNT" Acorn Count \n%s%s",
+      acorn_count, (buff_status->proficiency_acorn) ? "-**1** "PROFICIENCY_ACORN" Acorn of Proficiency \n" : " ",
+      (buff_status->boosted_acorn && player->squirrel == KING_SQUIRREL) ? "\n-**1** "BOOSTED_ACORN" Boosted Acorn \n" : " ");
 
   // GOLDEN ACORNS
   if (rewards->golden_acorns) 
@@ -195,7 +200,26 @@ void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, st
   }
 
   rewards->acorn_count = rewards->acorns;
+  if (player->squirrel == KING_SQUIRREL)
+  {
+    rewards->acorn_count *= 2;
+    if (player->buffs.boosted_acorn > 0) {
+      rewards->acorn_count *= 1.5;
+      player->buffs.boosted_acorn--;
+      buff_status->boosted_acorn = true;
+    }
+  }
   player->acorn_count += rewards->acorn_count;
+
+  if (player->squirrel == SQUIRREL_BOOKIE)
+  {
+    rewards->acorns *= 2;
+    if (player->buffs.boosted_acorn > 0) {
+      rewards->acorns *= 1.5;
+      player->buffs.boosted_acorn--;
+      buff_status->boosted_acorn = true;
+    }
+  }
 
   // stat is not included in acorn count
   rewards->acorns *= generate_factor(player->stats.proficiency_lv, PROFICIENCY_FACTOR);

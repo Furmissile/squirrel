@@ -201,6 +201,7 @@
   // Active Buffs
   #define PROFICIENCY_ACORN "<:proficiency_acorn:1045027184475123813>"
   #define LUCK_ACORN "<:luck_acorn:1045027183334264872>"
+  #define BOOSTED_ACORN "<:boosted_acorn:1119273554886799450>"
 
   // Items
   #define LOST_STASH "<:lost_stash:1044620525944705146>"

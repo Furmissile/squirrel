@@ -354,14 +354,13 @@ struct sd_file_data enchanted_acorns[BUFFS_SIZE] = {
   {
     .formal_name = "Conjured Acorn Boost",
 
-    .file_path = "items/conjured_acorn.png",
+    .file_path = "enchanted_acorns/boosted_acorn.png",
     .description = "*Increases squirrel effect by half*",
 
-    .emoji_name = "conjured_acorn",
-    .emoji_id = 1102676336289521774
+    .emoji_name = "boosted_acorn",
+    .emoji_id = 1119273554886799450
   }
 };
-
 
 enum SCURRY_ITEMS
 {
