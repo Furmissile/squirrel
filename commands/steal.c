@@ -54,14 +54,12 @@ void steal_acorns(
     PQclear(search_player);
 
     player->acorns += params->steal_amt;
-    player->acorn_count += STEAL_SCORE;
     player->golden_acorns += params->golden_acorns;
 
     APPLY_NUM_STR(golden_acorns, params->golden_acorns);
 
     u_snprintf(params->description, sizeof(params->description),
         "You anonymously stole **%s** "ACORNS" acorns! \n"
-        "\n+**1,000** "ACORN_COUNT" Acorn Count \n"
         "\n+**%s** "GOLDEN_ACORNS" Golden Acorns \n"
         "\n-**20** "ENERGY" Energy \n",
         steal_amt, golden_acorns);
