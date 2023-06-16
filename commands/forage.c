@@ -104,14 +104,16 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
     int hp_difference = player->max_health - player->health;
     // scales per strength evolution!
     int health_regen = BASE_HEALTH_REGEN * (player->stats.strength_lv/STAT_EVOLUTION +1);
-    
+
     if (player->squirrel == SKELETAL_SQUIRREL)
+    {
       health_regen *= 2;
-    
-    if (player->buffs.boosted_acorn > 0) {
-      health_regen *= 1.5;
-      player->buffs.boosted_acorn--;
-      buff_status.boosted_acorn = true;
+      // only apply boosted acorn to health regen if squirrel is active
+      if (player->buffs.boosted_acorn > 0) {
+        health_regen *= 1.5;
+        player->buffs.boosted_acorn--;
+        buff_status.boosted_acorn = true;
+      }
     }
 
     // if difference of player health and max health is less than the health regen ? give the difference : apply regen
@@ -124,7 +126,7 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
     u_snprintf(sd_description, description_size,
       "\n+**%s** "HEALTH" HP (**%s** "HEALTH" HP Left) \n%s", 
       renew_health, health,
-      (buff_status.boosted_acorn) ? "-**1** "CONJURED_ACORNS" Boosted Acorn \n" : " " );
+      (buff_status.boosted_acorn) ? "-**1** "BOOSTED_ACORN" Boosted Acorn \n" : " " );
   }
 }
 
@@ -295,6 +297,8 @@ int forage_interaction(const struct discord_interaction *event)
   fprintf(stderr, "%s \n", values);
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+
+  player.main_cd = time(NULL) + COOLDOWN;
 
   update_player_row(&player);
 
