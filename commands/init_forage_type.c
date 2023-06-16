@@ -138,6 +138,9 @@ int init_forage_interaction(const struct discord_interaction *event)
   struct sd_player player = { 0 };
   load_player_struct(&player, event->member->user->id); 
 
+  ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait 2 seconds.");
+  ERROR_INTERACTION((player.energy < 2), "You need more energy!");
+
   struct sd_init_forage params = { 0 };
   init_forage_buttons(event, &params);
   
@@ -160,7 +163,7 @@ int init_forage_interaction(const struct discord_interaction *event)
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
-    .title = u_snprintf(header.title, sizeof(header.title), "Scouring the lands"),
+    .title = u_snprintf(header.title, sizeof(header.title), "Scouring the lands..."),
     .image = &(struct discord_embed_image) {
       .url = u_snprintf(params.image_url, sizeof(params.image_url), GIT_PATH, 
           biomes[player.biome].biome_scene_path)
@@ -173,7 +176,7 @@ int init_forage_interaction(const struct discord_interaction *event)
 
   struct discord_interaction_response interaction = 
   {
-    .type = DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
+    .type = (event->data->custom_id) ? DISCORD_INTERACTION_UPDATE_MESSAGE : DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
 
     .data = &(struct discord_interaction_callback_data) 
     {
