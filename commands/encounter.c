@@ -64,7 +64,7 @@ void generate_encounter_reward(char* e_description, size_t description_size, str
       rewards->golden_acorns = genrand(50, 25);
       break;
     case TYPE_HEALTH_LOSS:
-      health_loss = genrand(10, 5) + (player->biome_num * BIOME_DAMAGE);
+      health_loss = genrand(7, 3) + (player->biome_num * BIOME_DAMAGE);
       break;
     case TYPE_ACORN_SACK:
       rewards->acorns = genrand(150, 50);
