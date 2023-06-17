@@ -17,11 +17,22 @@ int generate_price(int stat_lv, double value_mult)
 
 int energy_status(char* sd_description, size_t description_size, struct sd_player *player, int energy_loss)
 {
+  int energy_chance = 60;
+
+  int is_boosted_acorn = 0;
+  if (player->buffs.boosted_acorn > 0) {
+    energy_chance = 80;
+    player->buffs.boosted_acorn--;
+    is_boosted_acorn = 1;
+  }
+
   if (player->squirrel == GRAY_SQUIRREL
-    && rand() % MAX_CHANCE > 60
+    && rand() % MAX_CHANCE > energy_chance
     && energy_loss == MAIN_ENERGY_COST) 
   {
-    u_snprintf(sd_description, description_size, "\n "ENERGY" No energy was lost! \n");
+    // no need to check squirrel here! It's all or nothing!
+    u_snprintf(sd_description, description_size, "\n "ENERGY" No energy was lost! %s \n",
+        (is_boosted_acorn) ? "\n-**1** "BOOSTED_ACORN" Boosted Acorn \n" : " ");
     return 0;
   }
 
@@ -126,21 +137,22 @@ void print_rewards(char* sd_description, size_t description_size, struct sd_play
   // ACORNS
   APPLY_NUM_STR(acorns, rewards->acorns);
   APPLY_NUM_STR(acorn_count, rewards->acorn_count);
-  u_snprintf(sd_description, description_size, "\n+**%s** "ACORNS" Acorns \n%s",
-      acorns, (buff_status->boosted_acorn && player->squirrel == SQUIRREL_BOOKIE) ? "\n-**1** "BOOSTED_ACORN" Boosted Acorn \n" : " ");
+  u_snprintf(sd_description, description_size, "\n+**%s** "ACORNS" Acorns %s%s \n",
+      acorns, (buff_status->proficiency_acorn) ? "\n-**1** "PROFICIENCY_ACORN" Acorn of Proficiency" : " ",
+      (buff_status->boosted_acorn && player->squirrel == SQUIRREL_BOOKIE) ? "\n-**1** "BOOSTED_ACORN" Boosted Acorn" : " ");
 
   // PT 2 to ACORNS
-  u_snprintf(sd_description, description_size, "+**%s** "ACORN_COUNT" Acorn Count \n%s%s",
-      acorn_count, (buff_status->proficiency_acorn) ? "-**1** "PROFICIENCY_ACORN" Acorn of Proficiency \n" : " ",
-      (buff_status->boosted_acorn && player->squirrel == KING_SQUIRREL) ? "\n-**1** "BOOSTED_ACORN" Boosted Acorn \n" : " ");
+  u_snprintf(sd_description, description_size, "\n+**%s** "ACORN_COUNT" Acorn Count %s \n",
+      acorn_count,
+      (buff_status->boosted_acorn && player->squirrel == KING_SQUIRREL) ? "\n-**1** "BOOSTED_ACORN" Boosted Acorn" : " ");
 
   // GOLDEN ACORNS
   if (rewards->golden_acorns) 
   {
     APPLY_NUM_STR(reward, rewards->golden_acorns);
 
-    u_snprintf(sd_description, description_size, "\n+**%s** "GOLDEN_ACORNS" Golden Acorns \n%s", 
-        reward, (buff_status->luck_acorn) ? "-**1** "LUCK_ACORN" Acorn of Luck \n" : " " );
+    u_snprintf(sd_description, description_size, "\n+**%s** "GOLDEN_ACORNS" Golden Acorns %s \n", 
+        reward, (buff_status->luck_acorn) ? "\n-**1** "LUCK_ACORN" Acorn of Luck" : " " );
   }
 
   // EVENT REWARDS (only one can occur)
@@ -170,7 +182,7 @@ void print_rewards(char* sd_description, size_t description_size, struct sd_play
   else if (rewards->stolen_acorns)
   {
     APPLY_NUM_STR(stolen_acorns, rewards->stolen_acorns);
-    u_snprintf(sd_description, description_size, "\n+**%s** "WAR_ACORNS" Stolen Acorns! \n", stolen_acorns);
+    u_snprintf(sd_description, description_size, "\n+**%s** "WAR_ACORNS" Stolen Acorns \n", stolen_acorns);
   }
   else if (rewards->war_acorns)
     u_snprintf(sd_description, description_size, "\n+**%d** "WAR_ACORNS" War Acorns \n", rewards->war_acorns);
@@ -187,8 +199,12 @@ void print_rewards(char* sd_description, size_t description_size, struct sd_play
 // base rewards includes acorns and golden acorns (if any)
 void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, struct sd_buff_status *buff_status)
 {
+  // apply base earning to acorn count BEFORE biome increase
+  rewards->acorn_count = rewards->acorns;
+
   rewards->acorns += (BIOME_ACORN_INC * player->biome_num);
 
+  // vengence will scale with progression!
   if (player->vengeance_flag)
     rewards->acorns *= 2;
 
@@ -196,10 +212,10 @@ void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, st
   if (player->buffs.proficiency_acorn) {
     player->buffs.proficiency_acorn--;
     rewards->acorns *= 2;
+    rewards->acorn_count *= 2;
     buff_status->proficiency_acorn = true;
   }
 
-  rewards->acorn_count = rewards->acorns;
   if (player->squirrel == KING_SQUIRREL)
   {
     rewards->acorn_count *= 2;

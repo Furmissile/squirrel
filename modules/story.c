@@ -87,12 +87,12 @@ int biome_story_interaction(const struct discord_interaction *event)
         .name = u_snprintf(params.field_name, sizeof(params.field_name), 
             ""ACORNS" Origins of Squirrel Dash"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "INDENT" Before the question starts popping up everywhere, you as a player might be wondering where did the idea come from? \n"
-            " "INDENT" The idea started off as a fishing game where you explore the same biomes while fishing. The problem I had here was that there wasn't any"
-            " rationality behind how you progress through biomes by fishing; it just sounds like pond hopping. That's dull. I wanted more out of it. \n"
+            " "INDENT" Before the question starts popping up everywhere, as a player might be wondering where did the game idea come from? \n"
+            " "INDENT" The idea started off as a fishing game where you explore the same biomes while fishing as a cat! The problem I had here was that there wasn't any"
+            " rationality behind how you progress through biomes by fishing; it just sounds like pond hopping. But I wanted more out of it. \n"
 
             " "INDENT" There has been an ongoing joke with some online friends and even within my family that one of my cats, Bunny, is running a catnip business and he uses the local squirrels to carry out his dirty work."
-            " I wanted to bring the joke farther and make a game out of it. And for a time, I did! You explored the biomes collecting different themed squirrels and create your own network as a cat!"
+            " So I decided to jokingly make a game out of it. And for a time, I did! You explored the biomes collecting different themed squirrels and create your own network as a cat!"
             " But there was still no way to connect the story. So I passed the perspective to the eyes of the squirrel and sure enough, Squirrel Dash was born!")
       };
       break;
