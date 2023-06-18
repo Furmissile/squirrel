@@ -138,6 +138,8 @@ int init_forage_interaction(const struct discord_interaction *event)
   struct sd_player player = { 0 };
   load_player_struct(&player, event->member->user->id); 
 
+  energy_regen(&player);
+
   ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait 2 seconds.");
   ERROR_INTERACTION((player.energy < 2), "You need more energy!");
 
