@@ -71,14 +71,18 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
       struct sd_scurry scurry = { 0 };
       load_scurry_struct(&scurry, player->scurry_id);
 
-      if (scurry.war_flag == 0)
+      // general chance to either steal or recover war acorns
+      int scurry_chance = rand() % MAX_CHANCE;
+
+      if (scurry.war_flag == 0
+        && scurry_chance > 65)
       {
         rewards->war_acorns = (scurry.war_acorns + rewards->acorns >= scurry.war_acorn_cap)
             ? scurry.war_acorn_cap - scurry.war_acorns : rewards->acorns;
 
         scurry.war_acorns += rewards->war_acorns;
       }
-      else if ((rand() % MAX_CHANCE) > 65)
+      else if (scurry_chance > 65)
         factor_war(player, &scurry, rewards);
     
       update_scurry_row(&scurry);
