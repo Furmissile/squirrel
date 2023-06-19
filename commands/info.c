@@ -1,5 +1,8 @@
 struct sd_squirrel_info 
 {
+  struct discord_component refresh;
+  char custom_id[64];
+
   struct discord_embed_field fields[2];
   char field_names[2][64];
   char field_values[2][512];
@@ -96,7 +99,6 @@ void build_stats_info(struct sd_squirrel_info *params, struct sd_player *player)
 
 void build_buffs_info(struct sd_squirrel_info *params, struct sd_player *player)
 {
-
   if (player->buffs.proficiency_acorn == 0
     && player->buffs.luck_acorn == 0
     && player->buffs.boosted_acorn == 0)
@@ -185,6 +187,23 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
     }
   };
 
+  params.refresh =(struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .style = DISCORD_BUTTON_SUCCESS,
+    .custom_id = u_snprintf(params.custom_id, sizeof(params.custom_id), "%c0_%ld",
+      TYPE_INFO, event->member->user->id),
+    .label = "Refresh"
+  };
+
+  struct discord_component action_rows = {
+    .type = DISCORD_COMPONENT_ACTION_ROW,
+    .components = &(struct discord_components) {
+      .array = &params.refresh,
+      .size = 1
+    }
+  };
+
   struct discord_interaction_response interaction = 
   {
     .type = (event->data->custom_id) ? DISCORD_INTERACTION_UPDATE_MESSAGE : DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
@@ -194,6 +213,11 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
       .embeds = &(struct discord_embeds) 
       {
         .array = &header.embed,
+        .size = 1
+      },
+      .components = &(struct discord_components)
+      {
+        .array = &action_rows,
         .size = 1
       }
     }

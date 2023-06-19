@@ -74,10 +74,10 @@
   #define TYPE_ENCOUNTER_RESP 'e'
 
   #define TYPE_FORAGE 'f'
-  #define TYPE_VENGEANCE_MODE 'd'
+  #define TYPE_INFO 'd'
   #define TYPE_UPGRADE 'u'
   #define TYPE_SQUIRREL 's'
-  #define TYPE_BUNNY 'b'
+  #define TYPE_BUNNY 'g'
   #define TYPE_E_ACORN 'a'
   #define TYPE_INVITE 'i'
   #define TYPE_SCURRY_INFO 'x'
@@ -178,6 +178,11 @@
 #define APPLY_NUM_STR(buffer, value) \
     char buffer[64] = { }; \
     num_str(buffer, sizeof(buffer), value);
+
+#define LOG_COMMAND(name) \
+    FILE* fp = fopen("crash.log", "a+"); \
+    fprintf(fp, "%s\n", name); \
+    fclose(fp);
 
 // EMOJI CONSTANTS
   // Resources

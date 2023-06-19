@@ -94,8 +94,8 @@ struct sd_command *cmds = (struct sd_command[])
   },
   { // CMD_INFO
     .name = "info",
-    .command_id = TYPE_VENGEANCE_MODE,
-    .error_msg = "You cannot enable/disable Vengeance mode with this button! Please send `/info` to enable/disable.",
+    .command_id = TYPE_INFO,
+    .error_msg = "This info embed belongs to someone else! Pkease send `/info` to view your own info.",
     
     .func_cb = &info_interaction
   },

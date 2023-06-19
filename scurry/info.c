@@ -29,8 +29,8 @@ struct sd_scurry_info
   struct sd_scurry_data *scurry_data;
   PGresult* scurry_members;
 
-  struct discord_component buttons[3];
-  char custom_ids[3][64];
+  struct discord_component buttons[4];
+  char custom_ids[4][64];
 
   struct discord_embed_field fields[2];
   char field_names[2][64];
@@ -52,7 +52,6 @@ void build_info_buttons(const struct discord_interaction *event, struct sd_scurr
 
   if (event->data->custom_id)
   {
-    button_idx = event->data->custom_id[1] - 48;
     is_war_button = event->data->custom_id[2] - 48;
 
     if (button_idx == 0)
@@ -63,30 +62,30 @@ void build_info_buttons(const struct discord_interaction *event, struct sd_scurr
       "select * from public.player where scurry_id = %ld", scurry->scurry_owner_id);
 
   params->buttons[0] = (scurry->war_flag == 0) ?
-  (struct discord_component)
-  {
-    .type = DISCORD_COMPONENT_BUTTON,
-    .style = DISCORD_BUTTON_SUCCESS,
-    .label = "Join War",
-    .custom_id = u_snprintf(params->custom_ids[0], sizeof(params->custom_ids[0]),
-        "%c0%d_%ld", TYPE_SCURRY_INFO, is_war_button, scurry->scurry_owner_id),
-    // if war acorns isnt full or the button was pressed disable button
-    .disabled = (is_war_button
-      || scurry->war_acorns < scurry->war_acorn_cap
-      || PQntuples(params->scurry_members) < SCURRY_MEMBER_REQ
-      )
-      ? true : false
-  } :
-  (struct discord_component)
-  {
-    .type = DISCORD_COMPONENT_BUTTON,
-    .style = DISCORD_BUTTON_DANGER,
-    .label = "Retreat",
-    .custom_id = u_snprintf(params->custom_ids[0], sizeof(params->custom_ids[0]),
-        "%c0%d_%ld", TYPE_SCURRY_INFO, is_war_button, scurry->scurry_owner_id),
-    // if the button was pressed, disable button
-    .disabled = (is_war_button) ? true : false
-  };
+    (struct discord_component)
+    {
+      .type = DISCORD_COMPONENT_BUTTON,
+      .style = DISCORD_BUTTON_SUCCESS,
+      .label = "Join War",
+      .custom_id = u_snprintf(params->custom_ids[0], sizeof(params->custom_ids[0]),
+          "%c0%d_%ld", TYPE_SCURRY_INFO, is_war_button, scurry->scurry_owner_id),
+      // if war acorns isnt full or the button was pressed disable button
+      .disabled = (is_war_button
+        || scurry->war_acorns < scurry->war_acorn_cap
+        || PQntuples(params->scurry_members) < SCURRY_MEMBER_REQ
+        )
+        ? true : false
+    } :
+    (struct discord_component)
+    {
+      .type = DISCORD_COMPONENT_BUTTON,
+      .style = DISCORD_BUTTON_DANGER,
+      .label = "Retreat",
+      .custom_id = u_snprintf(params->custom_ids[0], sizeof(params->custom_ids[0]),
+          "%c0%d_%ld", TYPE_SCURRY_INFO, is_war_button, scurry->scurry_owner_id),
+      // if the button was pressed, disable button
+      .disabled = (is_war_button) ? true : false
+    };
 
   PQclear(params->scurry_members);
 
@@ -108,6 +107,15 @@ void build_info_buttons(const struct discord_interaction *event, struct sd_scurr
     .custom_id = u_snprintf(params->custom_ids[2], sizeof(params->custom_ids[2]),
         "%c2%d_%ld*%ld", TYPE_SCURRY_INFO, is_war_button, event->member->user->id, scurry->scurry_owner_id),
     .disabled = (button_idx != 1) ? true : false
+  };
+
+  params->buttons[3] = (struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .style = DISCORD_BUTTON_SUCCESS,
+    .label = "Refresh",
+    .custom_id = u_snprintf(params->custom_ids[3], sizeof(params->custom_ids[3]),
+        "%c3%d_%ld*%ld", TYPE_SCURRY_INFO, is_war_button, event->member->user->id, scurry->scurry_owner_id),
   };
 }
 
@@ -146,7 +154,7 @@ void complete_interaction(
     .type = DISCORD_COMPONENT_ACTION_ROW,
     .components = &(struct discord_components) {
       .array = params->buttons,
-      .size = 3
+      .size = 4
     }
   };
 
@@ -314,7 +322,8 @@ void fill_general_info(struct discord *client, struct discord_response *resp, co
       war_acorns, war_acorn_cap );
 
   if ((!event->data->custom_id && scurry->war_flag == 0)
-    || (event->data->custom_id && event->data->custom_id[1] - 48 == 1)) 
+    || (event->data->custom_id && event->data->custom_id[1] - 48 == 1)
+    || (event->data->custom_id && event->data->custom_id[1] - 48 == 3 && scurry->war_flag == 0)) 
     // this condition is taken by the form of params->is_participation_list
   {
     params->fields[1].name = u_snprintf(params->field_names[1], sizeof(params->field_names[1]), "Members");
