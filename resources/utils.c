@@ -277,7 +277,7 @@ int get_season_event(const struct discord_interaction *event)
 
   char* months[12] = {"Jan", "Feb", "Mar", "April", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
-  char* seasons[4] = {"Spring (Spring Chicken Live!)", "Summer (Garden Raid Season!)", "Fall (Winter Prep Live!)", "Winter (Bunny's Endeavor Live!)"};
+  char* seasons[4] = {"Spring (Spring Chicken Live!)", "Summer (Garden Raid Season!)", "Fall (Hibernation Live!)", "Winter (Bunny's Endeavor Live!)"};
 
   char event_season[128] = { };
 
