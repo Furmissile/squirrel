@@ -60,14 +60,14 @@ void generate_encounter_reward(char* e_description, size_t description_size, str
   switch (rewards->item_type) 
   {
     case TYPE_ACORN_MOUTHFUL:
-      rewards->acorns = genrand(75, 25);
+      rewards->acorns = genrand(125, 50);
       rewards->golden_acorns = genrand(50, 25);
       break;
     case TYPE_HEALTH_LOSS:
       health_loss = genrand(7, 3) + (player->biome_num * BIOME_DAMAGE);
       break;
     case TYPE_ACORN_SACK:
-      rewards->acorns = genrand(150, 50);
+      rewards->acorns = genrand(350, 100);
       rewards->golden_acorns = genrand(100, 50);
   }
 

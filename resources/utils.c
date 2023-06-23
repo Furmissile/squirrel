@@ -87,7 +87,7 @@ int factor_season(struct sd_player *player, struct sd_rewards *rewards)
   }
   else if (info->tm_mday < 14) 
   {
-    if (rand() % MAX_CHANCE > 80)
+    if (rand() % MAX_CHANCE > VICTUALS_CHANCE)
     {
       // resource overflow is acceptable in this case since the chance is so low
       int victuals_chance = rand() % MAX_CHANCE;
@@ -103,7 +103,7 @@ int factor_season(struct sd_player *player, struct sd_rewards *rewards)
       }
       else if (victuals_chance < CHERRY_CHANCE) 
       {
-        rewards->victual_amt = genrand(BASE_HEALTH_REGEN, BASE_HEALTH_REGEN) * player->stats.strength_lv;
+        rewards->victual_amt = genrand(10, 5) * player->stats.strength_lv;
         rewards->victual_type = VICTUALS_CHERRY;
         rewards->ref_resource = ITEM_HEALTH;
         player->health += rewards->victual_amt;
