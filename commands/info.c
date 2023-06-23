@@ -191,8 +191,8 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
   {
     .type = DISCORD_COMPONENT_BUTTON,
     .style = DISCORD_BUTTON_SUCCESS,
-    .custom_id = u_snprintf(params.custom_id, sizeof(params.custom_id), "%c0_%ld",
-      TYPE_INFO, event->member->user->id),
+    .custom_id = u_snprintf(params.custom_id, sizeof(params.custom_id), "%c0_%ld*%ld",
+      TYPE_INFO, event->member->user->id, user->id),
     .label = "Refresh"
   };
 
@@ -248,6 +248,18 @@ int info_interaction(const struct discord_interaction *event)
     trim_user_id(user_id_buffer, sizeof(user_id_buffer), event->data->options->array[0].value);
     user_id = strtobigint(user_id_buffer);
 
+    PGresult* search_player = (PGresult*) { 0 };
+    search_player = SQL_query(search_player, "select * from public.player where user_id = %ld", user_id);
+
+    ERROR_DATABASE_RET((PQntuples(search_player) == 0), "This player does not exist!", search_player);
+    PQclear(search_player);
+  }
+  else if (event->data->custom_id)
+  {
+    char user_id_buffer[64] = { };
+    trim_buffer(user_id_buffer, sizeof(user_id_buffer), event->data->custom_id, '*');
+    user_id = strtobigint(user_id_buffer);
+    
     PGresult* search_player = (PGresult*) { 0 };
     search_player = SQL_query(search_player, "select * from public.player where user_id = %ld", user_id);
 
