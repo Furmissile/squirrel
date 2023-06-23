@@ -86,24 +86,31 @@ void upgrade_command_state(const struct discord_interaction *event, struct sd_up
     int button_idx = event->data->custom_id[1] -48;
     int* stat_ptrs[STAT_SIZE] = { &player->stats.proficiency_lv, &player->stats.luck_lv, &player->stats.strength_lv };
   
-    for (int stat_idx = 0; stat_idx < STAT_SIZE; stat_idx++) 
+    if (player->acorns < generate_price(*(stat_ptrs[button_idx]), stats[button_idx].price_mult))
     {
-      if (button_idx == stat_idx) {
-				player->acorns -= generate_price(*(stat_ptrs[stat_idx]), stats[stat_idx].price_mult);
-				(*stat_ptrs[stat_idx])++;
-
-        struct sd_file_data stat_data = stats[stat_idx].stat;
-        u_snprintf(params->footer_text, sizeof(params->footer_text), "You received the stat of %s", stat_data.formal_name);
-        u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, stat_data.file_path);
-        
-        if (stat_idx == STAT_STRENGTH)
-          player->health += STRENGTH_FACTOR;
-        
-        break;
-      }
+      u_snprintf(params->footer_text, sizeof(params->footer_text), "You need more acorns to make this upgrade!");
+      u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, item_types[TYPE_NO_ACORNS].file_path); 
     }
-    // update player only on purchase
-    update_player_row(player);
+    else {
+      for (int stat_idx = 0; stat_idx < STAT_SIZE; stat_idx++) 
+      {
+        if (button_idx == stat_idx) {
+          player->acorns -= generate_price(*(stat_ptrs[stat_idx]), stats[stat_idx].price_mult);
+          (*stat_ptrs[stat_idx])++;
+
+          struct sd_file_data stat_data = stats[stat_idx].stat;
+          u_snprintf(params->footer_text, sizeof(params->footer_text), "You received the stat of %s", stat_data.formal_name);
+          u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, stat_data.file_path);
+          
+          if (stat_idx == STAT_STRENGTH)
+            player->health += STRENGTH_FACTOR;
+          
+          break;
+        }
+      }
+      // update player only on purchase
+      update_player_row(player);
+    }
   }
   else {
     u_snprintf(params->footer_text, sizeof(params->footer_text), "Welcome to the Upgrades Shop!");
