@@ -1,7 +1,7 @@
 struct sd_buffs_shop {
   struct discord_component buttons[BUFFS_SIZE];
-  char custom_ids[BUFFS_SIZE][64];
-  char labels[BUFFS_SIZE][64];
+  char custom_ids[BUFFS_SIZE +1][64]; // +1 for refresh button
+  char labels[BUFFS_SIZE +1][64];
 
   struct discord_emoji emojis[BUFFS_SIZE];
   char emoji_names[BUFFS_SIZE][64];
@@ -126,7 +126,7 @@ void init_buffs_buttons(const struct discord_interaction *event, struct sd_buffs
 
 void buffs_command_state(const struct discord_interaction *event, struct sd_buffs_shop *params, struct sd_player *player)
 {
-  if (event->data->custom_id) 
+  if (event->data->custom_id && event->data->custom_id[1] -48 < BUFFS_SIZE) 
   {
     int* stat_ptrs[5] = { 
       &player->buffs.proficiency_acorn, 
@@ -203,11 +203,29 @@ int buffs_interaction(const struct discord_interaction *event)
 
   init_buffs_buttons(event, &params, &player);
 
-  struct discord_component action_rows = {
-    .type = DISCORD_COMPONENT_ACTION_ROW,
-    .components = &(struct discord_components) {
-      .array = params.buttons,
-      .size = BUFFS_SIZE
+  struct discord_component refresh = (struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .style = DISCORD_BUTTON_SUCCESS,
+    .label = u_snprintf(params.labels[BUFFS_SIZE], sizeof(params.labels[BUFFS_SIZE]), "Refresh"),
+    .custom_id = u_snprintf(params.custom_ids[BUFFS_SIZE], sizeof(params.custom_ids[BUFFS_SIZE]), "%c%d_%ld",
+        TYPE_E_ACORN, BUFFS_SIZE, event->member->user->id)
+  };
+
+  struct discord_component action_rows[2] = {
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = params.buttons,
+        .size = BUFFS_SIZE
+      }
+    },
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = &refresh,
+        .size = 1
+      }
     }
   };
 
@@ -254,8 +272,8 @@ int buffs_interaction(const struct discord_interaction *event)
         .size = 1
       },
       .components = &(struct discord_components) {
-        .array = &action_rows,
-        .size = 1
+        .array = action_rows,
+        .size = 2
       }
     }
 
