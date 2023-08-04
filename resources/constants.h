@@ -59,6 +59,7 @@
 
   #define WAR_STEAL_CHANCE 50
 
+
 // GENERAL PROGRESSION
   #define BIOME_INTERVAL 5000
   #define BIOME_DAMAGE 10
@@ -68,6 +69,7 @@
   #define STEAL_MINIMUM 1000
   #define STEAL_SCORE 1000
 
+
 // INTERACTION TYPES
   #define TYPE_FORAGE_INIT 'n'
   #define TYPE_FORAGE_RESP 'r'
@@ -75,6 +77,7 @@
 
   #define TYPE_FORAGE 'f'
   #define TYPE_INFO 'd'
+  #define TYPE_INFO_FROM_BUTTONS 'h'
   #define TYPE_UPGRADE 'u'
   #define TYPE_SQUIRREL 's'
   #define TYPE_BUNNY 'g'
