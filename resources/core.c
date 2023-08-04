@@ -12,6 +12,13 @@ PGresult* SQL_query(PGresult* query, char* format, ...)
 
   query = PQexec(conn, buffer);
 
+  if (PQresultStatus(query) != PGRES_COMMAND_OK)
+  {
+    FILE *fp = fopen("crash.log", "a");
+    fprintf(fp, "%s \n", PQerrorMessage(conn));
+    fclose(fp);
+  }
+
   return query;
 }
 
