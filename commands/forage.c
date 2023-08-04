@@ -1,6 +1,7 @@
 struct sd_forage_resp {
-  struct discord_component buttons[4];
-  char custom_ids[4][64];
+  struct discord_component buttons[3];
+  char custom_ids[3][64];
+  char labels[3][64];
 
   struct discord_emoji emojis[3];
   char emoji_names[3][64];
@@ -90,8 +91,6 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
       rewards->acorns = rewards->acorns * (BASE_ACORN_MULT * (scurry.rank +1) +1);
     }
 
-    // if (blood_mode is on...)
-
     struct sd_buff_status buff_status = { 0 };
     apply_base_rewards(player, rewards, &buff_status);
   
@@ -103,7 +102,7 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
   struct sd_buff_status buff_status = { 0 }; // for boosted_acorn
 
   if (player->health < player->max_health
-    && rand() % MAX_CHANCE > 80)
+    && rand() % MAX_CHANCE > 70)
   {
     int hp_difference = player->max_health - player->health;
     // scales per strength evolution!
@@ -164,13 +163,13 @@ int build_forage_buttons(const struct discord_interaction *event, struct sd_fora
         : (chance < CONTAINER_CHANCE) ? TYPE_LOST_STASH : TYPE_ACORN_SACK;
 
   int item_type = ERROR_STATUS;
-  for (int button_idx = 1; button_idx < 4; button_idx++) 
+  for (int button_idx = 0; button_idx < 3; button_idx++) 
   {
-    int current_item = button_items[button_idx -1];
+    int current_item = button_items[button_idx];
 
     // set the emoji
-    params->emojis[button_idx -1] = (struct discord_emoji) {
-        .name = u_snprintf(params->emoji_names[button_idx -1], sizeof(params->emoji_names[button_idx -1]), 
+    params->emojis[button_idx] = (struct discord_emoji) {
+        .name = u_snprintf(params->emoji_names[button_idx], sizeof(params->emoji_names[button_idx]), 
                 item_types[current_item].emoji_name),
         .id = item_types[current_item].emoji_id
     };
@@ -179,14 +178,14 @@ int build_forage_buttons(const struct discord_interaction *event, struct sd_fora
     params->buttons[button_idx] = (struct discord_component) 
     { 
       .type = DISCORD_COMPONENT_BUTTON,
-      .emoji = &params->emojis[button_idx -1],
+      .emoji = &params->emojis[button_idx],
       .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c_%ld",
-                    TYPE_FORAGE_RESP, button_idx -1, ERROR_STATUS + 96, event->member->user->id),
+                    TYPE_FORAGE_RESP, button_idx, ERROR_STATUS + 96, event->member->user->id),
       .disabled = true
     };
 
     // highlight the button selected
-    if (event->data->custom_id[1] -48 == button_idx -1)
+    if (event->data->custom_id[1] -48 == button_idx)
     {
       params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
       item_type = current_item;
@@ -206,7 +205,7 @@ int forage_interaction(const struct discord_interaction *event)
   energy_regen(&player);
 
   int encounter_chance = (player.vengeance_flag) ? 50 : ENCOUNTER_CHANCE;
-
+    
   if (player.encounter == ERROR_STATUS
     && rand() % MAX_CHANCE < encounter_chance)
   {
@@ -220,29 +219,12 @@ int forage_interaction(const struct discord_interaction *event)
     init_encounter_interaction(event, &player);
     return 0;
   }
-  
+
   struct sd_forage_resp params = { 0 };
-  
-  params.buttons[0] = (struct discord_component)
-  {
-    .type = DISCORD_COMPONENT_BUTTON,
-    .style = DISCORD_BUTTON_SUCCESS,
-    .label = "Forage again!",
-    .custom_id = u_snprintf(params.custom_ids[0], sizeof(params.custom_ids[0]), "%c3%c_%ld",
-        TYPE_FORAGE_INIT, ERROR_STATUS + 96, event->member->user->id),
-  };
 
   struct sd_rewards rewards = { 0 };
 
   rewards.item_type = build_forage_buttons(event, &params);
-
-  struct discord_component action_rows = {
-    .type = DISCORD_COMPONENT_ACTION_ROW,
-    .components = &(struct discord_components) {
-      .array = params.buttons,
-      .size = 4
-    }
-  };
 
   struct sd_header_params header = { 0 };
 
@@ -277,6 +259,27 @@ int forage_interaction(const struct discord_interaction *event)
       : &(struct discord_embed_footer) { 0 }
   };
 
+  struct sd_util_info util_data = { 0 };
+
+  generate_util_buttons(event, &player, &util_data);
+
+  struct discord_component action_rows[2] = {
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = params.buttons,
+        .size = 3
+      }
+    },
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = util_data.buttons,
+        .size = 5
+      }
+    }
+  };
+
   struct discord_interaction_response interaction = 
   {
     .type = DISCORD_INTERACTION_UPDATE_MESSAGE,
@@ -289,8 +292,8 @@ int forage_interaction(const struct discord_interaction *event)
         .size = 1
       },
       .components = &(struct discord_components) {
-        .array = &action_rows,
-        .size = 1
+        .array = action_rows,
+        .size = 2
       }
     }
 

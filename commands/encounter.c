@@ -7,11 +7,10 @@ struct sd_encounter_resp {
   char emoji_names[3][64];
 
   char image_url[128];
-  char description[512];
+  char description[1024];
   char footer_txt[64];
   char footer_url[128];
 };
-
 
 void apply_conjured_acorn(struct sd_player *player, struct sd_rewards *rewards)
 {
@@ -52,119 +51,128 @@ void apply_conjured_acorn(struct sd_player *player, struct sd_rewards *rewards)
   }
 }
 
-void generate_encounter_reward(char* e_description, size_t description_size, struct sd_player *player, struct sd_rewards *rewards)
+// void generate_encounter_reward(char* e_description, size_t description_size, struct sd_player *player, struct sd_rewards *rewards)
+void generate_encounter_reward(const struct discord_interaction *event, struct sd_encounter_resp *params, struct sd_player *player, struct sd_rewards *rewards)
 {
-  int health_loss = 0;
+  int selected_button = event->data->custom_id[1] -48;
 
-  // case on item type
-  switch (rewards->item_type) 
+  if (selected_button == 2)
   {
-    case TYPE_ACORN_MOUTHFUL:
-      rewards->acorns = genrand(125, 50);
-      rewards->golden_acorns = genrand(50, 25);
-      break;
-    case TYPE_HEALTH_LOSS:
-      health_loss = genrand(7, 3) + (player->biome_num * BIOME_DAMAGE);
-      break;
-    case TYPE_ACORN_SACK:
-      rewards->acorns = genrand(350, 100);
-      rewards->golden_acorns = genrand(100, 50);
+    player->golden_acorns -= rewards->encounter_cost;
+  }
+  else 
+  {
+    rewards->is_health = 1;
+    player->health -= (rewards->encounter_cost > player->health) ? player->health : rewards->encounter_cost;
   }
 
-  if (rewards->acorns) {
+  switch (rewards->item_type) 
+  {
+    case TYPE_ACORN_HANDFUL:
+      rewards->acorns = genrand(50, 25);
+      break;
+    case TYPE_ACORN_MOUTHFUL:
+      rewards->acorns = genrand(100, 50);
+      break;
+    case TYPE_LOST_STASH:
+      rewards->acorns = genrand(250, 50);
+      rewards->golden_acorns = genrand(100, 50);
+      break;
+    case TYPE_ACORN_SACK:
+      rewards->acorns = genrand(300, 100);
+  }
+
+  if (rewards->acorns)
+  {
     apply_conjured_acorn(player, rewards);
 
     struct sd_buff_status buff_status = { 0 };
     apply_base_rewards(player, rewards, &buff_status);
-    print_rewards(e_description, description_size, player, rewards, &buff_status);
+    print_rewards(params->description, sizeof(params->description), player, rewards, &buff_status);
   }
   else {
-    u_snprintf(e_description, description_size, "\nYou received no earnings! \n");
+    u_snprintf(params->description, sizeof(params->description), "\nYou received no earnings! \n");
+  }
 
-    health_loss = (health_loss > player->health) ? player->health : health_loss;
-    player->health -= health_loss;
+  if (rewards->encounter_cost)
+  {
+    APPLY_NUM_STR(encounter_cost, rewards->encounter_cost);
 
-    APPLY_NUM_STR(reward, health_loss);
-    APPLY_NUM_STR(player_health, player->health);
-
-    u_snprintf(e_description, description_size,
-        "\n-**%s** "BROKEN_HEALTH" HP (**%s** "HEALTH" HP Left) \n", 
-        reward, player_health );
-
-    if (player->health <= 0
-      || player->vengeance_flag) 
+    if (rewards->is_health)
     {
-      // final acorns are added and then high score is set
-      if (player->acorn_count > player->high_acorn_count) {
-        u_snprintf(e_description, description_size, "\n"ENERGY" **NEW HIGH ACORN COUNT**");
-        player->high_acorn_count = player->acorn_count;
-      }
+      APPLY_NUM_STR(player_health, player->health);
 
-      APPLY_NUM_STR(old_acorn_count, player->acorn_count);
-      u_snprintf(e_description, description_size,
-          "\n **%s** "ACORN_COUNT" Final acorn count", old_acorn_count);
+      u_snprintf(params->description, sizeof(params->description),
+          "\n-**%s** "BROKEN_HEALTH" HP (**%s** "HEALTH" HP Left) \n", 
+          encounter_cost, player_health );
+    }
+    else {
+      APPLY_NUM_STR(golden_acorns, player->golden_acorns);
 
-      player->health = MAX_HEALTH + generate_factor(player->stats.strength_lv, STRENGTH_FACTOR);
+      u_snprintf(params->description, sizeof(params->description),
+          "\n-**%s** "GOLDEN_ACORNS" Golden Acorns (**%s** "GOLDEN_ACORNS" Golden Acorns Left) \n", 
+          encounter_cost, golden_acorns );
+    }
+  }
 
-      if (player->acorn_count > (BIOME_INTERVAL * BIOME_SIZE)) {
-        player->acorn_count /= 2;
-        APPLY_NUM_STR(new_acorn_count, player->acorn_count);
-        u_snprintf(e_description, description_size,
-            "\n"QUEST_MARKER" Your acorn count was set to **%s**! \n", new_acorn_count);
-
-        // Only reset squirrel if new acorn count is less than requirement
-        if (player->acorn_count < squirrels[player->squirrel].acorn_count_req)
-          player->squirrel = 0;
-      }
-      else {
-        player->acorn_count = 0;
-        u_snprintf(e_description, description_size,
-            "\n"QUEST_MARKER" Your acorn count was reset! \n");
-      }
-
-      player->vengeance_flag = 0;
+  if (player->health == 0
+    || player->vengeance_flag) 
+  {
+    // final acorns are added and then high score is set
+    if (player->acorn_count > player->high_acorn_count) {
+      u_snprintf(params->description, sizeof(params->description), "\n"ENERGY" **NEW HIGH ACORN COUNT**");
+      player->high_acorn_count = player->acorn_count;
     }
 
+    APPLY_NUM_STR(old_acorn_count, player->acorn_count);
+    u_snprintf(params->description, sizeof(params->description),
+        "\n **%s** "ACORN_COUNT" Final acorn count", old_acorn_count);
+
+    player->health = MAX_HEALTH + generate_factor(player->stats.strength_lv, STRENGTH_FACTOR);
+
+    if (player->acorn_count > (BIOME_INTERVAL * BIOME_SIZE)) {
+      player->acorn_count /= 2;
+      APPLY_NUM_STR(new_acorn_count, player->acorn_count);
+      u_snprintf(params->description, sizeof(params->description),
+          "\n"QUEST_MARKER" Your acorn count was set to **%s**! \n", new_acorn_count);
+
+      // Only reset squirrel if new acorn count is less than requirement
+      if (player->acorn_count < squirrels[player->squirrel].acorn_count_req)
+        player->squirrel = 0;
+    }
+    else {
+      player->acorn_count = 0;
+      u_snprintf(params->description, sizeof(params->description),
+          "\n"QUEST_MARKER" Your acorn count was reset! \n");
+    }
+
+    player->vengeance_flag = 0;
   }
   
   player->encounter = ERROR_STATUS;
 }
 
-int build_encounter_buttons(const struct discord_interaction *event, struct sd_encounter_resp *params, struct sd_player *player)
+void build_encounter_buttons(const struct discord_interaction *event, struct sd_encounter_resp *params, struct sd_player *player, struct sd_rewards *rewards)
 {
-  // determine item types first and redirect if necessary
-  int button_items[3] = { };
-  int failure = 0;
-  int chance = 0;
-
-  for (int button_idx = 0; button_idx < 3; button_idx++)
-  {
-    chance = rand() % MAX_CHANCE;
-
-    if (chance < HEALTH_LOSS_CHANCE) {
-      button_items[button_idx] = TYPE_HEALTH_LOSS;
-      failure++;
-    }
-    else
-      button_items[button_idx] = 
-        (chance < NORMAL_CHANCE) ? TYPE_ACORN_MOUTHFUL : TYPE_ACORN_SACK;
-  }
-
-  chance = rand() % MAX_CHANCE;
-  if (failure == 3) 
-      button_items[rand() % 3] = 
-        (chance < NORMAL_CHANCE) ? TYPE_ACORN_MOUTHFUL : TYPE_ACORN_SACK;
-
   struct sd_encounter encounter = biomes[player->biome].encounters[player->encounter];
 
-  int item_type = ERROR_STATUS;
-  for (int button_idx = 1; button_idx < 4; button_idx++) 
+  int potential_types[3] = { 
+    (rand() % MAX_CHANCE > 30) ? TYPE_ACORN_MOUTHFUL : TYPE_LOST_STASH, // half damage -- least risky
+    (rand() % MAX_CHANCE > 30) ? TYPE_LOST_STASH : TYPE_ACORN_SACK, // full damage
+    (rand() % MAX_CHANCE > 60) ? TYPE_ACORN_SACK : TYPE_ACORN_MOUTHFUL // golden acorns -- most risky
+  };
+  
+  int selected_button = event->data->custom_id[1] -48;
+
+  rewards->item_type = potential_types[selected_button];
+
+  for (int button_idx = 0; button_idx < 3; button_idx++) 
   {
-    int current_item = button_items[button_idx -1];
+    int current_item = potential_types[button_idx];
 
     // set the emoji
-    params->emojis[button_idx -1] = (struct discord_emoji) {
-        .name = u_snprintf(params->emoji_names[button_idx -1], sizeof(params->emoji_names[button_idx -1]), 
+    params->emojis[button_idx] = (struct discord_emoji) {
+        .name = u_snprintf(params->emoji_names[button_idx], sizeof(params->emoji_names[button_idx]), 
                 item_types[current_item].emoji_name),
         .id = item_types[current_item].emoji_id
     };
@@ -173,49 +181,31 @@ int build_encounter_buttons(const struct discord_interaction *event, struct sd_e
     params->buttons[button_idx] = (struct discord_component) 
     { 
       .type = DISCORD_COMPONENT_BUTTON,
-      .emoji = &params->emojis[button_idx -1],
+      // highlight the selected button
+      .style = (selected_button == button_idx) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
+      .emoji = &params->emojis[button_idx],
       // adding player->biome as a character is not a breaking change! It's only encounters that need it
-      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c%d_%ld",
-                    TYPE_ENCOUNTER_RESP, button_idx -1, player->encounter + 96, player->biome, event->member->user->id),
-      .label = u_snprintf(params->labels[button_idx -1], sizeof(params->labels[button_idx -1]), encounter.solutions[button_idx -1]),
+      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d_%ld",
+                    TYPE_ENCOUNTER_RESP, button_idx, event->member->user->id),
+      .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), encounter.solutions[button_idx]),
       .disabled = true
     };
-
-    // highlight the button selected
-    if (event->data->custom_id[1] -48 == button_idx -1)
-    {
-      params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
-      item_type = current_item;
-    }
-    else
-      params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
   }
-
-  return item_type;
 }
 
 void encounter_error(const struct discord_interaction *event, struct sd_player *player)
 {
   struct sd_encounter_resp params = { 0 };
 
-  params.buttons[0] = (struct discord_component)
-  {
-    .type = DISCORD_COMPONENT_BUTTON,
-    .style = DISCORD_BUTTON_SUCCESS,
-    .label = "Forage again!",
-    .custom_id = u_snprintf(params.custom_ids[0], sizeof(params.custom_ids[0]), "%c3%c_%ld",
-        TYPE_FORAGE_INIT, ERROR_STATUS + 96, event->member->user->id),
-  };
-
   // recall encounter
   int original_biome_idx = event->data->custom_id[3] -48;
-  int original_encounter_idx = event->data->custom_id[1] -48;
+  int original_encounter_idx = event->data->custom_id[2] -96;
   struct sd_encounter encounter = biomes[original_biome_idx].encounters[original_encounter_idx];
 
-  for (int button_idx = 1; button_idx < 4; button_idx++) 
+  for (int button_idx = 0; button_idx < 3; button_idx++) 
   {
-    params.emojis[button_idx -1] = (struct discord_emoji) {
-        .name = u_snprintf(params.emoji_names[button_idx -1], sizeof(params.emoji_names[button_idx -1]), 
+    params.emojis[button_idx] = (struct discord_emoji) {
+        .name = u_snprintf(params.emoji_names[button_idx], sizeof(params.emoji_names[button_idx]), 
                 item_types[TYPE_ENCOUNTER].emoji_name),
         .id = item_types[TYPE_ENCOUNTER].emoji_id
     };
@@ -223,20 +213,33 @@ void encounter_error(const struct discord_interaction *event, struct sd_player *
     params.buttons[button_idx] = (struct discord_component) 
     { 
       .type = DISCORD_COMPONENT_BUTTON,
-      .style = DISCORD_BUTTON_SECONDARY,
-      .emoji = &params.emojis[button_idx - 1],
-      .label = u_snprintf(params.labels[button_idx -1], sizeof(params.labels[button_idx -1]), encounter.solutions[button_idx -1]),
+      .style = (event->data->custom_id[1] -48 == button_idx) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
+      .emoji = &params.emojis[button_idx],
+      .label = u_snprintf(params.labels[button_idx], sizeof(params.labels[button_idx]), encounter.solutions[button_idx]),
       .custom_id = u_snprintf(params.custom_ids[button_idx], sizeof(params.custom_ids[button_idx]), "%c%d%c_%ld",
-                    TYPE_ENCOUNTER_RESP, button_idx -1, original_encounter_idx + 96, event->member->user->id),
+                    TYPE_ENCOUNTER_RESP, button_idx, original_encounter_idx + 96, event->member->user->id),
       .disabled = true
     };
   }
 
-  struct discord_component action_rows = {
-    .type = DISCORD_COMPONENT_ACTION_ROW,
-    .components = &(struct discord_components) {
-      .array = params.buttons,
-      .size = 4
+  struct sd_util_info util_data = { 0 };
+
+  generate_util_buttons(event, player, &util_data);
+
+  struct discord_component action_rows[2] = {
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = params.buttons,
+        .size = 3
+      }
+    },
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = util_data.buttons,
+        .size = 4
+      }
     }
   };
   
@@ -279,8 +282,8 @@ void encounter_error(const struct discord_interaction *event, struct sd_player *
         .size = 1
       },
       .components = &(struct discord_components) {
-        .array = &action_rows,
-        .size = 1
+        .array = action_rows,
+        .size = 2
       }
     }
 
@@ -311,33 +314,42 @@ int encounter_interaction(const struct discord_interaction *event)
 
   struct sd_encounter_resp params = { 0 };
 
-  params.buttons[0] = (struct discord_component)
-  {
-    .type = DISCORD_COMPONENT_BUTTON,
-    .style = DISCORD_BUTTON_SUCCESS,
-    .label = "Forage again!",
-    .custom_id = u_snprintf(params.custom_ids[0], sizeof(params.custom_ids[0]), "%c3%c_%ld",
-        TYPE_FORAGE_INIT, ERROR_STATUS + 96, event->member->user->id),
-  };
+  char quantity[64] = { };
+  trim_buffer(quantity, sizeof(quantity), event->data->custom_id, '-');
+  
+  struct sd_rewards rewards = { .encounter_cost = strtoint(quantity) };
 
-  struct discord_component action_rows = {
-    .type = DISCORD_COMPONENT_ACTION_ROW,
-    .components = &(struct discord_components) {
-      .array = params.buttons,
-      .size = 4
+  build_encounter_buttons(event, &params, &player, &rewards);
+
+  struct sd_util_info util_data = { 0 };
+
+  generate_util_buttons(event, &player, &util_data);
+
+  struct discord_component action_rows[2] = {
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = params.buttons,
+        .size = 3
+      }
+    },
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = util_data.buttons,
+        .size = 5
+      }
     }
   };
-
-  struct sd_rewards rewards = { 0 };
-
-  rewards.item_type = build_encounter_buttons(event, &params, &player);
 
   struct sd_encounter encounter = biomes[player.biome].encounters[player.encounter];
 
   // apply encounter description FIRST
   u_snprintf(params.description, sizeof(params.description), encounter.conflict);
 
-  generate_encounter_reward(params.description, sizeof(params.description), &player, &rewards);
+  // then add rewards
+  // generate_encounter_reward(params.description, sizeof(params.description), &player, &rewards);
+  generate_encounter_reward(event, &params, &player, &rewards);
   
   int energy_loss = energy_status(params.description, sizeof(params.description), &player, 2);
 
@@ -383,8 +395,8 @@ int encounter_interaction(const struct discord_interaction *event)
         .size = 1
       },
       .components = &(struct discord_components) {
-        .array = &action_rows,
-        .size = 1
+        .array = action_rows,
+        .size = 2
       }
     }
 

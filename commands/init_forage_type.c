@@ -15,23 +15,47 @@ void init_encounter_buttons(const struct discord_interaction *event, struct sd_i
 {
   struct sd_encounter encounter = biomes[player->biome].encounters[player->encounter];
 
+  int health_loss = genrand(7, 3) + (player->biome_num * BIOME_DAMAGE);
+  int golden_acorns = genrand(70, 5) + (BIOME_ACORN_INC * player->biome_num) * generate_factor(player->stats.luck_lv *2, LUCK_FACTOR);
+
+  int encounter_costs[3] = {
+    health_loss /2,
+    health_loss, 
+    golden_acorns
+  };
+
   for (int button_idx = 0; button_idx < 3; button_idx++) 
   {
+    int current_item = (button_idx < 2) ? ITEM_HEALTH : ITEM_GOLDEN_ACORN;
+
     params->emojis[button_idx] = (struct discord_emoji) {
         .name = u_snprintf(params->emoji_names[button_idx], sizeof(params->emoji_names[button_idx]), 
-                item_types[TYPE_ENCOUNTER].emoji_name),
-        .id = item_types[TYPE_ENCOUNTER].emoji_id
+                items[current_item].emoji_name),
+        .id = items[current_item].emoji_id
     };
 
     params->buttons[button_idx] = (struct discord_component) 
     { 
       .type = DISCORD_COMPONENT_BUTTON,
-      .style = DISCORD_BUTTON_PRIMARY,
-      .emoji = params->emojis,
-      .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), encounter.solutions[button_idx]),
-      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c%d_%ld",
-                    TYPE_ENCOUNTER_RESP, button_idx, player->encounter + 96, player->biome, event->member->user->id)
+      .emoji = &params->emojis[button_idx],
+      .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), "(-%d) %s", 
+          encounter_costs[button_idx], encounter.solutions[button_idx]),
+      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c%d -%d-_%ld",
+          TYPE_ENCOUNTER_RESP, button_idx, player->encounter + 96, player->biome, encounter_costs[button_idx], event->member->user->id)
     };
+
+    if (button_idx < 2 && player->health <= encounter_costs[button_idx])
+    {
+      params->buttons[button_idx].style = DISCORD_BUTTON_DANGER;
+    }
+    else if (button_idx == 2 && player->golden_acorns < encounter_costs[button_idx])
+    {
+      params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
+      params->buttons[button_idx].disabled = true;
+    }
+    else {
+      params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
+    }
   }
 }
 
@@ -39,14 +63,6 @@ int init_encounter_interaction(const struct discord_interaction *event, struct s
 {
   struct sd_init_encounter params = { 0 };
   init_encounter_buttons(event, &params, player);
-  
-  struct discord_component action_rows = {
-    .type = DISCORD_COMPONENT_ACTION_ROW,
-    .components = &(struct discord_components) {
-      .array = params.buttons,
-      .size = 3
-    }
-  };
 
   struct sd_header_params header = { 0 };
   struct sd_encounter encounter = biomes[player->biome].encounters[player->encounter];
@@ -74,6 +90,27 @@ int init_encounter_interaction(const struct discord_interaction *event, struct s
     }
   };
 
+  struct sd_util_info util_data = { 0 };
+
+  generate_util_buttons(event, player, &util_data);
+
+  struct discord_component action_rows[2] = {
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = params.buttons,
+        .size = 3
+      }
+    },
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = util_data.buttons,
+        .size = 5
+      }
+    }
+  };
+
   struct discord_interaction_response interaction = 
   {
     .type = DISCORD_INTERACTION_UPDATE_MESSAGE,
@@ -86,8 +123,8 @@ int init_encounter_interaction(const struct discord_interaction *event, struct s
         .size = 1
       },
       .components = &(struct discord_components) {
-        .array = &action_rows,
-        .size = 1
+        .array = action_rows,
+        .size = 2
       }
     }
 
