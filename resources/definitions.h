@@ -524,6 +524,7 @@ enum BIOME
   BIOME_SIZE
 };
 
+/* Encounter solutions are ordered by: action, logical, chance */
 struct sd_biome biomes[BIOME_SIZE] = {
   { // GRASSLANDS
     .biome_scene_path = "gl_content/grasslands_scene.gif",
@@ -543,63 +544,63 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*The unicorn seems friendly... perhaps you could just sneak that acorn from under him?* \n",
         .file_path = "gl_content/encounters/unicorn.png",
 
-        .solutions = {"Cause a distraction", "Bolt out and hope you scare it", "Aim for the throat!"}
+        .solutions = {"Aim for the throat!", "Cause a distraction", "Bolt out and hope you scare it"}
       },
       {
         .name = "Enchanted Woods: Burly Pupper",
         .conflict = "*A werewolf has spotted you and begins to chase you!* \n",
         .file_path = "gl_content/encounters/werewolf.png",
 
-        .solutions = {"Run for your life!", "Aim for the throat!", "Run into a nearby bush"}
+        .solutions = {"Aim for the throat!", "Run into a nearby bush", "Run for your life!"}
       },
       {
         .name = "Enchanted Woods: Unique Goldfish",
         .conflict = "*This isn't your everyday goldfish. What's he doin' out of the water?* \n",
         .file_path = "gl_content/encounters/magical_goldfish.png",
 
-        .solutions = {"Go around him", "Eat him!", "Push him back into the water"}
+        .solutions = {"Eat him!", "Go around him", "Push him back into the water"}
       },
       {
         .name = "Imperium City: Rat Infestation",
         .conflict = "*Rats! They surely don't like you. Who knows what they could be carrying...* \n",
         .file_path = "gl_content/encounters/city_rat.png",
 
-        .solutions = {"Give him a peace offering", "Hug him", "Back off"}
+        .solutions = {"Give him a peace offering", "Back off", "Hug him"}
       },
       {
         .name = "Imperium City: Bold Coyotes",
         .conflict = "*These coyotes keep inching towards you. They're curious but do you want to take that chance?* \n",
         .file_path = "gl_content/encounters/coyote.png",
 
-        .solutions = {"Take your chances", "Punch him in the snoot and run up a tree", "Shriek to scare him off"}
+        .solutions = {"Punch him in the snoot and run up a tree", "Shriek to scare him off", "Take your chances"}
       },
       {
         .name = "Imperium City: Rampant Squirrels",
         .conflict = "*Still cute and fluffy- sort of. They dont like other squirrels though.* \n",
         .file_path = "gl_content/encounters/savage_squirrel.png",
 
-        .solutions = {"Tame him", "Wait for him to look the other way", "Offer an acorn"}
+        .solutions = {"Offer an acorn", "Wait for him to look the other way", "Try to tame him"}
       },
       {
         .name = "Desolate Plains: Art of Hunting",
         .conflict = "*A camoflauge snare has caught you! It didn't do much, the flimsy thing.* \n",
         .file_path = "gl_content/encounters/bandit_snare.png",
 
-        .solutions = {"Chew through the string", "Run as fast as you can to break the snare", "Wait for another squirrel to help you"}
+        .solutions = {"Run as fast as you can to break the snare", "Chew through the string", "Wait for another squirrel to help you"}
       },
       {
         .name = "Desolate Plains: Bullseye",
         .conflict = "*You spot a bandit hunter in the corner of your eye as he draws his bow!* \n",
         .file_path = "gl_content/encounters/hunter_detection.png",
 
-        .solutions = {"Hide behind a tree", "Lose his sight", "Throw an acorn"}
+        .solutions = { "Throw an acorn", "Lose his sight", "Hide behind a tree"}
       },
       {
         .name = "Desolate Plains: Suspicious Crops",
         .conflict = "*Unlike the other crops, this one is sticky...* \n",
         .file_path = "gl_content/encounters/poisoned_crop.png",
 
-        .solutions = {"Walk away", "Try a kernel", "Wipe off the poison in hopes there's no trace"}
+        .solutions = {"Try a kernel", "Walk away", "Wipe off the poison in hopes there's no trace"}
       },
       {
         .name = "Witch Swamp: Is it an Acorn?",
@@ -613,14 +614,14 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*It's a friendly squirrel! Is it?* \n",
         .file_path = "gl_content/encounters/squirrel_doppleganger.png",
 
-        .solutions = {"Shake his paw", "Indicate you know it's a disguise", "Ignore him"}
+        .solutions = {"Indicate you know it's a disguise", "Ignore him", "Shake his paw"}
       },
       {
         .name = "Witch Swamp: Poison from Below! Above?",
         .conflict = "*A witch has spotted you and threw a flask!* \n",
         .file_path = "gl_content/encounters/thrown_flask.png",
 
-        .solutions = {"Dodge the flask", "Try to catch the flask", "Run at the witch!"}
+        .solutions = {"Run at the witch!", "Dodge the flask", "Try to catch the flask"}
       }
     },
 
@@ -643,35 +644,35 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*There's an acorn next to the feasting bobcat.* \n",
         .file_path = "sp_content/encounters/bobcat.png",
 
-        .solutions = {"Don't look!", "Snatch it and hope you don't get eaten", "Shake a nearby bush"}
+        .solutions = {"Don't look!", "Shake a nearby bush", "Snatch it and hope you don't get eaten"}
       },
       {
         .name = "Sandy Shores: Sleeping Cobra",
         .conflict = "*You've caught the attention of this cobra!* \n",
         .file_path = "sp_content/encounters/cobra.png",
 
-        .solutions = {"Flee the scene", "Aim for the neck!", "Dodge the lunge"}
+        .solutions = {"Aim for the neck!", "Flee the scene", "Dodge the lunge"}
       },
       {
         .name = "Sandy Shores: Distracting Vibrations",
         .conflict = "*The rattling of the rattlesnake's tail catches your attention and you lock eyes...* \n",
         .file_path = "sp_content/encounters/rattlesnake.png",
 
-        .solutions = {"Ignore it and scurry away", "Passively approach it", "Aim for the throat!"}
+        .solutions = {"Aim for the throat!", "Ignore it and scurry away", "Approach it"}
       },
       {
         .name = "Forgotten City: Vicious Land Lobsters",
         .conflict = "*A scorpion finds you and charges to attack you!* \n",
         .file_path = "sp_content/encounters/scorpion.png",
 
-        .solutions = {"Dodge the pincer", "Throw an acorn", "Scurry Away!"},
+        .solutions = {"Throw an acorn", "Scurry Away!", "Dodge the pincer"},
       },
       {
         .name = "Forgotten City: Unhappy Camels",
         .conflict = "*This camel doesn't look too happy. Watch out for the spit!* \n",
         .file_path = "sp_content/encounters/angry_camel.png",
 
-        .solutions = {"Sneak around", "Aim for the face!", "Cause a distraction"}
+        .solutions = {"Aim for the face!", "Cause a distraction", "Sneak around"}
       },
       {
         .name = "Forgotten City: Starving Coyotes",
@@ -685,7 +686,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*A pack of hyenas are giving you the death stare...* \n",
         .file_path = "sp_content/encounters/hyena.png",
 
-        .solutions = {"Try to touch one", "Aim for the throat!", "Run to a nearby carcass"}
+        .solutions = {"Aim for the throat!", "Run to a nearby carcass", "Try to touch one"}
       },
       {
         .name = "Golden Dunes: The Curious Jackal",
@@ -699,21 +700,21 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*They look a bit hungry. Maybe not a friendly foe...* \n",
         .file_path = "sp_content/encounters/wild_dog.png",
 
-        .solutions = {"Offer an acorn", "Show them to some food", "Scurry awway!"}
+        .solutions = {"Offer an acorn", "Scurry awway!", "Show them to some food"}
       },
       {
         .name = "Ancient Wastelands: Here Comes the Calvary!",
         .conflict = "*A living skeleton? A horse? Better hope it's not that unicorn...* \n",
         .file_path = "sp_content/encounters/skeletal_horse.png",
 
-        .solutions = {"Cause a distraction", "Bolt out and hope you scare it", "Aim for the throat!"}
+        .solutions = {"Aim for the throat!", "Cause a distraction", "Bolt out and hope you scare it"}
       },
       {
         .name = "Ancient Wastelands: Squirrel Meets Squirrel",
         .conflict = "*What looks to be a skeletal squirrel makes eye contaact with you... Well? You can't just ignore it!* \n",
         .file_path = "sp_content/encounters/skeletal_squirrel.png",
 
-        .solutions = {"Shake its paw", "Tame it", "Offer an acorn"}
+        .solutions = {"Shake its paw", "Offer an acorn", "Tame it"}
       },
       {
         .name = "Wormhole: Shifting Doom",
@@ -749,7 +750,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*This bear doesn't seem one bit intmidated! Perhaps he's friendly?* \n",
         .file_path = "ne_content/encounters/bear.png",
 
-        .solutions = {"Give him head pats", "Offer an acorn", "Don't take your chances"}
+        .solutions = {"Give him head pats", "Don't take your chances", "Offer an acorn"}
       },
       {
         .name = "Light's Refuge: Curious Fox",
@@ -777,42 +778,42 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*A defensive moose detects you and charges at you!* \n",
         .file_path = "ne_content/encounters/moose.png",
 
-        .solutions = {"Run under him", "Climb up a tree", "Aim for the throat!"}
+        .solutions = {"Aim for the throat!", "Climb up a tree", "Run under him"}
       },
       {
         .name = "Nature's Dying Light: Spooked Wolf",
-        .conflict = "*A twig you stepped on startled the wolf! He's approaching...* \n",
+        .conflict = "*A twig you stepped on startled a wolf! He's approaching...* \n",
         .file_path = "ne_content/encounters/wolf.png",
 
-        .solutions = {"Run up a tree", "Hide in a bush", "Aim for throat!"}
+        .solutions = {"Aim for throat!", "Run up a tree", "Hide in a bush"}
       },
       {
         .name = "Breached Woods: Collapsed Caves",
         .conflict = "*This bear doesn't seem too happy his home was destroyed...* \n",
         .file_path = "ne_content/encounters/angry_bear.png",
 
-        .solutions = {"Offer an acorn", "Boop his snoot", "Give him a hug"}
+        .solutions = {"Boop his snoot", "Offer an acorn", "Give him a hug"}
       },
       {
         .name = "Breached Woods: Consumed Elk",
         .conflict = "*Taken by the growing corruption, his mind isn't his own!* \n",
         .file_path = "ne_content/encounters/consumed_elk.png",
 
-        .solutions = {"Aim for the throat!", "Squeal!", "Flee into a tree"}
+        .solutions = {"Aim for the throat!", "Flee into a tree", "Squeal!"}
       },
       {
         .name = "Breached Woods: Corrupt Squirrel",
         .conflict = "*This one doesn't want to shake your paw... You're his snack!* \n",
         .file_path = "ne_content/encounters/corrupt_squirrel.png",
 
-        .solutions = {"Outrun him", "Force his paw out", "Offer an acorn"}
+        .solutions = {"Force his paw out", "Outrun him", "Offer an acorn"}
       },
       {
         .name = "Ruins of Luxos: Sewage Rats",
         .conflict = "*[dry heaves] Those rats STINK! Where have they been, the sewers?* \n",
         .file_path = "ne_content/encounters/city_rat.png",
 
-        .solutions = {"Flee their stench", "Hold your breath", "Throw them in water"}
+        .solutions = {"Throw them in water", "Flee their stench", "Hold your breath"}
       },
       {
         .name = "Ruins of Luxos: Aggressive Trash Pandas",
@@ -826,7 +827,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*This squirrel has seen a bit... Can he see?* \n",
         .file_path = "ne_content/encounters/skeletal_squirrel.png",
 
-        .solutions = {"Hope he can see your acorn offer", "Shake his paw if he can feel it", "Tame him if he know who you are"}
+        .solutions = {"Hope he can see your acorn offer", "Shake his paw if he can feel it", "Tame him if he knows who you are"}
       }
     },
 
@@ -849,21 +850,21 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*An arctic fox's head pops above the snow and locks eyes with you.* \n",
         .file_path = "dg_content/encounters/arctic_fox.png",
 
-        .solutions = {"Stare harder", "Wave", "Keep running"}
+        .solutions = {"Stare harder", "Keep running", "Wave"}
       },
       {
         .name = "Boreal Forest: Sneaky Puppers",
         .conflict = "*You hear snow patting and realize a wolf is after you!* \n",
         .file_path = "dg_content/encounters/arctic_wolf.png",
 
-        .solutions = {"Throw an acorn", "Scurry faster", "Aim for the throat!"}
+        .solutions = {"Aim for the throat!", "Scurry faster", "Throw an acorn"}
       },
       {
         .name = "Boreal Forest: Waddle Waddle",
         .conflict = "*This curious penguin approaches you with intrigument.* \n",
         .file_path = "dg_content/encounters/penguin.png",
 
-        .solutions = {"Stop him before he pecks", "Offer an acorn", "Scurry on"}
+        .solutions = {"Offer an acorn", "Stop him before he pecks", "Scurry on"}
       },
       {
         .name = "Necrotic Lakes: Purple Energy",
@@ -877,7 +878,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*Does he raise- tiny fluffballs of doom? Should you find out?* \n",
         .file_path = "dg_content/encounters/necro-squirrel.png",
 
-        .solutions = {"Approach", "Bonk him on the cabeza with an acorn", "Don't want to know"}
+        .solutions = {"Bonk him on the cabeza with an acorn", "Don't want to know", "Approach"}
       },
       {
         .name = "Necrotic Lakes: Re-foraging",
@@ -891,42 +892,42 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*This squirrel has been wandering aimlessly for hours. But he finds a warm companion...* \n",
         .file_path = "dg_content/encounters/frost_squirrel.png",
 
-        .solutions = {"Scurry away", "Don't make eye contact", "Cough"}
+        .solutions = { "Cough", "Scurry away", "Don't make eye contact"}
       },
       {
         .name = "Kingdom of Ice: Nice Teddy Bear",
         .conflict = "*This polar bear appears to be a bit lonely...* \n",
         .file_path = "dg_content/encounters/polar_bear.png",
 
-        .solutions = {"Snuggle with him", "Offer an acorn", "Let him be"}
+        .solutions = {"Offer an acorn", "Snuggle with him", "Let him be"}
       },
       {
         .name = "Kingdom of Ice: Definitely a Fluffy Bunny",
         .conflict = "*He's so cute, small ans squishy you could just-* \n",
         .file_path = "dg_content/encounters/snowshoe_hare.png",
 
-        .solutions = {"Bring him home", "Give him head pats", "Call him Squishy"}
+        .solutions = {"Give him head pats", "Call him Squishy", "Bring him home"}
       },
       {
         .name = "Lost City of Honor: Bony Teddy Bear",
         .conflict = "*Those claws look sharp and it doesn't look happy...* \n",
         .file_path = "dg_content/encounters/skeletal_bear.png",
 
-        .solutions = {"Scurry away", "Aim for the throat!", "Ride it to where you want to go next"}
+        .solutions = {"Aim for the throat!", "Scurry away", "Ride it to where you want to go next"}
       },
       {
         .name = "Lost City of Honor: Future Me?",
         .conflict = "*We bare uncanny resemblance, but it prefers to be alone.* \n",
         .file_path = "dg_content/encounters/skeletal_squirrel.png",
 
-        .solutions = {"Tame it", "Leash it", "Poke with an acorn until it does something"}
+        .solutions = {"Poke with an acorn until it does something", "Offer an acorn", "Tame it"}
       },
       {
         .name = "Lost City of Honor: Not so Fluffy...",
         .conflict = "*Can it see? Can it hear? What do you do?* \n",
         .file_path = "dg_content/encounters/skeletal_wolf.png",
 
-        .solutions = {"Squeal to test its hearing", "Throw an acorn to see if it can feel", "Boop his skeletal snoot"}
+        .solutions = {"Throw an acorn to see if it can feel", "Boop his skeletal snoot", "Squeal to test its hearing"}
       },
       {
         .name = "Death's Valley: Less Fluffy Bunn- uh, Fox",
@@ -940,7 +941,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*So cute but scary at the same!* \n",
         .file_path = "dg_content/encounters/consumed_hare.png",
 
-        .solutions = {"Stare in confusion", "Attempt to pat its head", "Don't look in its eyes!"}
+        .solutions = {"Stare in confusion", "Don't look in its eyes!", "Attempt to pat its head"}
       },
       {
         .name = "Death's Valley: Angry Teddy Bear",
@@ -970,35 +971,35 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*This pupper is different from the rest... he's riddled with dark energy!* \n",
         .file_path = "la_content/encounters/wolf_familiar.png",
 
-        .solutions = {"Throw a golden acorn", "Touch it", "Give him a bone"}
+        .solutions = {"Throw a golden acorn", "Give him a bone", "Touch it"}
       },
       {
         .name = "Creeping Woods: Fox Zoomies",
         .conflict = "*The foxes notices you, locks eyes with you, pupils grow large...* \n",
         .file_path = "la_content/encounters/fox_familiar.png",
         
-        .solutions = {"Give the death stare", "Aim for the throat", "Make him fetch an acorn"}
+        .solutions = {"Aim for the throat", "Make him fetch an acorn", "Give the death stare"}
       },
       {
         .name = "Creeping Woods: The Talking Squirrel",
         .conflict = "*It speaks but its mouth doesn't move? What is it saying?* \n",
         .file_path = "la_content/encounters/familiar_skeletal_squirrel.png",
         
-        .solutions = {"Wave", "Touch it", "Find the voice"}
+        .solutions = {"Touch it", "Wave", "Find the voice"}
       },
       {
         .name = "Shed of Light: Harmless Fluff Ball",
         .conflict = "*What a lonely little hare! He starts to approach you...* \n",
         .file_path = "la_content/encounters/woodland_hare.png",
         
-        .solutions = {"Give him a carrot", "Give him head pats", "Keep him"}
+        .solutions = {"Keep him", "Give him a carrot", "Give him head pats"}
       },
       {
         .name = "Shed of Light: Happy Elk",
         .conflict = "*This elk is happy. He's surrounded by food and other elk!* \n",
         .file_path = "la_content/encounters/elk.png",
         
-        .solutions = {"Admire the scene", "Try to saddle him", "Offer an acorn"}
+        .solutions = {"Offer an acorn", "Admire the scene", "Try to saddle him"}
       },
       {
         .name = "Shed of Light: Snoozing Bear",
@@ -1012,35 +1013,35 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*This acorn looks like an acorn and tastes like an acorn. Is it an acorn?* \n",
         .file_path = "la_content/encounters/conjured_acorn.png",
         
-        .solutions = {"Try to crack it open", "Don't trust it", "Throw it at the nearby cultist"}
+        .solutions = {"Throw it at the nearby cultist", "Don't trust it", "Try to crack it open"}
       },
       {
         .name = "Haunted Pasture: Random Goldfish",
         .conflict = "*This goldfish is flopping around on the ground far away from any body of water...* \n",
         .file_path = "la_content/encounters/conjured_goldfish.png",
         
-        .solutions = {"Scurry away", "Bring it to a body of water", "Test sniff"}
+        .solutions = {"Bring it to a body of water", "Scurry away", "Test sniff"}
       },
       {
         .name = "Haunted Pasture: It's a Normal Squirrel, Right?",
         .conflict = "*A suspicious looking squirrel is feasting on some victuals.* \n",
         .file_path = "la_content/encounters/squirrel_doppleganger.png",
         
-        .solutions = {"Grab its attention", "Throw an acorn", "Scurry away"}
+        .solutions = {"Throw an acorn", "Scurry away", "Grab its attention"}
       },
       {
         .name = "Plain of Embers: Flaming Equine",
         .conflict = "*A spawn of Hell... It looks peaceful despite its appearance.* \n",
         .file_path = "la_content/encounters/nightmare.png",
         
-        .solutions = {"Don't trust it", "Try to saddle it", "Reach for head pats"}
+        .solutions = {"Reach for head pats", "Don't trust it", "Try to saddle it"}
       },
       {
         .name = "Plain of Embers: A fellow Bunny?",
         .conflict = "*A spawn of Hell... But he's just A BUNNY!* \n",
         .file_path = "la_content/encounters/molten_bunny.png",
         
-        .solutions = {"Give him heat pats", "Offer an acorn", "Take him with you"}
+        .solutions = {"Let him be", "Give hm head pats", "Take him with you"}
       },
       {
         .name = "Plain of Embers: To Touch Or Not To Touch",
@@ -1061,14 +1062,14 @@ struct sd_biome biomes[BIOME_SIZE] = {
         .conflict = "*Brainwashed by the corruptive forces, this squirrel isn't natural!* \n",
         .file_path = "la_content/encounters/squirrel_cultist.png",
         
-        .solutions = {"Does it like acorns?", "Throw an acorn at it", "Scurry away"}
+        .solutions = {"Throw an acorn at it", "Scurry away", "Does it like acorns?"}
       },
       {
         .name = "Death's Locus: The Less Fortunate",
         .conflict = "*Was once a happy squirrel, but was unfortunate enough to stumble upon this corruption...* \n",
         .file_path = "la_content/encounters/possessed_squirrel.png",
         
-        .solutions = {"Try to comfort him", "Let him be", "Offer an acorn"}
+        .solutions = {"Offer an acorn", "Let him be", "Try to comfort him"}
       }
     },
 
