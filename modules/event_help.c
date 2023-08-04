@@ -48,7 +48,7 @@ int event_help_interaction(const struct discord_interaction *event)
             " "OFF_ARROW" Everyone is growing all sorts of useful victuals! *RaId ThEiR gArDeNsSs!* \n"
             " "OFF_ARROW" Lasts throughout the in-game Summer season. \n"
             " "OFF_ARROW" Look for all sorts of victuals including "BLUEBERRY_VICTUALS" *blueberries*, "SEED_VICTUALS" *seeds*, and "CHERRY_VICTUALS" *cherries* for bonus rewards! \n"
-            " "OFF_ARROW" Victuals are __NOT__ resources. They are not added to your inventory! What they give appear in parentheses right after.")
+            " "OFF_ARROW" Victuals are __NOT__ resources. They are not added to your inventory! What they give appears in parentheses right after.")
       };
       break;
     case E_TOPIC_FALL:
@@ -67,7 +67,7 @@ int event_help_interaction(const struct discord_interaction *event)
             ""ACORNS" Bunny's Endeavor (Winter)"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
             " "OFF_ARROW" Resources are depleting! Bunny is looking for able-bodies who can fetch him "CATNIP" *catnip*. He'll pay handsomely for it too. \n"
-            " "OFF_ARROW" Lasts throughout the in-game Winter season! Check it out with </bunny_endeavor:1089664142203424769>! \n"
+            " "OFF_ARROW" Lasts throughout the in-game Winter season! Check it out with </bunny_endeavor:1089664142203424769> (only usable while event is active)! \n"
             " "OFF_ARROW" Catnip has a chance to be included in every </forage:1089663881959460926>! \n")
       };
       break;
