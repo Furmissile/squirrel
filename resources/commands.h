@@ -17,6 +17,7 @@ enum CMD_TYPE
   CMD_UPGRADE,
   CMD_BUFFS,
   CMD_INFO,
+  CMD_INFO_FROM_BUTTONS,
   CMD_COLOR,
   CMD_STEAL,
   CMD_SQUIRREL,
@@ -98,6 +99,13 @@ struct sd_command *cmds = (struct sd_command[])
     .error_msg = "This info embed belongs to someone else! Pkease send `/info` to view your own info.",
     
     .func_cb = &info_interaction
+  },
+  { // CMD_INFO_FROM_BUTTONS
+    .name = "info",
+    .command_id = TYPE_INFO_FROM_BUTTONS,
+    .error_msg = "This info embed belongs to someone else! Pkease send `/info` to view your own info.",
+
+    .func_cb = &info_from_buttons
   },
   { // CMD_COLOR
     .name = "color",

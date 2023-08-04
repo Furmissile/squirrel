@@ -132,6 +132,9 @@ struct sd_rewards
   int war_acorns; // for building scurry stash
   int stolen_acorns;
 
+  int encounter_cost;
+  int is_health;
+
   int seasoned_golden_acorns;
   int catnip;
   int victual_amt;
@@ -153,6 +156,15 @@ struct sd_header_params {
   char avatar_url[128];
   char title[64];
   char thumbnail_url[128];
+};
+
+struct sd_util_info {
+  struct discord_component buttons[5];
+  char custom_ids[5][64];
+  char labels[5][64];
+
+  struct discord_emoji emojis[5];
+  char emoji_names[5][64];
 };
 
 struct sd_help_info 

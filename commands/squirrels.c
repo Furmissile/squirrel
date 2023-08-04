@@ -123,33 +123,6 @@ int squirrels_interaction(const struct discord_interaction *event)
   squirrel_cmd_state(event, &params, &player);
 
   init_squirrel_buttons(event, &params, &player);
-
-  struct discord_component refresh = (struct discord_component)
-  {
-    .type = DISCORD_COMPONENT_BUTTON,
-    .style = DISCORD_BUTTON_SUCCESS,
-    .label = u_snprintf(params.labels[SQUIRREL_SIZE], sizeof(params.labels[SQUIRREL_SIZE]), "Refresh"),
-    .custom_id = u_snprintf(params.custom_ids[SQUIRREL_SIZE], sizeof(params.custom_ids[SQUIRREL_SIZE]), "%c%d_%ld",
-        TYPE_SQUIRREL, SQUIRREL_SIZE, event->member->user->id)
-  };
-
-  struct discord_component action_rows[2] = {
-    {
-      .type = DISCORD_COMPONENT_ACTION_ROW,
-      .components = &(struct discord_components) {
-        .array = params.buttons,
-        .size = SQUIRREL_SIZE
-      }
-    },
-    {
-      .type = DISCORD_COMPONENT_ACTION_ROW,
-      .components = &(struct discord_components) {
-        .array = &refresh,
-        .size = 1
-      }
-    }
-  };
-
   init_squirrel_fields(&params, &player);
 
   struct sd_header_params header = { 0 };
@@ -179,6 +152,27 @@ int squirrels_interaction(const struct discord_interaction *event)
     .footer = &(struct discord_embed_footer) {
       .text = params.footer_text,
       .icon_url = params.footer_url
+    }
+  };
+
+  struct sd_util_info util_data = { 0 };
+
+  generate_util_buttons(event, &player, &util_data);
+
+  struct discord_component action_rows[2] = {
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = params.buttons,
+        .size = SQUIRREL_SIZE
+      }
+    },
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = util_data.buttons,
+        .size = 5
+      }
     }
   };
 

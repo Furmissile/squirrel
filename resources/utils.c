@@ -11,7 +11,6 @@ float generate_factor(int stat_lv, double value_factor)
 /* Returns a total price based on stat level, currency unit, and a value multiplier */
 int generate_price(int stat_lv, double value_mult)
 {
-  // return (value_mult * stat_lv) + (value_mult * (stat_lv/STAT_EVOLUTION));
   return ((stat_lv +1)/STAT_EVOLUTION * value_mult + value_mult) * stat_lv;
 }
 
@@ -20,7 +19,8 @@ int energy_status(char* sd_description, size_t description_size, struct sd_playe
   int energy_chance = 60;
 
   int is_boosted_acorn = 0;
-  if (player->buffs.boosted_acorn > 0) {
+  if (player->squirrel == GRAY_SQUIRREL
+    && player->buffs.boosted_acorn > 0) {
     energy_chance = 80;
     player->buffs.boosted_acorn--;
     is_boosted_acorn = 1;
@@ -76,8 +76,8 @@ int factor_season(struct sd_player *player, struct sd_rewards *rewards)
   {
     if (rand() % MAX_CHANCE > 80)
     {
-      rewards->seasoned_golden_acorns = (rewards->item_type < TYPE_ACORN_MOUTHFUL) ? genrand(10, 5)
-          : (rewards->item_type < TYPE_LOST_STASH) ? genrand(15, 10) : genrand(25, 10);
+      rewards->seasoned_golden_acorns = (rewards->item_type < TYPE_ACORN_MOUTHFUL) ? genrand(25, 10)
+          : (rewards->item_type < TYPE_LOST_STASH) ? genrand(50, 25) : genrand(100, 50);
 
       rewards->seasoned_golden_acorns *= generate_factor(player->stats.luck_lv, LUCK_FACTOR);
       
@@ -342,6 +342,89 @@ void init_help_buttons(const struct discord_interaction *event, struct sd_help_i
         "%c%dd_%ld", help_type, last_topic, event->member->user->id),
     .style = (page_idx < last_topic) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
     .disabled = (page_idx == last_topic) ? true : false
+  };
+}
+
+void generate_util_buttons(const struct discord_interaction *event, struct sd_player *player, struct sd_util_info *params)
+{
+  params->emojis[0] = (struct discord_emoji)
+  {
+    .name = u_snprintf(params->emoji_names[0], sizeof(params->emoji_names[0]), 
+            item_types[TYPE_ACORN_MOUTHFUL].emoji_name),
+    .id = item_types[TYPE_ACORN_MOUTHFUL].emoji_id
+  };
+  params->buttons[0] = (struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .style = DISCORD_BUTTON_SUCCESS,
+    .label = u_snprintf(params->labels[0], sizeof(params->labels[0]), "Forage again!"),
+    .custom_id = u_snprintf(params->custom_ids[0], sizeof(params->custom_ids[0]), "%c%c_%ld",
+        TYPE_FORAGE_INIT, ERROR_STATUS + 96, event->member->user->id),
+    .emoji = &params->emojis[0]
+  };
+
+  params->emojis[1] = (struct discord_emoji)
+  {
+    .name = u_snprintf(params->emoji_names[1], sizeof(params->emoji_names[1]), 
+            stats[STAT_STRENGTH].stat.emoji_name),
+    .id = stats[STAT_STRENGTH].stat.emoji_id
+  };
+  params->buttons[1] = (struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .style = DISCORD_BUTTON_SECONDARY,
+    .label = u_snprintf(params->labels[1], sizeof(params->labels[1]), "Upgrades"),
+    .custom_id = u_snprintf(params->custom_ids[1], sizeof(params->custom_ids[1]), "%c_%ld",
+        TYPE_UPGRADE, event->member->user->id),
+    .emoji = &params->emojis[1]
+  };
+
+  params->emojis[2] = (struct discord_emoji)
+  {
+    .name = u_snprintf(params->emoji_names[2], sizeof(params->emoji_names[2]), 
+            enchanted_acorns[BUFF_PROFICIENCY_ACORN].emoji_name),
+    .id = enchanted_acorns[BUFF_PROFICIENCY_ACORN].emoji_id
+  };
+  params->buttons[2] = (struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .style = DISCORD_BUTTON_SECONDARY,
+    .label = u_snprintf(params->labels[2], sizeof(params->labels[2]), "Buffs"),
+    .custom_id = u_snprintf(params->custom_ids[2], sizeof(params->custom_ids[2]), "%c_%ld",
+        TYPE_E_ACORN, event->member->user->id),
+    .emoji = &params->emojis[2]
+  };
+
+  params->emojis[3] = (struct discord_emoji)
+  {
+    .name = u_snprintf(params->emoji_names[3], sizeof(params->emoji_names[3]), 
+            squirrels[player->squirrel].squirrel.emoji_name),
+    .id = squirrels[player->squirrel].squirrel.emoji_id
+  };
+  params->buttons[3] = (struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .style = DISCORD_BUTTON_SECONDARY,
+    .label = u_snprintf(params->labels[3], sizeof(params->labels[3]), "Squirrels"),
+    .custom_id = u_snprintf(params->custom_ids[3], sizeof(params->custom_ids[3]), "%c_%ld",
+        TYPE_SQUIRREL, event->member->user->id),
+    .emoji = &params->emojis[3]
+  };
+
+  params->emojis[4] = (struct discord_emoji)
+  {
+    .name = u_snprintf(params->emoji_names[4], sizeof(params->emoji_names[4]), 
+            item_types[TYPE_ENCOUNTER].emoji_name),
+    .id = item_types[TYPE_ENCOUNTER].emoji_id
+  };
+  params->buttons[4] = (struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .style = DISCORD_BUTTON_SECONDARY,
+    .label = u_snprintf(params->labels[4], sizeof(params->labels[4]), "Info"),
+    .custom_id = u_snprintf(params->custom_ids[4], sizeof(params->custom_ids[4]), "%c_%ld",
+        TYPE_INFO_FROM_BUTTONS, event->member->user->id),
+    .emoji = &params->emojis[4]
   };
 }
 
