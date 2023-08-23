@@ -319,7 +319,7 @@ struct sd_file_data enchanted_acorns[BUFFS_SIZE] = {
   {
     .formal_name = "Acorn of Proficiency",
     .file_path = "enchanted_acorns/proficiency_acorn.png",
-    .description = "*Doubles acorn earnings*",
+    .description = "*Doubles proficiency stat*",
 
     .emoji_name = "proficiency_acorn",
     .emoji_id = 1045027184475123813
@@ -328,7 +328,7 @@ struct sd_file_data enchanted_acorns[BUFFS_SIZE] = {
     .formal_name = "Acorn of Luck",
 
     .file_path = "enchanted_acorns/luck_acorn.png",
-    .description = "*Doubles golden acorn earnings*",
+    .description = "*Doubles luck stat*",
 
     .emoji_name = "luck_acorn",
     .emoji_id = 1045027183334264872
@@ -424,12 +424,13 @@ enum SQUIRREL
   SKELETAL_SQUIRREL,
   SQUIRREL_BOOKIE,
   KING_SQUIRREL,
+  ANGELIC_SQUIRREL,
   SQUIRREL_SIZE
 };
 
 struct sd_squirrel squirrels[SQUIRREL_SIZE] = {
   {
-    .acorn_count_req = 0, // base squirrel
+    .acorn_count_req = GRAY_SQUIRREL_COUNT, // base squirrel
     
     .squirrel = {
       .formal_name = "Gray Squirrel",
@@ -477,7 +478,7 @@ struct sd_squirrel squirrels[SQUIRREL_SIZE] = {
       .formal_name = "Squirrel Bookie",
       .file_path = "squirrels/squirrel_bookie.png",
 
-      .description = "*Doubles acorn earning*",
+      .description = "*Doubles proficiency stat*",
 
       .emoji_name = "squirrel_bookie",
       .emoji_id = 1050175322286469250
@@ -510,6 +511,27 @@ struct sd_squirrel squirrels[SQUIRREL_SIZE] = {
 
       .emoji_name = "king_squirrel_evolve",
       .emoji_id = 1073298727017648219
+    }
+  },
+  {
+    .acorn_count_req = ANGELIC_SQUIRREL_COUNT, // base squirrel
+    
+    .squirrel = {
+      .formal_name = "Angelic Squirrel",
+      .file_path = "squirrels/angelic_squirrel.png",
+
+      .description = "*Doubles luck stat*",
+
+      .emoji_name = "angelic_squirrel",
+      .emoji_id = 1140690614137139314
+    },
+
+    .evo_squirrel  = {
+      .formal_name = "Angelic Squirrel Evolve",
+      .file_path = "evo_squirrel/angelic_squirrel_evolve.png",
+
+      .emoji_name = "angelic_squirrel_evolve",
+      .emoji_id = 1140690663361490994
     }
   }
 };
