@@ -83,7 +83,7 @@ void trim_buffer(char dest[], size_t dest_size, char* input, char separator)
     fprintf(stderr, "TRIM_BUFFER:: BUFFER ERROR \n");
     return;
   }
-  snprintf(tmp_buffer, sizeof(tmp_buffer), input);
+  snprintf(tmp_buffer, sizeof(tmp_buffer), "%s", input);
   int tmp_buffer_size = strlen(tmp_buffer);
 
   int tmp_buffer_idx = 0;

@@ -87,22 +87,19 @@ void build_stats_info(struct sd_squirrel_info *params, struct sd_player *player)
   // proficiency stat (init field)
   float proficiency_value = generate_factor(player->stats.proficiency_lv, PROFICIENCY_FACTOR);
   u_snprintf(params->field_values[2], sizeof(params->field_values[2]), 
-      " "INDENT" <:%s:%ld> *%s*  (Lv **%d**)  x**%0.1f** \n",
-      stats[STAT_PROFICIENCY].stat.emoji_name, stats[STAT_PROFICIENCY].stat.emoji_id,
+      " "INDENT" "PROFICIENCY_ICON" *%s*  (Lv **%d**)  x**%0.1f** \n",
       stats[STAT_PROFICIENCY].stat.formal_name, player->stats.proficiency_lv, proficiency_value);
-
+      
   // luck stat
   float luck_value = generate_factor(player->stats.luck_lv, LUCK_FACTOR);
   u_snprintf(params->field_values[2], sizeof(params->field_values[2]),
-      " "INDENT" <:%s:%ld> *%s*  (Lv **%d**)  x**%0.1f** \n",
-      stats[STAT_LUCK].stat.emoji_name, stats[STAT_LUCK].stat.emoji_id,
+      " "INDENT" "LUCK_ICON" *%s*  (Lv **%d**)  x**%0.1f** \n",
       stats[STAT_LUCK].stat.formal_name, player->stats.luck_lv, luck_value);
 
   // strength stat
   float strength_value = generate_factor(player->stats.strength_lv, STRENGTH_FACTOR);
   u_snprintf(params->field_values[2], sizeof(params->field_values[2]),
-      " "INDENT" <:%s:%ld> *%s*  (Lv. **%d**)  +**%0.0f** \n",
-      stats[STAT_STRENGTH].stat.emoji_name, stats[STAT_STRENGTH].stat.emoji_id,
+      " "INDENT" "STRENGTH_ICON" *%s*  (Lv. **%d**)  +**%0.0f** \n",
       stats[STAT_STRENGTH].stat.formal_name, player->stats.strength_lv, strength_value);
 
   // set the latest buffer to the pointer
@@ -245,6 +242,7 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
   update_player_row(&player);
 }
 
+// only sent when NOT requesting another user
 int info_from_buttons(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
@@ -301,7 +299,7 @@ int info_from_buttons(const struct discord_interaction *event)
 
   struct discord_interaction_response interaction = 
   {
-    .type = DISCORD_INTERACTION_UPDATE_MESSAGE,
+    .type = (event->data->custom_id) ? DISCORD_INTERACTION_UPDATE_MESSAGE : DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
 
     .data = &(struct discord_interaction_callback_data) 
     {
