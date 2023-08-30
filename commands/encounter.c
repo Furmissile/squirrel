@@ -158,8 +158,8 @@ void build_encounter_buttons(const struct discord_interaction *event, struct sd_
 
   int potential_types[3] = { 
     (rand() % MAX_CHANCE > 30) ? TYPE_ACORN_MOUTHFUL : TYPE_LOST_STASH, // half damage -- least risky
-    (rand() % MAX_CHANCE > 30) ? TYPE_LOST_STASH : TYPE_ACORN_SACK, // full damage
-    (rand() % MAX_CHANCE > 60) ? TYPE_ACORN_SACK : TYPE_ACORN_MOUTHFUL // golden acorns -- most risky
+    (rand() % MAX_CHANCE > 20) ? TYPE_LOST_STASH : TYPE_ACORN_SACK, // full damage
+    (rand() % MAX_CHANCE > 70) ? TYPE_ACORN_SACK : TYPE_ACORN_MOUTHFUL // golden acorns -- most risky
   };
   
   int selected_button = event->data->custom_id[1] -48;

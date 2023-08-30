@@ -181,7 +181,7 @@ int bunny_interaction(const struct discord_interaction *event)
     {
       .item_idx = ITEM_HEALTH,
       .cost = 500,
-      .quantity = STRENGTH_FACTOR/2 * (player.stats.strength_lv),
+      .quantity = MAX_HEALTH /2 + player.stats.strength_lv,
     },
     {
       .item_idx = ITEM_ENERGY,

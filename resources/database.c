@@ -26,7 +26,7 @@ void load_player_struct(struct sd_player *player_res, unsigned long user_id)
     PQclear(search_player);
     search_player = SQL_query(search_player,
         "BEGIN; \n"
-        "insert into public.player values(%ld, 0, 0, 0, 100, 100, 0, 0, 0, 0, 0, %d, 0, 0, 0, 0); \n"
+        "insert into public.player values(%ld, 0, 0, 0, 100, 10, 0, 0, 0, 0, 0, %d, 0, 0, 0, 0); \n"
         "insert into public.stats values(%ld, 1, 1, 1); \n"
         "insert into public.buffs values(%ld, 0, 0, 0, 0, 0); \n"
         "COMMIT;", 

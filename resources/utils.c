@@ -3,7 +3,7 @@
 float generate_factor(int stat_lv, double value_factor)
 {
   if (value_factor == STRENGTH_FACTOR)
-    return value_factor * (stat_lv -1);
+    return (value_factor * (stat_lv -1)) + (5 * (stat_lv/STAT_EVOLUTION));
   else
     return (value_factor * (stat_lv -1)) + (value_factor * (stat_lv/STAT_EVOLUTION)) +1;
 }
@@ -14,7 +14,6 @@ int generate_price(int stat_lv, double value_mult)
   return ((stat_lv +1)/STAT_EVOLUTION * value_mult + value_mult) * stat_lv;
 }
 
-// TODO: make sure boosted acorn is only consumed when energy is not lost!
 int energy_status(char* sd_description, size_t description_size, struct sd_player *player, int energy_loss)
 {
   int energy_chance = 100; // default energy chance
@@ -30,8 +29,6 @@ int energy_status(char* sd_description, size_t description_size, struct sd_playe
       is_boosted = 1;
     }
   }
-
-  printf("\n\n%d\n\n", energy_chance);
 
   if (rand() % MAX_CHANCE > energy_chance
     && energy_loss == MAIN_ENERGY_COST) // only for foraging
@@ -54,10 +51,7 @@ int energy_status(char* sd_description, size_t description_size, struct sd_playe
 void energy_regen(struct sd_player *player) 
 {
   if (player->buffs.endurance_acorn > 0)
-  {
-    player->energy += player->buffs.endurance_acorn;
     player->buffs.endurance_acorn = 0;
-  }
   if (player->buffs.strength_acorn > 0)
     player->buffs.strength_acorn = 0;
 
@@ -298,91 +292,6 @@ void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, st
   }
 
 }
-
-// // base rewards includes acorns and golden acorns (if any)
-// void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, struct sd_buff_status *buff_status)
-// {
-//   // apply base earning to acorn count BEFORE biome increase
-//   rewards->acorn_count = rewards->acorns;
-
-//   rewards->acorns += (BIOME_ACORN_INC * player->biome_num);
-
-//   // vengence will scale with progression!
-//   if (player->vengeance_flag)
-//     rewards->acorns *= 2;
-
-//   // apply proficiency acorn before setting acorn count!
-//   if (player->buffs.proficiency_acorn) {
-//     player->buffs.proficiency_acorn--;
-//     rewards->acorns *= 2;
-//     rewards->acorn_count *= 2;
-//     buff_status->proficiency_acorn = true;
-//   }
-
-//   if (player->squirrel == KING_SQUIRREL)
-//   {
-//     rewards->acorn_count *= 2;
-//     if (player->buffs.boosted_acorn > 0) {
-//       rewards->acorn_count *= 1.5;
-//       player->buffs.boosted_acorn--;
-//       buff_status->boosted_acorn = true;
-//     }
-//   }
-//   player->acorn_count += rewards->acorn_count;
-
-//   if (player->squirrel == SQUIRREL_BOOKIE)
-//   {
-//     rewards->acorns *= 2;
-//     if (player->buffs.boosted_acorn > 0) {
-//       rewards->acorns *= 1.5;
-//       player->buffs.boosted_acorn--;
-//       buff_status->boosted_acorn = true;
-//     }
-//   }
-
-//   // stat is not included in acorn count
-//   rewards->acorns *= generate_factor(player->stats.proficiency_lv, PROFICIENCY_FACTOR);
-
-//   // season bonus always applies to acorns -- golden acorns are handled separately
-//   // season bonuses must always be displayed last on rewards
-//   if (rewards->item_type != TYPE_NO_ACORNS
-//     && rewards->item_type != TYPE_HEALTH_LOSS)
-//   {
-//     int season_factor = factor_season(player, rewards);
-//     rewards->acorns *= season_factor;
-//   }
-
-//   player->acorns += rewards->acorns;
-
-//   // GOLDEN ACORNS
-//   if (rewards->golden_acorns) {
-//     rewards->golden_acorns += (BIOME_GOLDEN_ACORN_INC * player->biome_num);
-  
-//     if (player->vengeance_flag)
-//       rewards->golden_acorns *= 2;
-  
-//     if (player->squirrel == ANGELIC_SQUIRREL)
-//     {
-//       rewards->golden_acorns *= 2;
-//       if (player->buffs.boosted_acorn > 0) {
-//         rewards->golden_acorns *= 1.5;
-//         player->buffs.boosted_acorn--;
-//         buff_status->boosted_acorn = true;
-//       }
-//     }
-
-//     rewards->golden_acorns *= generate_factor(player->stats.luck_lv, LUCK_FACTOR);
-
-//     if (player->buffs.luck_acorn > 0) {
-//       player->buffs.luck_acorn--;
-//       rewards->golden_acorns *= 2;
-//       buff_status->luck_acorn = true;
-//     }
-
-//     player->golden_acorns += rewards->golden_acorns;
-//   }
-
-// }
 
 int get_season_event(const struct discord_interaction *event)
 {

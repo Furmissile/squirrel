@@ -294,7 +294,7 @@ struct sd_obj_stats stats[STAT_SIZE] = {
     .stat = {
       .formal_name = "Strength",
       .file_path = "stats/strength.png",
-      .description = "*Adds 100 max "HEALTH" HP*",
+      .description = "*Adds 5 max "HEALTH" chances*",
 
       .emoji_name = "strength",
       .emoji_id = 1066084556110831697

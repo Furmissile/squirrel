@@ -21,6 +21,7 @@
   #define RULES_CHANNEL_ID 1046640388456321126
   #define WELCOME_CHANNEL_ID 1046634205729275955
   #define VERIFY_CHANNEL_ID 1046813534790635550
+  #define BETA_MEMBER_ROLE 1017203719600885810
   #define MEMBER_ROLE_ID 1046627142345170984
 
 
@@ -62,7 +63,7 @@
 
 // GENERAL PROGRESSION
   #define BIOME_INTERVAL 5000
-  #define BIOME_DAMAGE 10
+  #define BIOME_ENCOUNTER_COST 100
   #define BIOME_ACORN_INC 10
   #define BIOME_GOLDEN_ACORN_INC 5
 
@@ -98,15 +99,13 @@
 
 
 // MAX VALUES
-  #define MAX_HEALTH 100
+  #define MAX_HEALTH 10
   #define MAX_ENERGY 100
 
 
 // BUFFS
-  #define GOLDEN_ACORN_BUFF_COST 2000
-
-  #define SQUIRREL_BOOST_INDEX 5
-  #define SQUIRREL_BOOST_COST 5
+  #define GOLDEN_ACORN_BUFF_COST 100
+  #define SQUIRREL_BOOST_COST 10
 
 
 // SEASONS
@@ -118,12 +117,13 @@
 
 // STATS
   #define STAT_EVOLUTION 5
-  #define BASE_HEALTH_REGEN 5
+  #define BASE_HEALTH_REGEN 2
 
   // Stat multiplier factors - See generate_factor() for details
   #define PROFICIENCY_FACTOR 0.1f
-  #define LUCK_FACTOR 0.1f
-  #define STRENGTH_FACTOR 100
+  #define LUCK_FACTOR 0.2f
+  // #define STRENGTH_FACTOR 100
+  #define STRENGTH_FACTOR 5
 
   // Price multiplier factors - See generate_price() for details
   #define PROFICIENCY_UNIT 1500
@@ -155,10 +155,11 @@
   // Multiply into rank
   #define BASE_ACORN_MULT 0.05f
 
+  #define GRAY_SQUIRREL_COUNT 0
   #define SKELETAL_SQUIRREL_COUNT 25000
   #define BOOKIE_SQUIRREL_COUNT 50000
   #define KING_SQUIRREL_COUNT 100000
-
+  #define ANGELIC_SQUIRREL_COUNT 150000
 
 // GAME ERRORS
   #define ERROR_STATUS -1

@@ -30,7 +30,7 @@ void init_buffs_fields(struct sd_buffs_shop *params, struct sd_player *player)
         golden_acorns, conjured_acorns)
   };
 
-  APPLY_NUM_STR(buff_cost, GOLDEN_ACORN_BUFF_COST * generate_factor(player->stats.luck_lv, LUCK_FACTOR));
+  APPLY_NUM_STR(buff_cost, (player->biome_num +1) * GOLDEN_ACORN_BUFF_COST);
   params->fields[1] = (struct discord_embed_field) {
     .name = u_snprintf(params->field_names[1], sizeof(params->field_names[1]), "Enchanted Acorn Cost"),
     .value = u_snprintf(params->field_values[1], sizeof(params->field_values[1]), 
@@ -106,12 +106,15 @@ void init_buffs_buttons(const struct discord_interaction *event, struct sd_buffs
       }
     }
     else {
-      if (button_idx == BUFF_STRENGTH_ACORN && player->health >= player->max_health)
+      if ( (button_idx == BUFF_STRENGTH_ACORN && player->health >= player->max_health)
+        || (button_idx == BUFF_PROFICIENCY_ACORN && player->buffs.proficiency_acorn > 0)
+        || (button_idx == BUFF_LUCK_ACORN && player->buffs.luck_acorn > 0)
+        || (button_idx == BUFF_ENDURANCE_ACORN && player->energy >= MAX_ENERGY) )
       {
         params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
         params->buttons[button_idx].disabled = true;
       }
-      else if (player->golden_acorns >= GOLDEN_ACORN_BUFF_COST * generate_factor(player->stats.luck_lv, LUCK_FACTOR))
+      else if (player->golden_acorns >= (player->biome_num +1) * GOLDEN_ACORN_BUFF_COST)
       {
         params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
       }
@@ -132,14 +135,15 @@ void buffs_command_state(const struct discord_interaction *event, struct sd_buff
       &player->buffs.proficiency_acorn, 
       &player->buffs.luck_acorn, 
       &player->buffs.strength_acorn, 
-      &player->buffs.endurance_acorn, 
+      &player->buffs.endurance_acorn,
       &player->buffs.boosted_acorn 
     };
 
     int button_idx = event->data->custom_id[1] -48;
+    int golden_acorn_cost = (player->biome_num +1) * GOLDEN_ACORN_BUFF_COST;
 
     // if an enchanted acorn and not enough golden acorn
-    if (button_idx != BUFF_BOOSTED_ACORN && player->golden_acorns < GOLDEN_ACORN_BUFF_COST * generate_factor(player->stats.luck_lv, LUCK_FACTOR))
+    if (button_idx != BUFF_BOOSTED_ACORN && player->golden_acorns < golden_acorn_cost)
     {
       u_snprintf(params->footer_text, sizeof(params->footer_text), "You need more golden acorns!");
       u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, item_types[TYPE_NO_ACORNS].file_path);
@@ -164,16 +168,24 @@ void buffs_command_state(const struct discord_interaction *event, struct sd_buff
           if (button_idx == BUFF_BOOSTED_ACORN) // take conjured acorns if boosted acorn is bought
             player->conjured_acorns -= SQUIRREL_BOOST_COST;
           else 
-            player->golden_acorns -= (GOLDEN_ACORN_BUFF_COST * generate_factor(player->stats.luck_lv, LUCK_FACTOR));
+            player->golden_acorns -= golden_acorn_cost;
 
           if (button_idx == BUFF_STRENGTH_ACORN) // exception with strength acorn
           {
-            int acorn_duration = genrand(15, 5) * player->stats.strength_lv;
-            player->buffs.strength_acorn += acorn_duration;
-            player->health += acorn_duration;
+            player->buffs.strength_acorn += (MAX_HEALTH /2 + player->stats.strength_lv);
+            player->health += player->buffs.strength_acorn;
+          }
+          else if (button_idx == BUFF_ENDURANCE_ACORN)
+          {
+            player->buffs.endurance_acorn += genrand(25, 25);
+            player->energy += player->buffs.endurance_acorn;
+          }
+          else if (button_idx == BUFF_PROFICIENCY_ACORN)
+          {
+            (*stat_ptrs[button_idx]) += genrand(10, 5);
           }
           else {
-            (*stat_ptrs[button_idx]) += genrand(15, 5);
+            (*stat_ptrs[button_idx]) += genrand(5, 5);
           }
 
           u_snprintf(params->footer_text, sizeof(params->footer_text), "You received the %s!", enchanted_acorns[button_idx].formal_name);

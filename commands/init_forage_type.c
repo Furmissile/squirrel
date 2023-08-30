@@ -15,11 +15,11 @@ void init_encounter_buttons(const struct discord_interaction *event, struct sd_i
 {
   struct sd_encounter encounter = biomes[player->biome].encounters[player->encounter];
 
-  int health_loss = genrand(7, 3) + (player->biome_num * BIOME_DAMAGE);
-  int golden_acorns = genrand(70, 5) + (BIOME_ACORN_INC * player->biome_num) * generate_factor(player->stats.luck_lv *2, LUCK_FACTOR);
+  int health_loss = 2 * 2 * (player->biome_num / BIOME_SIZE +1);
+  int golden_acorns = BIOME_ENCOUNTER_COST * (player->biome_num +1);
 
   int encounter_costs[3] = {
-    health_loss /2,
+    health_loss /1.5,
     health_loss, 
     golden_acorns
   };
@@ -34,12 +34,14 @@ void init_encounter_buttons(const struct discord_interaction *event, struct sd_i
         .id = items[current_item].emoji_id
     };
 
+    APPLY_NUM_STR(encounter_cost, encounter_costs[button_idx]);
+
     params->buttons[button_idx] = (struct discord_component) 
     { 
       .type = DISCORD_COMPONENT_BUTTON,
       .emoji = &params->emojis[button_idx],
-      .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), "(-%d) %s", 
-          encounter_costs[button_idx], encounter.solutions[button_idx]),
+      .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), "(-%s) %s", 
+          encounter_cost, encounter.solutions[button_idx]),
       .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c%d -%d-_%ld",
           TYPE_ENCOUNTER_RESP, button_idx, player->encounter + 96, player->biome, encounter_costs[button_idx], event->member->user->id)
     };
