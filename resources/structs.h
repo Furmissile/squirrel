@@ -102,7 +102,6 @@ struct sd_player
   int stolen_acorns;
   int catnip;
   
-  int vengeance_flag;
   int encounter;
   int biome;
   int biome_num;

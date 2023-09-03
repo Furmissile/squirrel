@@ -115,8 +115,7 @@ void generate_encounter_reward(const struct discord_interaction *event, struct s
     }
   }
 
-  if (player->health == 0
-    || player->vengeance_flag) 
+  if (player->health == 0) 
   {
     // final acorns are added and then high score is set
     if (player->acorn_count > player->high_acorn_count) {
@@ -145,8 +144,6 @@ void generate_encounter_reward(const struct discord_interaction *event, struct s
       u_snprintf(params->description, sizeof(params->description),
           "\n"QUEST_MARKER" Your acorn count was reset! \n");
     }
-
-    player->vengeance_flag = 0;
   }
   
   player->encounter = ERROR_STATUS;

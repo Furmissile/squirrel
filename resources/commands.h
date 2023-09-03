@@ -21,7 +21,6 @@ enum CMD_TYPE
   CMD_COLOR,
   CMD_STEAL,
   CMD_SQUIRREL,
-  CMD_VENGEANCE_MODE,
 
   CMD_EVENT_HELP,
   CMD_SEASON_INFO,
@@ -121,10 +120,6 @@ struct sd_command *cmds = (struct sd_command[])
     .error_msg = "You cannot swap squirrels with this embed! Please send `/squirrels` to change your current squirrel.",
 
     .func_cb = &squirrels_interaction
-  },
-  { // CMD_VENGEANCE_MODE
-    .name = "vengeance_mode",
-    .func_cb = &vengeance_interaction
   },
   { // CMD_LEADERBOARD
     .name = "leaderboard",

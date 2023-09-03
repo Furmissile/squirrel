@@ -205,11 +205,7 @@ void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, st
   rewards->acorn_count = rewards->acorns;
 
   rewards->acorns += (BIOME_ACORN_INC * player->biome_num);
-
-  // vengence will scale with progression!
-  if (player->vengeance_flag)
-    rewards->acorns *= 2;
-
+  
   // earning increases are now applied to stat instead of earning (EXCEPT acorn count)
   int new_proficiency_lv = player->stats.proficiency_lv;
 
@@ -264,9 +260,6 @@ void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, st
   // GOLDEN ACORNS
   if (rewards->golden_acorns) {
     rewards->golden_acorns += (BIOME_GOLDEN_ACORN_INC * player->biome_num);
-  
-    if (player->vengeance_flag)
-      rewards->golden_acorns *= 2;
 
     int new_luck_stat = player->stats.luck_lv;
   

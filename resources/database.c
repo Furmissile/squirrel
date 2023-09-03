@@ -26,7 +26,7 @@ void load_player_struct(struct sd_player *player_res, unsigned long user_id)
     PQclear(search_player);
     search_player = SQL_query(search_player,
         "BEGIN; \n"
-        "insert into public.player values(%ld, 0, 0, 0, 100, 10, 0, 0, 0, 0, 0, %d, 0, 0, 0, 0); \n"
+        "insert into public.player values(%ld, 0, 0, 0, 100, 10, 0, 0, 0, 0, 0, %d, 0, 0, 0); \n"
         "insert into public.stats values(%ld, 1, 1, 1); \n"
         "insert into public.buffs values(%ld, 0, 0, 0, 0, 0); \n"
         "COMMIT;", 
@@ -61,7 +61,6 @@ void load_player_struct(struct sd_player *player_res, unsigned long user_id)
     .stolen_acorns = strtoint( PQgetvalue(search_player, 0, DB_STOLEN_ACORNS) ),
     .catnip = strtoint( PQgetvalue(search_player, 0, DB_CATNIP) ),
   
-    .vengeance_flag = strtoint( PQgetvalue(search_player, 0, DB_VENGEANCE_MODE) ),
     .encounter = strtoint( PQgetvalue(search_player, 0, DB_ENCOUNTER) ),
     .main_cd = strtobigint( PQgetvalue(search_player, 0, DB_MAIN_CD) ),
 
@@ -147,13 +146,12 @@ void update_player_row(struct sd_player *player_res)
         "stolen_acorns = %d, "
         "catnip = %d, "
         "encounter = %d, "
-        "vengeance_flag = %d, "
         "main_cd = %ld \n"
       "where user_id = %ld; \n",
       player_res->scurry_id, player_res->color, player_res->squirrel, player_res->energy, 
       player_res->health,player_res->acorns, player_res->acorn_count, player_res->high_acorn_count, 
       player_res->golden_acorns, player_res->conjured_acorns,player_res->stolen_acorns, player_res->catnip,
-      player_res->encounter, player_res->vengeance_flag, player_res->main_cd,
+      player_res->encounter, player_res->main_cd,
       player_res->user_id);
     
   u_snprintf(sql_str, sizeof(sql_str),

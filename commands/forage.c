@@ -203,11 +203,9 @@ int forage_interaction(const struct discord_interaction *event)
   load_player_struct(&player, event->member->user->id); 
 
   energy_regen(&player);
-
-  int encounter_chance = (player.vengeance_flag) ? 50 : ENCOUNTER_CHANCE;
     
   if (player.encounter == ERROR_STATUS
-    && rand() % MAX_CHANCE < encounter_chance)
+    && rand() % MAX_CHANCE < ENCOUNTER_CHANCE)
   {
     player.encounter = rand() % biomes[player.biome].encounter_size;
     init_encounter_interaction(event, &player);

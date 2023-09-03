@@ -21,30 +21,17 @@ void build_general_info(struct sd_squirrel_info *params, struct sd_player *playe
 
   struct sd_file_data biome_icon = biomes[player->biome].biome_icon;
 
-  char is_vengeance[256] = { };
-
-  if (player->vengeance_flag)
-    u_snprintf(is_vengeance, sizeof(is_vengeance),
-        " "INDENT" "HEALTH" Health: **1**/1 \n"
-        " "INDENT" "BROKEN_HEALTH" Vengeance Mode: "QUEST_MARKER" **Active** \n",
-        health, max_health);
-  else
-    u_snprintf(is_vengeance, sizeof(is_vengeance),
-        " "INDENT" "HEALTH" Health: **%s**/%s \n"
-        " "INDENT" "BROKEN_HEALTH" Vengeance Mode: "HELP_MARKER" **Inactive** \n",
-        health, max_health);
-
   params->fields[0].name = u_snprintf(params->field_names[0], sizeof(params->field_names[0]), "General Info");
 
   u_snprintf(params->field_values[0], sizeof(params->field_values[0]), 
       " "INDENT" "ACORN_COUNT" Acorn Count: **%s**/%s \n"
       " "INDENT" <:%s:%ld> Biome: **%s** \n"
       " "INDENT" "LEADER" High Score: **%s** \n"
-      "%s",
+      " "INDENT" "HEALTH" Health: **%s**/%s \n",
       acorn_count, req_acorn_count,
       biome_icon.emoji_name, biome_icon.emoji_id, biome_icon.formal_name,
       (player->high_acorn_count > 0) ? high_acorn_count : acorn_count,
-      is_vengeance);
+      health, max_health);
 
   if (player->scurry_id > 0)
     u_snprintf(params->field_values[0], sizeof(params->field_values[0]),
