@@ -14,9 +14,9 @@ int event_help_interaction(const struct discord_interaction *event)
         .name = u_snprintf(params.field_name, sizeof(params.field_name), 
             ""ACORNS" Acorn Count Event"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "OFF_ARROW" This is an ongoing event where players compete based on "ACORN_COUNT" *acorn count*. \n"
-            " "OFF_ARROW" Acorn count is uneffected by your stats and buffs, so be sure to have your luck in your right pocket! \n"
-            " "OFF_ARROW" You can increase your score by </forage:1089663881959460926>, successful steals, and applying the "PROFICIENCY_ACORN" *proficiency acorn*. \n")
+            " "BULLET" This is an ongoing event where players compete based on "ACORN_COUNT" *acorn count*. \n"
+            " "BULLET" Acorn count is uneffected by your stats and buffs, so be sure to have your luck in your right pocket! \n"
+            " "BULLET" You can increase your score by </forage:1089663881959460926>, successful steals, and applying the "PROFICIENCY_ACORN" *proficiency acorn*. \n")
       };
       break;
     case E_TOPIC_ACORN_COUNT:
@@ -24,9 +24,9 @@ int event_help_interaction(const struct discord_interaction *event)
         .name = u_snprintf(params.field_name, sizeof(params.field_name), 
             ""ACORNS" Seasons"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "OFF_ARROW" Seasons change every week and passively occur. Each season gives a different boost to "ACORNS" *acorns* earnings. \n"
-            " "OFF_ARROW" Seasons include Spring (+**20**%%), Summer (+**10**%%), Fall (+**5**%%), and Winter (No boost). \n"
-            " "OFF_ARROW" Send </season_info:1089664143419768972> to find out when the current season ends! \n")
+            " "BULLET" Seasons change every week and passively occur. Each season gives a different boost to "ACORNS" *acorns* earnings. \n"
+            " "BULLET" Seasons include Spring (+**20**%%), Summer (+**10**%%), Fall (+**5**%%), and Winter (No boost). \n"
+            " "BULLET" Send </season_info:1089664143419768972> to find out when the current season ends! \n")
       };
       break;
     case E_TOPIC_SPRING:
@@ -34,9 +34,9 @@ int event_help_interaction(const struct discord_interaction *event)
         .name = u_snprintf(params.field_name, sizeof(params.field_name), 
             ""ACORNS" Spring Chicken Event (Spring)"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "OFF_ARROW" Trees everywhere are dropping "GOLDEN_ACORNS" *golden acorns*! \n"
-            " "OFF_ARROW" Lasts throughout the in-game Spring season. \n"
-            " "OFF_ARROW" "GOLDEN_ACORNS" *Golden acorns* have a chance to be included in every </forage:1089663881959460926> instead of just "
+            " "BULLET" Trees everywhere are dropping "GOLDEN_ACORNS" *golden acorns*! \n"
+            " "BULLET" Lasts throughout the in-game Spring season. \n"
+            " "BULLET" "GOLDEN_ACORNS" *Golden acorns* have a chance to be included in every </forage:1089663881959460926> instead of just "
                 "from </steal:1089663966520819865> or "LOST_STASH" *lost stashes*! \n")
       };
       break;
@@ -45,10 +45,10 @@ int event_help_interaction(const struct discord_interaction *event)
         .name = u_snprintf(params.field_name, sizeof(params.field_name), 
             ""ACORNS" Garden Raid Event (Summer)"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "OFF_ARROW" Everyone is growing all sorts of useful victuals! *RaId ThEiR gArDeNsSs!* \n"
-            " "OFF_ARROW" Lasts throughout the in-game Summer season. \n"
-            " "OFF_ARROW" Look for all sorts of victuals including "BLUEBERRY_VICTUALS" *blueberries*, "SEED_VICTUALS" *seeds*, and "CHERRY_VICTUALS" *cherries* for bonus rewards! \n"
-            " "OFF_ARROW" Victuals are __NOT__ resources. They are not added to your inventory! What they give appears in parentheses right after.")
+            " "BULLET" Everyone is growing all sorts of useful victuals! *RaId ThEiR gArDeNsSs!* \n"
+            " "BULLET" Lasts throughout the in-game Summer season. \n"
+            " "BULLET" Look for all sorts of victuals including "BLUEBERRY_VICTUALS" *blueberries*, "SEED_VICTUALS" *seeds*, and "CHERRY_VICTUALS" *cherries* for bonus rewards! \n"
+            " "BULLET" Victuals are __NOT__ resources. They are not added to your inventory! What they give appears in parentheses right after.")
       };
       break;
     case E_TOPIC_FALL:
@@ -56,9 +56,9 @@ int event_help_interaction(const struct discord_interaction *event)
         .name = u_snprintf(params.field_name, sizeof(params.field_name), 
             ""ACORNS" Hibernation Event (Fall)"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "OFF_ARROW" Winter is coming! Take this time to snatch all the "ACORNS" *acorns* you can before hibernation! \n"
-            " "OFF_ARROW" Lasts throughout the in-game Fall season. \n"
-            " "OFF_ARROW" Energy regeneration for all players is halved! \n")
+            " "BULLET" Winter is coming! Take this time to snatch all the "ACORNS" *acorns* you can before hibernation! \n"
+            " "BULLET" Lasts throughout the in-game Fall season. \n"
+            " "BULLET" Energy regeneration for all players is halved! \n")
       };
       break;
     case E_TOPIC_WINTER:
@@ -66,9 +66,9 @@ int event_help_interaction(const struct discord_interaction *event)
         .name = u_snprintf(params.field_name, sizeof(params.field_name), 
             ""ACORNS" Bunny's Endeavor (Winter)"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "OFF_ARROW" Resources are depleting! Bunny is looking for able-bodies who can fetch him "CATNIP" *catnip*. He'll pay handsomely for it too. \n"
-            " "OFF_ARROW" Lasts throughout the in-game Winter season! Check it out with </bunny_endeavor:1089664142203424769> (only usable while event is active)! \n"
-            " "OFF_ARROW" Catnip has a chance to be included in every </forage:1089663881959460926>! \n")
+            " "BULLET" Resources are depleting! Bunny is looking for able-bodies who can fetch him "CATNIP" *catnip*. He'll pay handsomely for it too. \n"
+            " "BULLET" Lasts throughout the in-game Winter season! Check it out with </bunny_endeavor:1089664142203424769> (only usable while event is active)! \n"
+            " "BULLET" Catnip has a chance to be included in every </forage:1089663881959460926>! \n")
       };
       break;
   }

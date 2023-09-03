@@ -14,9 +14,9 @@ int scurry_help_interaction(const struct discord_interaction *event)
         .name = u_snprintf(params.field_name, sizeof(params.field_name), 
             ""GUILD_ICON" Scurry Utils"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "OFF_ARROW" Member invites come in through DM. Plan accordingly because invites expire in **2** minutes! \n"
-            " "OFF_ARROW" Only the "LEADER" *owner* can kick a member! Mention the user in </scurry_kick:1089664058225066155> to kick. \n"
-            " "OFF_ARROW" Members can leave on their own prerogative too by using </scurry_leave:1089664058879377548>. \n"
+            " "BULLET" Member invites come in through DM. Plan accordingly because invites expire in **2** minutes! \n"
+            " "BULLET" Only the "LEADER" *owner* can kick a member! Mention the user in </scurry_kick:1089664058225066155> to kick. \n"
+            " "BULLET" Members can leave on their own prerogative too by using </scurry_leave:1089664058879377548>. \n"
             "**Please know that your stats related to the scurry will not be retained!**")
       };
       break;
@@ -25,9 +25,9 @@ int scurry_help_interaction(const struct discord_interaction *event)
         .name = u_snprintf(params.field_name, sizeof(params.field_name), 
             ""GUILD_ICON" Scurry Wars"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "OFF_ARROW" "WAR_ACORNS" *Total stolen acorn* is the scurry war currency that is obtained from stealing other scurries' war acorns. \n"
-            " "OFF_ARROW" Any scurry currently in the war has the chance to steal from your "LOST_STASH" *war stash*! \n"
-            " "OFF_ARROW" To join the arena found in </scurry_info:1089664056320852000>, scurries need their war stash full and have at least **4** members present!")
+            " "BULLET" "WAR_ACORNS" *Total stolen acorn* is the scurry war currency that is obtained from stealing other scurries' war acorns. \n"
+            " "BULLET" Any scurry currently in the war has the chance to steal from your "LOST_STASH" *war stash*! \n"
+            " "BULLET" To join the arena found in </scurry_info:1089664056320852000>, scurries need their war stash full and have at least **4** members present!")
       };
       break;
     case S_TOPIC_AFTERMATH:
@@ -35,10 +35,10 @@ int scurry_help_interaction(const struct discord_interaction *event)
         .name = u_snprintf(params.field_name, sizeof(params.field_name), 
             ""GUILD_ICON" Arena Aftermath"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "OFF_ARROW" Every scurry is dropped from the war upon running out of "WAR_ACORNS" *war acorns*. \n"
-            " "OFF_ARROW" Every time you re-enter the war, your "WAR_ACORNS" *total stolen acorn* is reset. \n"
-            " "OFF_ARROW" Scurries have the option to retreat at any point, but be aware your rank will match your new stolen acorn score! \n"
-            " "OFF_ARROW" Scurry ranks provide passive "ACORNS" *acorn* boosts!")
+            " "BULLET" Every scurry is dropped from the war upon running out of "WAR_ACORNS" *war acorns*. \n"
+            " "BULLET" Every time you re-enter the war, your "WAR_ACORNS" *total stolen acorn* is reset. \n"
+            " "BULLET" Scurries have the option to retreat at any point, but be aware your rank will match your new stolen acorn score! \n"
+            " "BULLET" Scurry ranks provide passive "ACORNS" *acorn* boosts!")
       };
       break;
     case S_TOPIC_RANKS:
@@ -50,7 +50,7 @@ int scurry_help_interaction(const struct discord_interaction *event)
         .name = u_snprintf(params.field_name, sizeof(params.field_name), 
             ""GUILD_ICON" War Ranks"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "OFF_ARROW" "WAR_ACORNS" *Stolen acorns* determines scurry rank as follows: \n"
+            " "BULLET" "WAR_ACORNS" *Stolen acorns* determines scurry rank as follows: \n"
             " "INDENT" "ACORNS" Seed-Nots (*Base*) \n"
             " "INDENT" "ACORNS" Acorn Snatchers (> **%s** "WAR_ACORNS" *Stolen Acorns*): x**1.05** \n"
             " "INDENT" "GOLDEN_ACORNS" Seed Sniffers (> **%s** "WAR_ACORNS" *Stolen Acorns*) x**1.1** \n"

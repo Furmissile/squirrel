@@ -22,8 +22,8 @@ void create_rules(struct discord *client, struct discord_response *resp, const s
     .name = u_snprintf(params.field_names[RULE_RESPECT], sizeof(params.field_names[RULE_RESPECT]), ""ACORNS" Respect"),
     .value = u_snprintf(params.field_values[RULE_RESPECT], sizeof(params.field_values[RULE_RESPECT]),
         "*Please treat others with respect and be mindful of the things you say.* \n"
-        ""OFF_ARROW" Hate speech, violent or obscene comments, and otherwise inappropriate or invasive behavior is not tolerated. \n"
-        ""OFF_ARROW" For reference, use common sense!")
+        ""BULLET" Hate speech, violent or obscene comments, and otherwise inappropriate or invasive behavior is not tolerated. \n"
+        ""BULLET" For reference, use common sense!")
   };
 
   params.fields[RULE_CONTENT] = (struct discord_embed_field)
@@ -31,25 +31,25 @@ void create_rules(struct discord *client, struct discord_response *resp, const s
     .name = u_snprintf(params.field_names[RULE_CONTENT], sizeof(params.field_names[RULE_CONTENT]), ""ACORNS" Content"),
     .value = u_snprintf(params.field_values[RULE_CONTENT], sizeof(params.field_values[RULE_CONTENT]),
         "*Make sure your content is posted in the right channel and **avoid** the following*: \n"
-        " "OFF_ARROW" Harmful links or malware. If you don't know the link, don't click it! \n"
-        " "OFF_ARROW" Controversial topics such as politcs, religion, etc. (or contributing to) \n"
-        " "OFF_ARROW" Spamming pings or mentions, messages, etc. \n"
-        " "OFF_ARROW" Adult content (NSFW). **If a minor shouldn't see it, then don't post it!**")
+        " "BULLET" Harmful links or malware. If you don't know the link, don't click it! \n"
+        " "BULLET" Controversial topics such as politcs, religion, etc. (or contributing to) \n"
+        " "BULLET" Spamming pings or mentions, messages, etc. \n"
+        " "BULLET" Adult content (NSFW). **If a minor shouldn't see it, then don't post it!**")
   };
 
   params.fields[RULE_BOT] = (struct discord_embed_field)
   {
     .name = u_snprintf(params.field_names[RULE_BOT], sizeof(params.field_names[RULE_BOT]), ""ACORNS" Bot Policy"),
     .value = u_snprintf(params.field_values[RULE_BOT], sizeof(params.field_values[RULE_BOT]),
-        " "OFF_ARROW" There is a license on the bot discussing use of content. Visit the repo and review the license [**here**](https://github.com/Furmissile/squirrel/blob/main/LICENSE). \n"
-        " "OFF_ARROW" If you have any questions regarding the license, please reach out using <#1047233819201261748> or by DMing <@582648847881338961>!")
+        " "BULLET" There is a license on the bot discussing use of content. Visit the repo and review the license [**here**](https://github.com/Furmissile/squirrel/blob/main/LICENSE). \n"
+        " "BULLET" If you have any questions regarding the license, please reach out using <#1047233819201261748> or by DMing <@582648847881338961>!")
   };
 
   params.fields[RULE_ADVERTISING] = (struct discord_embed_field)
   {
     .name = u_snprintf(params.field_names[RULE_ADVERTISING], sizeof(params.field_names[RULE_ADVERTISING]), ""ACORNS" Advertising"),
     .value = u_snprintf(params.field_values[RULE_ADVERTISING], sizeof(params.field_values[RULE_ADVERTISING]),
-        " "OFF_ARROW" All advertising, unless approved of, is prohibited. *Please ask before posting*!")
+        " "BULLET" All advertising, unless approved of, is prohibited. *Please ask before posting*!")
   };
 
   params.fields[RULE_WARNING] = (struct discord_embed_field)
@@ -57,7 +57,7 @@ void create_rules(struct discord *client, struct discord_response *resp, const s
     .name = u_snprintf(params.field_names[RULE_WARNING], sizeof(params.field_names[RULE_WARNING]), ""ACORNS" Warning Policy"),
     .value = u_snprintf(params.field_values[RULE_WARNING], sizeof(params.field_values[RULE_WARNING]),
         " Moderators (<@&1017203889784750100>) reserve the right to remove a member if they deem it necessary. \n"
-        " "OFF_ARROW" We generally follow **Warn** (1st) -> **Kick** (2nd) -> **Ban** (3rd) depending on severity.")
+        " "BULLET" We generally follow **Warn** (1st) -> **Kick** (2nd) -> **Ban** (3rd) depending on severity.")
   };
 
   struct sd_header_params header = { 0 };

@@ -220,6 +220,7 @@
   #define HELP_MARKER "<:no_acorns:1044620527223975957>"
   #define OFF_ARROW "<:offset_arrow:1010924151063715841>"
   #define INDENT "<:empty_space:1019379796037337118>"
+  #define BULLET "<:bullet:1147203278401183814>"
 
   // Scurry
   #define GUILD_ICON "<:guild_icon:1020714354351542362>"
