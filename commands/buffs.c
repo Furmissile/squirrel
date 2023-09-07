@@ -229,7 +229,7 @@ int buffs_interaction(const struct discord_interaction *event)
     },
     .title = u_snprintf(header.title, sizeof(header.title), "Buffs Shop"),
     .description = u_snprintf(params.description, sizeof(params.description), 
-        " "OFF_ARROW" Buffs are stackable and are only used when applicable. \n"
+        " "OFF_ARROW" Buffs are only used when applicable. \n"
         " "OFF_ARROW" Active buffs show up with a "QUEST_MARKER" and its duration."),
 
     .thumbnail = &(struct discord_embed_thumbnail) {
