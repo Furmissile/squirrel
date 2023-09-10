@@ -15,13 +15,13 @@ void init_encounter_buttons(const struct discord_interaction *event, struct sd_i
 {
   struct sd_encounter encounter = biomes[player->biome].sections[player->section].encounters[player->encounter];
 
-  int health_loss = 1 << (player->biome_num / BIOME_SIZE);
+  int health_loss = 1 << (player->biome_num / BIOME_SIZE +1);
   int golden_acorns = BIOME_ENCOUNTER_COST * (player->biome_num +1);
 
-  int encounter_costs[3] = {
+  float encounter_costs[3] = {
     health_loss,
     health_loss * 1.5f, 
-    golden_acorns /1.5
+    golden_acorns /2
   };
 
   for (int button_idx = 0; button_idx < 3; button_idx++) 
@@ -78,10 +78,10 @@ int init_encounter_interaction(const struct discord_interaction *event, struct s
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
+    .title = u_snprintf(header.title, sizeof(header.title), "%s: %s",
+        biomes[player->biome].sections[player->section].section_name, encounter.name),
 
-    .title = u_snprintf(header.title, sizeof(header.title), encounter.name),
-    .description = u_snprintf(params.description, sizeof(params.description), "%s: %s", 
-        biomes[player->biome].sections[player->section].section_name, encounter.conflict),
+    .description = u_snprintf(params.description, sizeof(params.description), "%s", encounter.conflict),
 
     .image = &(struct discord_embed_image) {
       .url = u_snprintf(params.image_url, sizeof(params.image_url), GIT_PATH, 
