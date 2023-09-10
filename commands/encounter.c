@@ -415,8 +415,9 @@ int encounter_interaction(const struct discord_interaction *event)
     },
     .title = u_snprintf(header.title, sizeof(header.title), "%s: %s", 
         biomes[player.biome].sections[player.section].section_name, encounter.name),
-    .description = params.description,
 
+    .description = params.description,
+    
     .image = &(struct discord_embed_image) {
       .url = u_snprintf(params.image_url, sizeof(params.image_url), GIT_PATH, 
           biomes[player.biome].biome_scene_path)
