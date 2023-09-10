@@ -18,7 +18,7 @@ void init_encounter_buttons(const struct discord_interaction *event, struct sd_i
   int health_loss = 1 << (player->biome_num / BIOME_SIZE +1);
   int golden_acorns = BIOME_ENCOUNTER_COST * (player->biome_num +1);
 
-  float encounter_costs[3] = {
+  int encounter_costs[3] = {
     health_loss,
     health_loss * 1.5f, 
     golden_acorns /2
