@@ -45,7 +45,7 @@ int color_interaction(const struct discord_interaction *event)
           event->member->user->id, event->member->user->avatar)
     },
 
-    .title = u_snprintf(header.title, sizeof(header.title), "Color successfully changed!"),
+    .title = u_snprintf(header.title, sizeof(header.title), "Color successfully changed!")
   };
 
   struct discord_interaction_response interaction = 

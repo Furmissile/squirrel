@@ -172,7 +172,7 @@ void buffs_command_state(const struct discord_interaction *event, struct sd_buff
 
           if (button_idx == BUFF_STRENGTH_ACORN) // exception with strength acorn
           {
-            player->buffs.strength_acorn += (MAX_HEALTH /2 + player->stats.strength_lv);
+            player->buffs.strength_acorn += (player->max_health * HEALING_FACTOR);
             player->health += player->buffs.strength_acorn;
           }
           else if (button_idx == BUFF_ENDURANCE_ACORN)

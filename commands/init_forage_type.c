@@ -13,15 +13,15 @@ struct sd_init_encounter {
 
 void init_encounter_buttons(const struct discord_interaction *event, struct sd_init_encounter *params, struct sd_player *player)
 {
-  struct sd_encounter encounter = biomes[player->biome].encounters[player->encounter];
+  struct sd_encounter encounter = biomes[player->biome].sections[player->section].encounters[player->encounter];
 
-  int health_loss = 2 * 2 * (player->biome_num / BIOME_SIZE +1);
+  int health_loss = 1 << (player->biome_num / BIOME_SIZE);
   int golden_acorns = BIOME_ENCOUNTER_COST * (player->biome_num +1);
 
   int encounter_costs[3] = {
-    health_loss /1.5,
-    health_loss, 
-    golden_acorns
+    health_loss,
+    health_loss * 1.5f, 
+    golden_acorns /1.5
   };
 
   for (int button_idx = 0; button_idx < 3; button_idx++) 
@@ -67,7 +67,7 @@ int init_encounter_interaction(const struct discord_interaction *event, struct s
   init_encounter_buttons(event, &params, player);
 
   struct sd_header_params header = { 0 };
-  struct sd_encounter encounter = biomes[player->biome].encounters[player->encounter];
+  struct sd_encounter encounter = biomes[player->biome].sections[player->section].encounters[player->encounter];
 
   header.embed = (struct discord_embed) 
   {
@@ -80,7 +80,8 @@ int init_encounter_interaction(const struct discord_interaction *event, struct s
     },
 
     .title = u_snprintf(header.title, sizeof(header.title), encounter.name),
-    .description = u_snprintf(params.description, sizeof(params.description), encounter.conflict),
+    .description = u_snprintf(params.description, sizeof(params.description), "%s: %s", 
+        biomes[player->biome].sections[player->section].section_name, encounter.conflict),
 
     .image = &(struct discord_embed_image) {
       .url = u_snprintf(params.image_url, sizeof(params.image_url), GIT_PATH, 
@@ -179,7 +180,10 @@ int init_forage_interaction(const struct discord_interaction *event)
 
   energy_regen(&player);
 
-  ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait 2 seconds.");
+  // Beta Bot will not consider cooldown
+  if (APPLICATION_ID == MAIN_BOT_ID)
+    ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait 2 seconds.");
+  
   ERROR_INTERACTION((player.energy < 2), "You need more energy!");
 
   struct sd_init_forage params = { 0 };

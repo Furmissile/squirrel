@@ -45,10 +45,7 @@
   #define MAX_CHANCE       100 // 5  % -- Sack of acorns
 
   #define ENCOUNTER_CHANCE 20 // 20 % -- checked separately
-
-  #define HEALTH_LOSS_CHANCE 30 // 30 % -- Health Loss
-  #define NORMAL_CHANCE 90      // 60 % -- Normal Reward
-  #define DOUBLE_REWARD 100     // 10 % -- Double Reward
+  #define STORY_CHANCE 80     // 20 %
 
   #define STEAL_CHANCE 30
 
@@ -64,8 +61,8 @@
 // GENERAL PROGRESSION
   #define BIOME_INTERVAL 5000
   #define BIOME_ENCOUNTER_COST 100
-  #define BIOME_ACORN_INC 10
-  #define BIOME_GOLDEN_ACORN_INC 5
+  #define BIOME_ACORN_INC 15
+  #define BIOME_GOLDEN_ACORN_INC 10
 
   #define STEAL_MINIMUM 1000
   #define STEAL_SCORE 1000
@@ -104,9 +101,15 @@
 
 
 // BUFFS
+  #define HEALING_FACTOR 0.6f
+
   #define GOLDEN_ACORN_BUFF_COST 100
   #define SQUIRREL_BOOST_COST 10
 
+  // explicitly defined to avoid confusion
+  #define BUFF_CONSTANT 2
+  #define SQUIRREL_CONSTANT 1.5f
+  #define BOOSTED_ACORN_CONSTANT 1.5f
 
 // SEASONS
   #define SPRING_MULT 1.2f
@@ -121,7 +124,7 @@
 
   // Stat multiplier factors - See generate_factor() for details
   #define PROFICIENCY_FACTOR 0.1f
-  #define LUCK_FACTOR 0.2f
+  #define LUCK_FACTOR 0.1f
   // #define STRENGTH_FACTOR 100
   #define STRENGTH_FACTOR 5
 
@@ -158,8 +161,8 @@
   #define GRAY_SQUIRREL_COUNT 0
   #define SKELETAL_SQUIRREL_COUNT 25000
   #define BOOKIE_SQUIRREL_COUNT 50000
-  #define KING_SQUIRREL_COUNT 100000
-  #define ANGELIC_SQUIRREL_COUNT 150000
+  #define ANGELIC_SQUIRREL_COUNT 100000
+  #define KING_SQUIRREL_COUNT 150000
 
 // GAME ERRORS
   #define ERROR_STATUS -1
@@ -220,7 +223,7 @@
   #define HELP_MARKER "<:no_acorns:1044620527223975957>"
   #define OFF_ARROW "<:offset_arrow:1010924151063715841>"
   #define INDENT "<:empty_space:1019379796037337118>"
-  #define BULLET "<:bullet:1147203278401183814>"
+  #define BULLET "<:bullet:1150089464161517621>"
 
   // Scurry
   #define GUILD_ICON "<:guild_icon:1020714354351542362>"
@@ -241,3 +244,38 @@
   #define BLUEBERRY_VICTUALS "<:blueberry_victuals:1094282921944305724>"
   #define CHERRY_VICTUALS "<:cherry_victuals:1094282923806556251>"
   #define SEED_VICTUALS "<:seed_victuals:1094282924750274572>"
+
+
+// COMMAND CONSTANTS
+  // make differences between beta and main automatic!!
+  #if (APPLICATION_ID == MAIN_BOT_ID)
+    #define STATUS_CHANNEL 1046635264883294259
+    #define FORAGE_ID "</forage:1089663881959460926>"
+    #define BUFFS_ID "</buffs:1089663883876257833>"
+    #define BIOME_STORY_ID "</biome_story:1105520586706403379>"
+    #define INFO_ID "</info:1089663884673167440>"
+    #define SQUIRRELS_ID "</squirrels:1089663967460327525>"
+    #define COLOR_ID "</color:1089663885692370954>"
+    #define STEAL_ID "</steal:1089663966520819865>"
+    #define SCURRY_INFO_ID "</scurry_info:1089664056320852000>"
+    #define SCURRY_HELP_ID "</scurry_help:1089663969721065592>"
+    #define SCURRY_KICK_ID "</scurry_kick:1089664058225066155>"
+    #define SCURRY_LEAVE_ID "</scurry_leave:1089664058879377548>"
+    #define SEASON_INFO_ID "</season_info:1089664143419768972>"
+    #define BUNNY_ENDEAVOR_ID "</bunny_endeavor:1089664142203424769>"
+  #else
+    #define STATUS_CHANNEL 1049184118954528888
+    #define FORAGE_ID "</forage:1089659245588381716>"
+    #define BUFFS_ID "</buffs:1089659247270297740>"
+    #define BIOME_STORY_ID "</biome_story:1103730882092748940>"
+    #define INFO_ID "</info:1089659248214024332>"
+    #define SQUIRRELS_ID "</squirrels:1089659332003635220>"
+    #define COLOR_ID "</color:1089659248595714111>"
+    #define STEAL_ID "</steal:1089659330674036766>"
+    #define SCURRY_INFO_ID "</scurry_info:1089659416749539348>"
+    #define SCURRY_HELP_ID "</scurry_help:1089659334490853488>"
+    #define SCURRY_KICK_ID "</scurry_kick:1089659418876059669>"
+    #define SCURRY_LEAVE_ID "</scurry_leave:1089659419782037514>"
+    #define SEASON_INFO_ID "</season_info:1089659416749539348>"
+    #define BUNNY_ENDEAVOR_ID "</bunny_endeavor:1089659502573387836>"
+  #endif

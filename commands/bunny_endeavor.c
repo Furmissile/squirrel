@@ -175,17 +175,17 @@ int bunny_interaction(const struct discord_interaction *event)
     },
     {
       .item_idx = ITEM_GOLDEN_ACORN,
-      .cost = 500,
-      .quantity = PROFICIENCY_UNIT/2 * (player.stats.luck_lv +1),
+      .cost = 750,
+      .quantity = LUCK_UNIT/2 * (player.stats.luck_lv +1),
     },
     {
       .item_idx = ITEM_HEALTH,
       .cost = 500,
-      .quantity = MAX_HEALTH /2 + player.stats.strength_lv,
+      .quantity = player.max_health * HEALING_FACTOR,
     },
     {
       .item_idx = ITEM_ENERGY,
-      .cost = 500,
+      .cost = 750,
       .quantity = MAX_ENERGY/2
     }
   };
