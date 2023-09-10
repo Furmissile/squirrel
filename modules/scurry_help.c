@@ -7,34 +7,38 @@ int scurry_help_interaction(const struct discord_interaction *event)
 
   int page_num = (event->data->custom_id) ? (event->data->custom_id[1] -48) +1 : 1;
 
+  params.fields = calloc(1, sizeof(struct discord_embed_field));
+  params.field_names = calloc(1, sizeof(*params.field_names));
+  params.field_values = calloc(1, sizeof(*params.field_values));
+
   switch (page_num -1)
   {
     case S_TOPIC_UTILS:
-      params.field = (struct discord_embed_field) {
-        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+      *params.fields = (struct discord_embed_field) {
+        .name = u_snprintf(*params.field_names, sizeof(*params.field_names),
             ""GUILD_ICON" Scurry Utils"),
-        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+        .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
             " "BULLET" Member invites come in through DM. Plan accordingly because invites expire in **2** minutes! \n"
-            " "BULLET" Only the "LEADER" *owner* can kick a member! Mention the user in </scurry_kick:1089664058225066155> to kick. \n"
-            " "BULLET" Members can leave on their own prerogative too by using </scurry_leave:1089664058879377548>. \n"
+            " "BULLET" Only the "LEADER" *owner* can kick a member! Mention the user in "SCURRY_KICK_ID" to kick. \n"
+            " "BULLET" Members can leave on their own prerogative too by using "SCURRY_LEAVE_ID". \n"
             "**Please know that your stats related to the scurry will not be retained!**")
       };
       break;
     case S_TOPIC_WARS:
-      params.field = (struct discord_embed_field) {
-        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+      *params.fields = (struct discord_embed_field) {
+        .name = u_snprintf(*params.field_names, sizeof(*params.field_names),
             ""GUILD_ICON" Scurry Wars"),
-        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+        .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
             " "BULLET" "WAR_ACORNS" *Total stolen acorn* is the scurry war currency that is obtained from stealing other scurries' war acorns. \n"
             " "BULLET" Any scurry currently in the war has the chance to steal from your "LOST_STASH" *war stash*! \n"
-            " "BULLET" To join the arena found in </scurry_info:1089664056320852000>, scurries need their war stash full and have at least **4** members present!")
+            " "BULLET" To join the arena found in "SCURRY_INFO_ID", scurries need their war stash full and have at least **4** members present!")
       };
       break;
     case S_TOPIC_AFTERMATH:
-      params.field = (struct discord_embed_field) {
-        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+      *params.fields = (struct discord_embed_field) {
+        .name = u_snprintf(*params.field_names, sizeof(*params.field_names),
             ""GUILD_ICON" Arena Aftermath"),
-        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+        .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
             " "BULLET" Every scurry is dropped from the war upon running out of "WAR_ACORNS" *war acorns*. \n"
             " "BULLET" Every time you re-enter the war, your "WAR_ACORNS" *total stolen acorn* is reset. \n"
             " "BULLET" Scurries have the option to retreat at any point, but be aware your rank will match your new stolen acorn score! \n"
@@ -46,10 +50,10 @@ int scurry_help_interaction(const struct discord_interaction *event)
       APPLY_NUM_STR(acorn_snatcher_max, ACORN_SNATCHER_MAX);
       APPLY_NUM_STR(seed_sniffer_max, SEED_SNIFFER_MAX);
       APPLY_NUM_STR(oakfficial_max, OAKFFICIAL_MAX);
-      params.field = (struct discord_embed_field) {
-        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+      *params.fields = (struct discord_embed_field) {
+        .name = u_snprintf(*params.field_names, sizeof(*params.field_names),
             ""GUILD_ICON" War Ranks"),
-        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+        .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
             " "BULLET" "WAR_ACORNS" *Stolen acorns* determines scurry rank as follows: \n"
             " "INDENT" "ACORNS" Seed-Nots (*Base*) \n"
             " "INDENT" "ACORNS" Acorn Snatchers (> **%s** "WAR_ACORNS" *Stolen Acorns*): x**1.05** \n"
@@ -78,7 +82,7 @@ int scurry_help_interaction(const struct discord_interaction *event)
         page_num, S_TOPIC_SIZE),
 
     .fields = &(struct discord_embed_fields) {
-      .array = &params.field,
+      .array = params.fields,
       .size = 1
     },
     .footer = &(struct discord_embed_footer) {
@@ -119,6 +123,10 @@ int scurry_help_interaction(const struct discord_interaction *event)
   fprintf(stderr, "%s \nCCODE: %d \n", values, code);
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+
+  free(params.field_names);
+  free(params.field_values);
+  free(params.fields);
 
   return 0;
 }

@@ -46,24 +46,19 @@ void init_upgrade_buttons(const struct discord_interaction *event, struct sd_upg
 
   for (int button_idx = 0; button_idx < STAT_SIZE; button_idx++) 
   {    
-    if ((*stat_ptrs[button_idx] +1) % STAT_EVOLUTION == 0)
-      params->emojis[button_idx] = (struct discord_emoji) {
-          .name = u_snprintf(params->emoji_names[button_idx], sizeof(params->emoji_names[button_idx]), 
-                  squirrels[player->squirrel].evo_squirrel.emoji_name),
-          .id = squirrels[player->squirrel].evo_squirrel.emoji_id
-      };
-    else
-      params->emojis[button_idx] = (struct discord_emoji) {
-          .name = u_snprintf(params->emoji_names[button_idx], sizeof(params->emoji_names[button_idx]), 
-                  squirrels[player->squirrel].squirrel.emoji_name),
-          .id = squirrels[player->squirrel].squirrel.emoji_id
-      };
+    struct sd_file_data stat_data = stats[button_idx].stat;
+    params->emojis[button_idx] = (struct discord_emoji) {
+        .name = u_snprintf(params->emoji_names[button_idx], sizeof(params->emoji_names[button_idx]), 
+                stat_data.emoji_name),
+        .id = stat_data.emoji_id
+    };
 
     params->buttons[button_idx] = (struct discord_component) 
     { 
       .type = DISCORD_COMPONENT_BUTTON,
       .emoji = &params->emojis[button_idx],
-      .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), stats[button_idx].stat.formal_name),
+      .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), 
+          ((*stat_ptrs[button_idx] +1) % STAT_EVOLUTION == 0) ? "EVOLVE" : stat_data.formal_name),
       .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c_%ld",
                     TYPE_UPGRADE, button_idx, ERROR_STATUS + 96, event->member->user->id)
     };

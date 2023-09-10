@@ -1,6 +1,6 @@
 PGresult* SQL_query(PGresult* query, char* format, ...)
 {
-  char buffer[1028] = { };
+  char buffer[2048] = { };
 
   va_list args;
 
