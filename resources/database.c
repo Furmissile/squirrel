@@ -26,12 +26,12 @@ void load_player_struct(struct sd_player *player_res, unsigned long user_id)
     PQclear(search_player);
     search_player = SQL_query(search_player,
         "BEGIN; \n"
-        "insert into public.player values(%ld, 0, 0, 0, 100, 10, 0, 0, 0, 0, 0, %d, 0, 0, 0); \n"
+        "insert into public.player values(%ld, 0, 0, 0, 100, 10, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0); \n"
         "insert into public.stats values(%ld, 1, 1, 1); \n"
         "insert into public.buffs values(%ld, 0, 0, 0, 0, 0); \n"
+        "insert into public.biome_story values(%ld, 0, 0, 0, 0, 0); \n"
         "COMMIT;", 
-        user_id, ERROR_STATUS, // ERROR_STATUS so an encounter doesnt trigger
-        user_id, user_id);
+        user_id, user_id, user_id, user_id);
   }
 
   PQclear(search_player);
@@ -40,6 +40,7 @@ void load_player_struct(struct sd_player *player_res, unsigned long user_id)
       "select * from public.player \n"
       "join public.stats on player.user_id = stats.user_id \n"
       "join public.buffs on player.user_id = buffs.user_id \n"
+      "join public.biome_story on player.user_id = biome_story.user_id \n"
       "where player.user_id = %ld",
       user_id);
 
@@ -61,6 +62,7 @@ void load_player_struct(struct sd_player *player_res, unsigned long user_id)
     .stolen_acorns = strtoint( PQgetvalue(search_player, 0, DB_STOLEN_ACORNS) ),
     .catnip = strtoint( PQgetvalue(search_player, 0, DB_CATNIP) ),
   
+    .section = strtoint( PQgetvalue(search_player, 0 , DB_SECTION) ),
     .encounter = strtoint( PQgetvalue(search_player, 0, DB_ENCOUNTER) ),
     .main_cd = strtobigint( PQgetvalue(search_player, 0, DB_MAIN_CD) ),
 
@@ -76,6 +78,14 @@ void load_player_struct(struct sd_player *player_res, unsigned long user_id)
       .strength_acorn = strtoint( PQgetvalue(search_player, 0, DB_STRENGTH_ACORN) ),
       .endurance_acorn = strtoint( PQgetvalue(search_player, 0, DB_ENDURANCE_ACORN) ),
       .boosted_acorn = strtoint( PQgetvalue(search_player, 0, DB_BOOSTED_ACORN) )
+    },
+
+    .story = {
+      .grasslands = strtoint( PQgetvalue(search_player, 0, DB_GL_STORY) ),
+      .seeping_sands = strtoint( PQgetvalue(search_player, 0, DB_SP_STORY) ),
+      .nature_end = strtoint( PQgetvalue(search_player, 0, DB_NE_STORY) ),
+      .death_grip = strtoint( PQgetvalue(search_player, 0, DB_DG_STORY) ),
+      .last_acorn = strtoint( PQgetvalue(search_player, 0, DB_LA_STORY) )
     }
   };
 
@@ -146,12 +156,13 @@ void update_player_row(struct sd_player *player_res)
         "stolen_acorns = %d, "
         "catnip = %d, "
         "encounter = %d, "
+        "section = %d, "
         "main_cd = %ld \n"
       "where user_id = %ld; \n",
       player_res->scurry_id, player_res->color, player_res->squirrel, player_res->energy, 
       player_res->health,player_res->acorns, player_res->acorn_count, player_res->high_acorn_count, 
       player_res->golden_acorns, player_res->conjured_acorns,player_res->stolen_acorns, player_res->catnip,
-      player_res->encounter, player_res->main_cd,
+      player_res->encounter, player_res->section, player_res->main_cd,
       player_res->user_id);
     
   u_snprintf(sql_str, sizeof(sql_str),
@@ -170,10 +181,22 @@ void update_player_row(struct sd_player *player_res)
         "strength_acorn = %d, "
         "endurance_acorn = %d, "
         "boosted = %d \n"
-      "where user_id = %ld; \n"
-      "COMMIT; \n",
+      "where user_id = %ld; \n",
       player_res->buffs.luck_acorn, player_res->buffs.proficiency_acorn, player_res->buffs.strength_acorn, 
       player_res->buffs.endurance_acorn, player_res->buffs.boosted_acorn, 
+      player_res->user_id);
+  
+  u_snprintf(sql_str, sizeof(sql_str),
+      "update public.biome_story set "
+        "grasslands = %d, "
+        "seeping_sands = %d, "
+        "nature_end = %d, "
+        "death_grip = %d, "
+        "last_acorn = %d "
+      "where user_id = %ld; \n"
+      "COMMIT; \n",
+      player_res->story.grasslands, player_res->story.seeping_sands, player_res->story.nature_end,
+      player_res->story.death_grip, player_res->story.last_acorn, 
       player_res->user_id);
 
   PGresult* player_update = (PGresult*) { 0 };

@@ -13,7 +13,6 @@ struct sd_squirrel
 {
   int acorn_count_req;
   struct sd_file_data squirrel;
-  struct sd_file_data evo_squirrel;
 };
 
 struct sd_encounter
@@ -22,16 +21,24 @@ struct sd_encounter
   char* file_path;
   char* conflict;
   char* solutions[3];
+  char* context;
+};
+
+struct sd_biome_section
+{
+  char* section_name;
+  struct sd_encounter *encounters;
+  int section_size;
 };
 
 struct sd_biome
 {
   char* biome_scene_path;
   struct sd_file_data biome_icon; // both emoji
+  char* intro;
 
-  struct sd_encounter *encounters;
-
-  int encounter_size;
+  struct sd_biome_section *sections;
+  int biome_size;
 };
 
 struct sd_obj_stats
@@ -68,7 +75,6 @@ struct sd_stats
 struct sd_buffs 
 {
   int proficiency_acorn;
-  int defense_acorn;
   int luck_acorn;
   int strength_acorn;
   int endurance_acorn;
@@ -81,6 +87,15 @@ struct sd_buff_status
   bool defense_acorn;
   bool luck_acorn;
   bool boosted_acorn;
+};
+
+struct sd_biome_story
+{
+  int grasslands;
+  int seeping_sands;
+  int nature_end;
+  int death_grip;
+  int last_acorn;
 };
 
 struct sd_player 
@@ -102,14 +117,16 @@ struct sd_player
   int stolen_acorns;
   int catnip;
   
-  int encounter;
-  int biome;
-  int biome_num;
+  int encounter; // biome-relative encounter idx
+  int biome; // current biome the player is on
+  int section; // current section player is on
+  int biome_num; // total number of biomes completed
 
   time_t main_cd;
 
   struct sd_stats stats;
   struct sd_buffs buffs;
+  struct sd_biome_story story;
 };
 
 struct sd_store
@@ -142,14 +159,16 @@ struct sd_rewards
 };
 
 // For listing members...
-struct sd_db_info {
+struct sd_db_info 
+{
   int db_idx;
   char username[128];
   unsigned long user_id;
   int value;
 };
 
-struct sd_header_params {
+struct sd_header_params 
+{
   struct discord_embed embed;
   char username[64];
   char avatar_url[128];
@@ -157,7 +176,8 @@ struct sd_header_params {
   char thumbnail_url[128];
 };
 
-struct sd_util_info {
+struct sd_util_info 
+{
   struct discord_component buttons[5];
   char custom_ids[5][64];
   char labels[5][64];
@@ -173,10 +193,12 @@ struct sd_help_info
 
   struct discord_emoji emojis[4];
   char emoji_names[4][64];
+  
+  struct discord_embed_field *fields;
+  char (*field_names)[64];
+  char (*field_values)[1024];
 
-  struct discord_embed_field field;
-  char field_name[64];
-  char field_value[1024];
+  char description[512];
 
   char footer_text[64];
   char footer_url[128];

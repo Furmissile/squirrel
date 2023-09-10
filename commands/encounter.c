@@ -1,10 +1,10 @@
 struct sd_encounter_resp {
   struct discord_component buttons[4];
   char custom_ids[4][64];
-  char labels[3][64];
+  char labels[4][64];
 
-  struct discord_emoji emojis[3];
-  char emoji_names[3][64];
+  struct discord_emoji emojis[4];
+  char emoji_names[4][64];
 
   char image_url[128];
   char description[1024];
@@ -19,27 +19,27 @@ void apply_conjured_acorn(struct sd_player *player, struct sd_rewards *rewards)
   {
     case GRASSLANDS:
       // Match location of Witch Swamp
-      if (player->encounter > 9 && player->encounter < 13)
+      if (player->section == 3)
         give_conjured_acorn = 1;
       break;
     case SEEPING_SANDS:
       // Match location of Wormhole
-      if (player->encounter > 10 && player->encounter < 13)
+      if (player->section == 4)
         give_conjured_acorn = 1;
       break;
     case NATURE_END:
       // Match location of Breached Woods
-      if (player->encounter > 5 && player->encounter < 8)
+      if (player->section == 2)
         give_conjured_acorn = 1;
       break;
     case DEATH_GRIP:
       // Match location of Necrotic Lakes
-      if (player->encounter > 3 && player->encounter < 6)
+      if (player->section == 1)
         give_conjured_acorn = 1;
       break;
     case LAST_ACORN:
       // Match location of Death's Locus
-      if (player->encounter > 11 && player->encounter < 15)
+      if (player->section == 4)
         give_conjured_acorn = 1;
       break;
   }
@@ -49,6 +49,39 @@ void apply_conjured_acorn(struct sd_player *player, struct sd_rewards *rewards)
     rewards->conjured_acorns = (rewards->item_type == TYPE_ACORN_MOUTHFUL) ? 1 : 2;
     player->conjured_acorns += rewards->conjured_acorns;
   }
+}
+
+void complete_encounter(struct sd_encounter_resp *params, struct sd_player *player)
+{
+  int encounter_idx = 0;
+  for (int i = 1; i < player->section +1; i++)
+  {
+    // count all whole sections
+    encounter_idx += biomes[player->biome].sections[player->section - i].section_size;
+  }
+
+  int* biome_stories[5] = { 
+    &player->story.grasslands, 
+    &player->story.seeping_sands, 
+    &player->story.nature_end, 
+    &player->story.death_grip, 
+    &player->story.last_acorn 
+  };
+
+  // add progress through current section
+  encounter_idx += player->encounter;
+
+  // if encounter idx bit is on or player didn't chance info, this encounter has been seen!
+  if ((*biome_stories[player->biome] >> encounter_idx & 0x01) == 1 || rand() % MAX_CHANCE < STORY_CHANCE)
+    return;
+
+  // now assume the encounter hasn't been seen!
+
+  // switch encounter idx bit on
+  (*biome_stories[player->biome]) |= (1 << encounter_idx);
+
+  u_snprintf(params->description, sizeof(params->description), "\nNew element of the story unlocked! \n"QUEST_MARKER" \"*%s*\" \n", 
+      biomes[player->biome].sections[player->section].encounters[player->encounter].context);
 }
 
 // void generate_encounter_reward(char* e_description, size_t description_size, struct sd_player *player, struct sd_rewards *rewards)
@@ -76,7 +109,7 @@ void generate_encounter_reward(const struct discord_interaction *event, struct s
       break;
     case TYPE_LOST_STASH:
       rewards->acorns = genrand(250, 50);
-      rewards->golden_acorns = genrand(100, 50);
+      rewards->golden_acorns = genrand(50, 25);
       break;
     case TYPE_ACORN_SACK:
       rewards->acorns = genrand(300, 100);
@@ -115,8 +148,11 @@ void generate_encounter_reward(const struct discord_interaction *event, struct s
     }
   }
 
-  if (player->health == 0) 
+  if (player->health > 0) // player is not dead yet...
   {
+    complete_encounter(params, player);
+  } 
+  else {
     // final acorns are added and then high score is set
     if (player->acorn_count > player->high_acorn_count) {
       u_snprintf(params->description, sizeof(params->description), "\n"ENERGY" **NEW HIGH ACORN COUNT**");
@@ -145,13 +181,13 @@ void generate_encounter_reward(const struct discord_interaction *event, struct s
           "\n"QUEST_MARKER" Your acorn count was reset! \n");
     }
   }
-  
+
   player->encounter = ERROR_STATUS;
 }
 
 void build_encounter_buttons(const struct discord_interaction *event, struct sd_encounter_resp *params, struct sd_player *player, struct sd_rewards *rewards)
 {
-  struct sd_encounter encounter = biomes[player->biome].encounters[player->encounter];
+  struct sd_encounter encounter = biomes[player->biome].sections[player->section].encounters[player->encounter];
 
   int potential_types[3] = { 
     (rand() % MAX_CHANCE > 30) ? TYPE_ACORN_MOUTHFUL : TYPE_LOST_STASH, // half damage -- least risky
@@ -188,6 +224,21 @@ void build_encounter_buttons(const struct discord_interaction *event, struct sd_
       .disabled = true
     };
   }
+
+  params->emojis[3] = (struct discord_emoji) {
+    .name = u_snprintf(params->emoji_names[3], sizeof(params->emoji_names[3]), 
+            item_types[TYPE_ENCOUNTER].emoji_name),
+    .id = item_types[TYPE_ENCOUNTER].emoji_id
+  };
+  params->buttons[3] = (struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .style = DISCORD_BUTTON_SUCCESS,
+    .emoji = &params->emojis[3],
+    .custom_id = u_snprintf(params->custom_ids[3], sizeof(params->custom_ids[3]), "%c%d_%ld*%ld",
+      TYPE_BIOME_STORY, player->biome, event->member->user->id, event->member->user->id),
+    .label = "Biome Story"
+  };
 }
 
 void encounter_error(const struct discord_interaction *event, struct sd_player *player)
@@ -195,9 +246,10 @@ void encounter_error(const struct discord_interaction *event, struct sd_player *
   struct sd_encounter_resp params = { 0 };
 
   // recall encounter
-  int original_biome_idx = event->data->custom_id[3] -48;
+  int original_biome_idx = event->data->custom_id[4] -48;
+  int original_section_idx = event->data->custom_id[3] -48;
   int original_encounter_idx = event->data->custom_id[2] -96;
-  struct sd_encounter encounter = biomes[original_biome_idx].encounters[original_encounter_idx];
+  struct sd_encounter encounter = biomes[original_biome_idx].sections[original_section_idx].encounters[original_encounter_idx];
 
   for (int button_idx = 0; button_idx < 3; button_idx++) 
   {
@@ -235,7 +287,7 @@ void encounter_error(const struct discord_interaction *event, struct sd_player *
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
         .array = util_data.buttons,
-        .size = 4
+        .size = 5
       }
     }
   };
@@ -252,7 +304,8 @@ void encounter_error(const struct discord_interaction *event, struct sd_player *
           event->member->user->id, event->member->user->avatar)
     },
 
-    .title = u_snprintf(header.title, sizeof(header.title), encounter.name),
+    .title = u_snprintf(header.title, sizeof(header.title), "%s: %s", 
+        biomes[original_biome_idx].sections[original_section_idx].section_name, encounter.name),
     .description = u_snprintf(params.description, sizeof(params.description), 
         "%s \nYou have already responded to this encounter!",
          encounter.conflict),
@@ -327,7 +380,7 @@ int encounter_interaction(const struct discord_interaction *event)
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
         .array = params.buttons,
-        .size = 3
+        .size = 4
       }
     },
     {
@@ -339,13 +392,12 @@ int encounter_interaction(const struct discord_interaction *event)
     }
   };
 
-  struct sd_encounter encounter = biomes[player.biome].encounters[player.encounter];
+  struct sd_encounter encounter = biomes[player.biome].sections[player.section].encounters[player.encounter];
 
   // apply encounter description FIRST
   u_snprintf(params.description, sizeof(params.description), encounter.conflict);
 
   // then add rewards
-  // generate_encounter_reward(params.description, sizeof(params.description), &player, &rewards);
   generate_encounter_reward(event, &params, &player, &rewards);
   
   int energy_loss = energy_status(params.description, sizeof(params.description), &player, 2);
@@ -361,7 +413,8 @@ int encounter_interaction(const struct discord_interaction *event)
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
-    .title = u_snprintf(header.title, sizeof(header.title), encounter.name),
+    .title = u_snprintf(header.title, sizeof(header.title), "%s: %s", 
+        biomes[player.biome].sections[player.section].section_name, encounter.name),
     .description = params.description,
 
     .image = &(struct discord_embed_image) {
@@ -372,12 +425,12 @@ int encounter_interaction(const struct discord_interaction *event)
       .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
           encounter.file_path)
     },
-    .footer = (energy_loss) ?
-      &(struct discord_embed_footer) {
-        .text = u_snprintf(params.footer_txt, sizeof(params.footer_txt), "You have %d energy left!", player.energy),
-        .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, items[ITEM_ENERGY].file_path)
-      }
-      : &(struct discord_embed_footer) { 0 }
+    .footer = &(struct discord_embed_footer) 
+    {
+      .text = (energy_loss) ? u_snprintf(params.footer_txt, sizeof(params.footer_txt), "You have %d energy left!", player.energy)
+          : u_snprintf(params.footer_txt, sizeof(params.footer_txt), "\n No energy was lost! \n"),
+      .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, items[ITEM_ENERGY].file_path)
+    }
   };
 
   struct discord_interaction_response interaction = 

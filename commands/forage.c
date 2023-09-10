@@ -207,7 +207,10 @@ int forage_interaction(const struct discord_interaction *event)
   if (player.encounter == ERROR_STATUS
     && rand() % MAX_CHANCE < ENCOUNTER_CHANCE)
   {
-    player.encounter = rand() % biomes[player.biome].encounter_size;
+    // select section and encounter!
+    player.section = rand() % biomes[player.biome].biome_size;
+    player.encounter = rand() % biomes[player.biome].sections[player.section].section_size;
+
     init_encounter_interaction(event, &player);
     update_player_row(&player);
     return 0;
@@ -249,12 +252,12 @@ int forage_interaction(const struct discord_interaction *event)
       .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
           item_types[rewards.item_type].file_path)
     },
-    .footer = (energy_loss) ?
-      &(struct discord_embed_footer) {
-        .text = u_snprintf(params.footer_txt, sizeof(params.footer_txt), "You have %d energy left!", player.energy),
-        .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, items[ITEM_ENERGY].file_path)
-      }
-      : &(struct discord_embed_footer) { 0 }
+    .footer = &(struct discord_embed_footer) 
+    {
+      .text = (energy_loss) ? u_snprintf(params.footer_txt, sizeof(params.footer_txt), "You have %d energy left!", player.energy)
+          : u_snprintf(params.footer_txt, sizeof(params.footer_txt), "\n No energy was lost! \n"),
+      .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, items[ITEM_ENERGY].file_path)
+    }
   };
 
   struct sd_util_info util_data = { 0 };

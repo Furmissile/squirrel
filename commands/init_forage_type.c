@@ -42,8 +42,8 @@ void init_encounter_buttons(const struct discord_interaction *event, struct sd_i
       .emoji = &params->emojis[button_idx],
       .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), "(-%s) %s", 
           encounter_cost, encounter.solutions[button_idx]),
-      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c%d -%d-_%ld",
-          TYPE_ENCOUNTER_RESP, button_idx, player->encounter + 96, player->biome, encounter_costs[button_idx], event->member->user->id)
+      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c%d%d -%d-_%ld",
+          TYPE_ENCOUNTER_RESP, button_idx, player->encounter + 96, player->section, player->biome, encounter_costs[button_idx], event->member->user->id)
     };
 
     if (button_idx < 2 && player->health <= encounter_costs[button_idx])

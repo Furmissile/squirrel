@@ -7,67 +7,81 @@ int player_help_interaction(const struct discord_interaction *event)
 
   int page_num = (event->data->custom_id) ? (event->data->custom_id[1] -48) +1 : 1;
 
+  params.fields = calloc(1, sizeof(struct discord_embed_field));
+  params.field_names = calloc(1, sizeof(*params.field_names));
+  params.field_values = calloc(1, sizeof(*params.field_values));
+
   switch (page_num -1)
   {
     case P_TOPIC_INTRO:
-      params.field = (struct discord_embed_field) {
-        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+      *params.fields = (struct discord_embed_field) {
+        .name = u_snprintf(*params.field_names, sizeof(*params.field_names), 
             ""ACORNS" Bot Interaction"),
-        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+        .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
             " "BULLET" Never heard of slash commands? No need to fret! \n"
-            " "BULLET" Enter </forage:1089663881959460926> to get started with an adventure and press any button. \n"
-            " "BULLET" If you're feeling adventurous, click the squirrel in the left column of the menu and the description for each command should come up. \n"
+            " "BULLET" Enter "FORAGE_ID" to get started with an adventure and press any button. \n"
+            " "BULLET" After pressing `/`, click the squirrel in the left column of the menu and the description for each command should come up. \n"
             " "BULLET" "ACORNS" *Acorn* is the main currency and "ACORN_COUNT" *acorn count* is your score in the game."
-            " "BULLET" "GOLDEN_ACORNS" *Golden acorns* can be spent on buffs to make the most of your run! Check it out using </buffs:1089663883876257833>!")
+            " "BULLET" "GOLDEN_ACORNS" *Golden acorns* can be spent on buffs to make the most of your run! Check it out using "BUFFS_ID"!")
+      };
+      break;
+    case P_TOPIC_STORY:
+      *params.fields = (struct discord_embed_field) {
+        .name = u_snprintf(*params.field_names, sizeof(*params.field_names), 
+            ""ACORNS" Unlocking the Story"),
+        .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
+            " "BULLET" Every encounter you complete has a chance to unlock an element of the biome's story. \n"
+            " "BULLET" These elements are then added to "BIOME_STORY_ID". \n"
+            " "BULLET" The option selected in the encounter does not effect the chance of getting element so long as the player doesn't die from the encounter.")
       };
       break;
     case P_TOPIC_PROGRESSION:
       APPLY_NUM_STR(b_interval, BIOME_INTERVAL);
-      params.field = (struct discord_embed_field) {
-        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+      *params.fields = (struct discord_embed_field) {
+        .name = u_snprintf(*params.field_names, sizeof(*params.field_names), 
             ""ACORNS" Biome Progression"),
-        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+        .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
             " "BULLET" Every **%s** "ACORN_COUNT" *acorn count*, you will enter the next biome. Once you get past the last biome, it cycles back. "
-                "Send </info:1089663884673167440> to see what biome you're in! \n"
+                "Send "INFO_ID" to see what biome you're in! \n"
             " "BULLET" The required acorn count to reach the next biome is also shown after your acorn count. \n"
-            " "BULLET" With each biome, the damage dealt by encounters and earnings increases. \n"
+            " "BULLET" With each biome, the damage dealt by encounters and earnings increase. \n"
             " "BULLET" Upon losing all your "HEALTH" *health*, your acorn count is set back! \n"
             " "BULLET" If you get past the first biome cycle in a run before you die, your acorn count is *halved*. Otherwise, it is set back to **0**.",
             b_interval)
       };
       break;
     case P_TOPIC_SQUIRREL:
-      params.field = (struct discord_embed_field) {
-        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+      *params.fields = (struct discord_embed_field) {
+        .name = u_snprintf(*params.field_names, sizeof(*params.field_names), 
             ""ACORNS" Squirrels"),
-        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+        .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
             " "BULLET" With certain "ACORN_COUNT" *acorn count* milestones, you can unlock new squirrels! \n"
-            " "BULLET" Each squirrel has its own benefit based on player needs. Send </squirrels:1089663967460327525> to check it out!")
+            " "BULLET" Each squirrel has its own benefit based on player needs. Send "SQUIRRELS_ID" to check it out!")
       };
       break;
     case P_TOPIC_CHANGE_COLOR:
-      params.field = (struct discord_embed_field) {
-        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+      *params.fields = (struct discord_embed_field) {
+        .name = u_snprintf(*params.field_names, sizeof(*params.field_names), 
             ""ACORNS" Changing Message Color"),
-        .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "BULLET" The color of your embed can be changed by inputing a hex value into </color:1089663885692370954>. \n"
+        .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
+            " "BULLET" The color of your embed can be changed by inputing a hex value into "COLOR_ID". \n"
             " "BULLET" Looking for a hex color? Check out this [**link**](https://htmlcolorcodes.com/color-picker/) for reference!")
       };
       break;
     case P_TOPIC_STEAL:
-      params.field = (struct discord_embed_field) {
-        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+      *params.fields = (struct discord_embed_field) {
+        .name = u_snprintf(*params.field_names, sizeof(*params.field_names), 
             ""ACORNS" Stealing Player Acorns"),
-        .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "BULLET" Stealing from other players gives "ACORNS" *acorns* and "GOLDEN_ACORNS" *golden acorns* using </steal:1089663966520819865>. \n"
-            " "BULLET" Stolen rewards can be improved when you upgrade your "PROFICIENCY_ICON" *Proficiency* and "LUCK_ICON" *Luck* stat respectively.")
+        .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
+            " "BULLET" Stealing from other players gives "ACORNS" *acorns* and "GOLDEN_ACORNS" *golden acorns* using "STEAL_ID". \n"
+            " "BULLET" Stolen rewards increase when you upgrade your "PROFICIENCY_ICON" *Proficiency* and "LUCK_ICON" *Luck* stat respectively.")
       };
       break;
     case P_TOPIC_CONJURED_ACORNS:
-      params.field = (struct discord_embed_field) {
-        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+      *params.fields = (struct discord_embed_field) {
+        .name = u_snprintf(*params.field_names, sizeof(*params.field_names), 
             ""ACORNS" Conjured Acorns"),
-        .value = u_snprintf(params.field_value, sizeof(params.field_value),
+        .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
             " "BULLET" "CONJURED_ACORNS" *Conjured acorns* are fragments of dark power originating from the "LAST_ACORN_ICON" **Last Acorn**. \n"
             " "BULLET" They can be found in corruption-touched areas including: \n" 
                 " "INDENT" "GRASSLANDS_ICON" *Witch Swamp*, \n" 
@@ -76,40 +90,29 @@ int player_help_interaction(const struct discord_interaction *event)
                 " "INDENT" "DEATH_GRIP_ICON" *Necrotic Lakes*, \n"
                 " "INDENT" "LAST_ACORN_ICON" *Death's Locus* \n"
             " "BULLET" Conjured acorns are used to buy the "BOOSTED_ACORN" *boosted acorn* buff that will boost your current squirrel's effect. This effect transfers between squirrels. \n"
-            " "BULLET" Check out the buff in </buffs:1089663883876257833>!")
+            " "BULLET" Check out the buff in "BUFFS_ID"!")
       };
       break;
     case P_TOPIC_SCURRY:
       APPLY_NUM_STR(scurry_cost, SCURRY_CREATION_COST);
-      params.field = (struct discord_embed_field) {
-        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+      *params.fields = (struct discord_embed_field) {
+        .name = u_snprintf(*params.field_names, sizeof(*params.field_names), 
             ""ACORNS" Scurries"),
-        .value = u_snprintf(params.field_value, sizeof(params.field_value), 
+        .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
             " "BULLET" Scurries can be created with **%s** "ACORNS" *acorns*. A player can not own more than **1** scurry. \n"
-            " "BULLET" If you are looking to transfer ownership of your scurry, reset it, or disban it altogether, please reach out to the support server (link on the last page). \n"
-            " "BULLET" For more info on scurries, send </scurry_help:1089663969721065592>! \n"
-            " "BULLET" Already in a scurry? Send </scurry_info:1089664056320852000>!",
+            " "BULLET" If you are looking to transfer ownership of your scurry, reset it, or disband it altogether, please reach out to the [support server](https://discord.gg/Dd8Te3HmPW). \n"
+            " "BULLET" For more info on scurries, send "SCURRY_HELP_ID"! \n"
+            " "BULLET" Already in a scurry? Send "SCURRY_INFO_ID"!",
             scurry_cost)
       };
       break;
-    case P_TOPIC_VENGENCE_MODE:
-      params.field = (struct discord_embed_field) {
-        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
-            ""ACORNS" Vengence Mode"),
-        .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "BULLET" Vengeance mode is a type of hardcore that sets your health to **1**, is unphased by your "STRENGTH_ICON" *strength* stat"
-                " and the chance to find an encounter is also increased. \n"
-            " "BULLET" In turn, you receive *double* the base value of "ACORNS" *acorn*, "ACORN_COUNT" *acorn count*, and "GOLDEN_ACORNS" *golden acorn* earnings! \n"
-            " "BULLET" You must have been through the biome cycle at least once in your current run to be able to enable this mode! \n"
-            " "BULLET" This mode can be enabled or disabled with </vengeance_mode:1117141905776595054> and is automatically disabled upon dying.")
-      };
-      break;
     case P_TOPIC_HELP:
-      params.field = (struct discord_embed_field) {
-        .name = u_snprintf(params.field_name, sizeof(params.field_name), 
+      *params.fields = (struct discord_embed_field) {
+        .name = u_snprintf(*params.field_names, sizeof(*params.field_names), 
             ""ACORNS" Reporting Issues"),
-        .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "BULLET" If you've found a bug or just have a question that wasn't addressed, feel free to join the [support server](https://discord.gg/Dd8Te3HmPW)! \n")
+        .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
+            " "BULLET" If you've found a bug or just have a question that wasn't addressed, feel free to join the [support server](https://discord.gg/Dd8Te3HmPW)! \n"
+            " "BULLET" If you encounter a bug while foraging, please screenshot the message immediately and send it to <#1047233819201261748>! Otherwise, the bug may not be handled.")
       };
   }
 
@@ -130,7 +133,7 @@ int player_help_interaction(const struct discord_interaction *event)
         page_num, P_TOPIC_SIZE),
 
     .fields = &(struct discord_embed_fields) {
-      .array = &params.field,
+      .array = params.fields,
       .size = 1
     },
     .footer = &(struct discord_embed_footer) {
@@ -171,6 +174,10 @@ int player_help_interaction(const struct discord_interaction *event)
   fprintf(stderr, "%s \nCCODE: %d \n", values, code);
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+
+  free(params.field_names);
+  free(params.field_values);
+  free(params.fields);
 
   return 0;
 }
