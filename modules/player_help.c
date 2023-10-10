@@ -31,7 +31,7 @@ int player_help_interaction(const struct discord_interaction *event)
         .name = u_snprintf(*params.field_names, sizeof(*params.field_names), 
             ""ACORNS" Unlocking the Story"),
         .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
-            " "BULLET" Every encounter you complete has a chance to unlock an element of the biome's story. \n"
+            " "BULLET" Every encounter you complete has a chance to unlock an element of the biome's story! \n"
             " "BULLET" These elements are then added to "BIOME_STORY_ID". \n"
             " "BULLET" The option selected in the encounter does not effect the chance of getting element so long as the player doesn't die from the encounter.")
       };
@@ -45,7 +45,7 @@ int player_help_interaction(const struct discord_interaction *event)
             " "BULLET" Every **%s** "ACORN_COUNT" *acorn count*, you will enter the next biome. Once you get past the last biome, it cycles back. "
                 "Send "INFO_ID" to see what biome you're in! \n"
             " "BULLET" The required acorn count to reach the next biome is also shown after your acorn count. \n"
-            " "BULLET" With each biome, the damage dealt by encounters and earnings increase. \n"
+            " "BULLET" With each biome, earnings and the damage dealt by encounters increase. \n"
             " "BULLET" Upon losing all your "HEALTH" *health*, your acorn count is set back! \n"
             " "BULLET" If you get past the first biome cycle in a run before you die, your acorn count is *halved*. Otherwise, it is set back to **0**.",
             b_interval)
@@ -83,7 +83,7 @@ int player_help_interaction(const struct discord_interaction *event)
         .name = u_snprintf(*params.field_names, sizeof(*params.field_names), 
             ""ACORNS" Conjured Acorns"),
         .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
-            " "BULLET" "CONJURED_ACORNS" *Conjured acorns* are fragments of dark power originating from the "LAST_ACORN_ICON" **Last Acorn**. \n"
+            " "BULLET" "CONJURED_ACORNS" *Conjured acorns* are fragments of dark power originating from the "LAST_ACORN_ICON" *Last Acorn*. \n"
             " "BULLET" They can be found in corruption-touched areas including: \n" 
                 " "INDENT" ("GRASSLANDS_ICON") *Witch Swamp*, \n" 
                 " "INDENT" ("SEEPING_SANDS_ICON") *Wormhole*, \n"
@@ -112,8 +112,8 @@ int player_help_interaction(const struct discord_interaction *event)
             ""ACORNS" Reporting Issues"),
         .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
             " "BULLET" If you've found a bug or just have a question that wasn't addressed, feel free to join the [support server](https://discord.gg/Dd8Te3HmPW)! \n"
-            " "BULLET" If you encounter a bug while foraging, please screenshot the message immediately and send it to <#1047233819201261748>! Otherwise, the bug may not be handled. \n"
-            " "BULLET" Please refer to the [license](https://github.com/Furmissile/squirrel/blob/main/LICENSE) for using this project. If unauthorized copies are encountered, please immediately report it to <#1047233819201261748> with the supporting link!")
+            " "BULLET" If you encounter a bug while foraging, please screenshot the message immediately before reporting it! Otherwise, the bug may not be handled. \n"
+            " "BULLET" Please refer to the [license](https://github.com/Furmissile/squirrel/blob/main/LICENSE) if you wish to use this project. If unauthorized copies are encountered, please immediately report it to <#1047233819201261748> with the supporting link!")
       };
   }
 

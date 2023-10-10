@@ -55,11 +55,11 @@ int scurry_help_interaction(const struct discord_interaction *event)
             ""GUILD_ICON" War Ranks"),
         .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
             " "BULLET" "WAR_ACORNS" *Stolen acorns* determines scurry rank as follows: \n"
-            " "INDENT" "ACORNS" Seed-Nots (*Base*) \n"
-            " "INDENT" "ACORNS" Acorn Snatchers (> **%s** "WAR_ACORNS" *Stolen Acorns*): x**1.05** \n"
-            " "INDENT" "GOLDEN_ACORNS" Seed Sniffers (> **%s** "WAR_ACORNS" *Stolen Acorns*) x**1.1** \n"
-            " "INDENT" "GOLDEN_ACORNS" Oakfficials (> **%s** "WAR_ACORNS" *Stolen Acorns*) x**1.15** \n"
-            " "INDENT" "CONJURED_ACORNS" Royal Nuts (**%s**+ "WAR_ACORNS" *Stolen Acorns*) x**1.2**",
+            " "INDENT" ("ACORNS") Seed-Nots (*Base*) \n"
+            " "INDENT" ("ACORNS") Acorn Snatchers (> **%s** "WAR_ACORNS" *Stolen Acorns*): x**1.05** \n"
+            " "INDENT" ("GOLDEN_ACORNS") Seed Sniffers (> **%s** "WAR_ACORNS" *Stolen Acorns*) x**1.1** \n"
+            " "INDENT" ("GOLDEN_ACORNS") Oakfficials (> **%s** "WAR_ACORNS" *Stolen Acorns*) x**1.15** \n"
+            " "INDENT" ("CONJURED_ACORNS") Royal Nuts (**%s**+ "WAR_ACORNS" *Stolen Acorns*) x**1.2**",
             seed_not_max, acorn_snatcher_max, seed_sniffer_max, oakfficial_max)
       };
       break;
