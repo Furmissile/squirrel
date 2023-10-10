@@ -46,8 +46,14 @@ void apply_conjured_acorn(struct sd_player *player, struct sd_rewards *rewards)
 
   if (give_conjured_acorn)
   {
-    rewards->conjured_acorns = (rewards->item_type == TYPE_ACORN_MOUTHFUL) ? 1 : 2;
-    player->conjured_acorns += rewards->conjured_acorns;
+    rewards->conjured_acorns = (player->button_idx == 2) ? 2 : 1;
+    if (player->conjured_acorns + rewards->conjured_acorns > 10)
+      player->conjured_acorns = 10;
+    else
+      player->conjured_acorns += rewards->conjured_acorns;
+
+    if (player->conjured_acorns == 10)
+      rewards->charge_ready = 1;
   }
 }
 
@@ -85,67 +91,62 @@ void complete_encounter(struct sd_encounter_resp *params, struct sd_player *play
 }
 
 // void generate_encounter_reward(char* e_description, size_t description_size, struct sd_player *player, struct sd_rewards *rewards)
-void generate_encounter_reward(const struct discord_interaction *event, struct sd_encounter_resp *params, struct sd_player *player, struct sd_rewards *rewards)
+void generate_encounter_reward(struct sd_encounter_resp *params, struct sd_player *player, struct sd_rewards *rewards)
 {
-  int selected_button = event->data->custom_id[1] -48;
+  struct sd_buff_status buff_status = { 0 };
 
-  if (selected_button == 2)
+  if (player->button_idx == 2)
   {
     player->golden_acorns -= rewards->encounter_cost;
+    player->spent_golden_acorns += rewards->encounter_cost;
   }
   else 
   {
+    int health_deduction = (rewards->encounter_cost > player->health) ? player->health : rewards->encounter_cost;
     rewards->is_health = 1;
-    player->health -= (rewards->encounter_cost > player->health) ? player->health : rewards->encounter_cost;
+    player->health -= health_deduction;
+    player->session_data.health_loss += health_deduction;
   }
 
   switch (rewards->item_type) 
   {
     case TYPE_ACORN_HANDFUL:
       rewards->acorns = genrand(50, 25);
+      player->session_data.acorn_handful++;
       break;
     case TYPE_ACORN_MOUTHFUL:
       rewards->acorns = genrand(100, 50);
+      player->session_data.acorn_mouthful++;
       break;
     case TYPE_LOST_STASH:
       rewards->acorns = genrand(250, 50);
       rewards->golden_acorns = genrand(50, 25);
+      player->session_data.lost_stash++;
       break;
     case TYPE_ACORN_SACK:
       rewards->acorns = genrand(300, 100);
+      player->session_data.acorn_sack++;
   }
 
-  if (rewards->acorns)
-  {
+  // only fill when charge isn't ready or in use!
+  if (player->buffs.boosted_acorn == 0 && player->conjured_acorns < 10)
     apply_conjured_acorn(player, rewards);
 
-    struct sd_buff_status buff_status = { 0 };
-    apply_base_rewards(player, rewards, &buff_status);
-    print_rewards(params->description, sizeof(params->description), player, rewards, &buff_status);
-  }
-  else {
-    u_snprintf(params->description, sizeof(params->description), "\nYou received no earnings! \n");
-  }
+  // apply golden acorn cost boost to acorn count! (3rd button)
+  rewards->acorn_count = (player->button_idx == 2) ? rewards->acorns *2 : rewards->acorns;
 
-  if (rewards->encounter_cost)
+  apply_base_rewards(player, rewards, &buff_status);
+
+  print_rewards(params->description, sizeof(params->description), player, rewards, &buff_status);
+
+  APPLY_NUM_STR(encounter_cost, rewards->encounter_cost);
+  if (rewards->is_health)
   {
-    APPLY_NUM_STR(encounter_cost, rewards->encounter_cost);
+    APPLY_NUM_STR(player_health, player->health);
 
-    if (rewards->is_health)
-    {
-      APPLY_NUM_STR(player_health, player->health);
-
-      u_snprintf(params->description, sizeof(params->description),
-          "\n-**%s** "BROKEN_HEALTH" HP (**%s** "HEALTH" HP Left) \n", 
-          encounter_cost, player_health );
-    }
-    else {
-      APPLY_NUM_STR(golden_acorns, player->golden_acorns);
-
-      u_snprintf(params->description, sizeof(params->description),
-          "\n-**%s** "GOLDEN_ACORNS" Golden Acorns (**%s** "GOLDEN_ACORNS" Golden Acorns Left) \n", 
-          encounter_cost, golden_acorns );
-    }
+    u_snprintf(params->description, sizeof(params->description),
+        "\n-**%s** "BROKEN_HEALTH" HP (**%s** "HEALTH" HP Left) \n", 
+        encounter_cost, player_health);
   }
 
   if (player->health > 0) // player is not dead yet...
@@ -189,15 +190,27 @@ void build_encounter_buttons(const struct discord_interaction *event, struct sd_
 {
   struct sd_encounter encounter = biomes[player->biome].sections[player->section].encounters[player->encounter];
 
-  int potential_types[3] = { 
-    (rand() % MAX_CHANCE > 30) ? TYPE_ACORN_MOUTHFUL : TYPE_LOST_STASH, // half damage -- least risky
-    (rand() % MAX_CHANCE > 20) ? TYPE_LOST_STASH : TYPE_ACORN_SACK, // full damage
-    (rand() % MAX_CHANCE > 70) ? TYPE_ACORN_SACK : TYPE_ACORN_MOUTHFUL // golden acorns -- most risky
-  };
-  
-  int selected_button = event->data->custom_id[1] -48;
+  int potential_types[3] = {};
 
-  rewards->item_type = potential_types[selected_button];
+  if (player->squirrel == ANGELIC_SQUIRREL)
+  {
+    potential_types[0] = (rand() % MAX_CHANCE > 40 -20) ? TYPE_ACORN_MOUTHFUL : TYPE_LOST_STASH; // half damage -- for defense
+    potential_types[1] = (rand() % MAX_CHANCE > 20 +20) ? TYPE_LOST_STASH : TYPE_ACORN_SACK; // full damage -- for golden acorns
+  }
+  else {
+    potential_types[0] = (rand() % MAX_CHANCE > 40) ? TYPE_ACORN_MOUTHFUL : TYPE_LOST_STASH; // half damage -- for defense
+    potential_types[1] = (rand() % MAX_CHANCE > 20) ? TYPE_LOST_STASH : TYPE_ACORN_SACK; // full damage -- for golden acorns
+  }
+
+  potential_types[2] = (rand() % MAX_CHANCE > 20) ? TYPE_ACORN_SACK : TYPE_ACORN_MOUTHFUL; // golden acorns -- for score
+
+  // int potential_types[3] = { 
+  //   (rand() % MAX_CHANCE > 40) ? TYPE_ACORN_MOUTHFUL : TYPE_LOST_STASH, // half damage -- for defense
+  //   (rand() % MAX_CHANCE > 20) ? TYPE_LOST_STASH : TYPE_ACORN_SACK, // full damage -- for golden acorns
+  //   (rand() % MAX_CHANCE > 20) ? TYPE_ACORN_SACK : TYPE_ACORN_MOUTHFUL // golden acorns -- for score
+  // };
+  
+  rewards->item_type = potential_types[player->button_idx];
 
   for (int button_idx = 0; button_idx < 3; button_idx++) 
   {
@@ -215,7 +228,7 @@ void build_encounter_buttons(const struct discord_interaction *event, struct sd_
     { 
       .type = DISCORD_COMPONENT_BUTTON,
       // highlight the selected button
-      .style = (selected_button == button_idx) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
+      .style = (player->button_idx == button_idx) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
       .emoji = &params->emojis[button_idx],
       // adding player->biome as a character is not a breaking change! It's only encounters that need it
       .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d_%ld",
@@ -262,7 +275,7 @@ void encounter_error(const struct discord_interaction *event, struct sd_player *
     params.buttons[button_idx] = (struct discord_component) 
     { 
       .type = DISCORD_COMPONENT_BUTTON,
-      .style = (event->data->custom_id[1] -48 == button_idx) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
+      .style = (player->button_idx == button_idx) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
       .emoji = &params.emojis[button_idx],
       .label = u_snprintf(params.labels[button_idx], sizeof(params.labels[button_idx]), encounter.solutions[button_idx]),
       .custom_id = u_snprintf(params.custom_ids[button_idx], sizeof(params.custom_ids[button_idx]), "%c%d%c_%ld",
@@ -349,10 +362,25 @@ void encounter_error(const struct discord_interaction *event, struct sd_player *
 int encounter_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event->member->user->id); 
+  load_player_struct(&player, event);
 
+  // heal was used!
+  if (player.button_idx == 3)
+  {
+    int full_heal = player.max_health * HEALING_FACTOR;
+    int heal_cost = (BUFF_FACTOR * (player.stats.strength_lv + player.stats.strength_lv / STAT_EVOLUTION));
+
+    player.health = (player.health + full_heal > player.max_health) ? player.max_health : player.health + full_heal;
+    player.golden_acorns -= heal_cost;
+    player.spent_golden_acorns += heal_cost;
+
+    // re-initialize encounter!
+    init_encounter_interaction(event, &player);
+    update_player_row(&player);
+    return 0;
+  }
   // error handle if this was a prior encounter and not the current encounter if one is active
-  if (player.encounter == ERROR_STATUS
+  else if (player.encounter == ERROR_STATUS
     || player.encounter != event->data->custom_id[2] - 96)
   {
     // temorarily recall the encounter index through the custom id
@@ -371,34 +399,13 @@ int encounter_interaction(const struct discord_interaction *event)
 
   build_encounter_buttons(event, &params, &player, &rewards);
 
-  struct sd_util_info util_data = { 0 };
-
-  generate_util_buttons(event, &player, &util_data);
-
-  struct discord_component action_rows[2] = {
-    {
-      .type = DISCORD_COMPONENT_ACTION_ROW,
-      .components = &(struct discord_components) {
-        .array = params.buttons,
-        .size = 4
-      }
-    },
-    {
-      .type = DISCORD_COMPONENT_ACTION_ROW,
-      .components = &(struct discord_components) {
-        .array = util_data.buttons,
-        .size = 5
-      }
-    }
-  };
-
   struct sd_encounter encounter = biomes[player.biome].sections[player.section].encounters[player.encounter];
 
   // apply encounter description FIRST
   u_snprintf(params.description, sizeof(params.description), encounter.conflict);
 
   // then add rewards
-  generate_encounter_reward(event, &params, &player, &rewards);
+  generate_encounter_reward(&params, &player, &rewards);
   
   int energy_loss = energy_status(params.description, sizeof(params.description), &player, 2);
 
@@ -431,6 +438,26 @@ int encounter_interaction(const struct discord_interaction *event)
       .text = (energy_loss) ? u_snprintf(params.footer_txt, sizeof(params.footer_txt), "You have %d energy left!", player.energy)
           : u_snprintf(params.footer_txt, sizeof(params.footer_txt), "\n No energy was lost! \n"),
       .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, items[ITEM_ENERGY].file_path)
+    }
+  };
+
+  struct sd_util_info util_data = { 0 };
+  generate_util_buttons(event, &player, &util_data);
+
+  struct discord_component action_rows[2] = {
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = params.buttons,
+        .size = sizeof(params.buttons)/sizeof(*params.buttons)
+      }
+    },
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = util_data.buttons,
+        .size = sizeof(util_data.buttons)/sizeof(*util_data.buttons)
+      }
     }
   };
 

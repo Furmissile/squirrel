@@ -52,16 +52,20 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
   {
     case TYPE_ACORN_HANDFUL:
       rewards->acorns = genrand(50, 25);
+      player->session_data.acorn_handful++;
       break;
     case TYPE_ACORN_MOUTHFUL:
       rewards->acorns = genrand(100, 50);
+      player->session_data.acorn_mouthful++;
       break;
     case TYPE_LOST_STASH:
       rewards->acorns = genrand(200, 50);
       rewards->golden_acorns = genrand(50, 25);
+      player->session_data.lost_stash++;
       break;
     case TYPE_ACORN_SACK:
       rewards->acorns = genrand(300, 100);
+      player->session_data.acorn_sack++;
   }
 
   if (rewards->acorns) 
@@ -91,13 +95,31 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
       rewards->acorns = rewards->acorns * (BASE_ACORN_MULT * (scurry.rank +1) +1);
     }
 
+    // apply base earning to acorn count BEFORE increases
+    rewards->acorn_count = rewards->acorns;
+
     struct sd_buff_status buff_status = { 0 };
     apply_base_rewards(player, rewards, &buff_status);
-  
+
+    // must be right chance for right button
+    if (player->buffs.proficiency_acorn == 0 && rand() % MAX_CHANCE > PROFICIENCY_BUFF_CHANCE && player->button_idx == rand() % 3)
+    {
+      buff_status.received_proficiency_buff = 1;
+      player->buffs.proficiency_acorn += genrand(10, 5);
+    }
+
+    if (player->buffs.luck_acorn == 0 && rand() % MAX_CHANCE > LUCK_BUFF_CHANCE && player->button_idx == rand() % 3)
+    {
+      buff_status.received_luck_buff = 1;
+      player->buffs.luck_acorn += genrand(5, 5);
+    }
+
     print_rewards(sd_description, description_size, player, rewards, &buff_status);
   }
-  else 
+  else {
+    player->session_data.no_acorns++;
     u_snprintf(sd_description, description_size, "\nYou received no earnings! \n");
+  }
 
   struct sd_buff_status buff_status = { 0 }; // for boosted_acorn
 
@@ -106,14 +128,14 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
   {
     int hp_difference = player->max_health - player->health;
     // scales per strength evolution!
-    int health_regen = BASE_HEALTH_REGEN * (player->stats.strength_lv/STAT_EVOLUTION +1);
+    int health_regen = player->stats.strength_lv +1;
 
     if (player->squirrel == SKELETAL_SQUIRREL)
     {
-      health_regen *= 2;
+      health_regen *= SQUIRREL_CONSTANT;
       // only apply boosted acorn to health regen if squirrel is active
       if (player->buffs.boosted_acorn > 0) {
-        health_regen *= 1.5;
+        health_regen *= BOOSTED_ACORN_CONSTANT;
         player->buffs.boosted_acorn--;
         buff_status.boosted_acorn = true;
       }
@@ -127,40 +149,40 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
     APPLY_NUM_STR(renew_health, health_regen);
     APPLY_NUM_STR(health, player->health);
     u_snprintf(sd_description, description_size,
-      "\n+**%s** "HEALTH" HP (**%s** "HEALTH" HP Left) \n%s", 
-      renew_health, health,
-      (buff_status.boosted_acorn) ? "-**1** "BOOSTED_ACORN" Boosted Acorn \n" : " " );
+      "\n+**%s** "HEALTH" HP (**%s** "HEALTH" HP Left) \n", 
+      renew_health, health);
+    
+    if (player->squirrel == SKELETAL_SQUIRREL && buff_status.boosted_acorn)
+      u_snprintf(sd_description, description_size, "\n-**10**%% "BOOSTED_ACORN" Squirrel Charge (**%d**%% left)", player->buffs.boosted_acorn *10);
   }
 }
 
-int build_forage_buttons(const struct discord_interaction *event, struct sd_forage_resp *params)
+int build_forage_buttons(const struct discord_interaction *event, struct sd_forage_resp *params, struct sd_player *player)
 {
   // determine item types first and redirect if necessary
   int button_items[3] = { };
-  int failure = 0;
   int chance = 0;
 
   for (int button_idx = 0; button_idx < 3; button_idx++)
   {
     chance = rand() % MAX_CHANCE;
-
-    if (chance < JUNK_CHANCE) {
-      button_items[button_idx] = TYPE_NO_ACORNS;
-      failure++;
-    }
-    else
-      button_items[button_idx] = 
-        (chance < COMMON_CHANCE) ? TYPE_ACORN_HANDFUL
-        : (chance < UNCOMMON_CHANCE) ? TYPE_ACORN_MOUTHFUL
-        : (chance < CONTAINER_CHANCE) ? TYPE_LOST_STASH : TYPE_ACORN_SACK;
+    button_items[button_idx] = 
+        (chance < JUNK_CHANCE) ? TYPE_NO_ACORNS
+      : (chance < COMMON_CHANCE) ? TYPE_ACORN_HANDFUL
+      : (chance < UNCOMMON_CHANCE) ? TYPE_ACORN_MOUTHFUL
+      : (chance < CONTAINER_CHANCE) ? TYPE_LOST_STASH : TYPE_ACORN_SACK;
   }
 
-  chance = rand() % MAX_CHANCE;
-  if (failure == 3) 
-      button_items[rand() % 3] = 
-        (chance < COMMON_CHANCE) ? TYPE_ACORN_HANDFUL
-        : (chance < UNCOMMON_CHANCE) ? TYPE_ACORN_MOUTHFUL
-        : (chance < CONTAINER_CHANCE) ? TYPE_LOST_STASH : TYPE_ACORN_SACK;
+  // if all buttons are one reward: introduce random lost stash
+  if (button_items[0] == button_items[1] && button_items[1] == button_items[2])
+    button_items[rand() % 3] = TYPE_LOST_STASH;
+
+  if (player->squirrel == ANGELIC_SQUIRREL 
+    && button_items[player->button_idx] != TYPE_LOST_STASH
+    && rand() % MAX_CHANCE > ((player->buffs.boosted_acorn > 0) ? 40 : 70))
+  {
+    button_items[player->button_idx] = TYPE_LOST_STASH;
+  }
 
   int item_type = ERROR_STATUS;
   for (int button_idx = 0; button_idx < 3; button_idx++) 
@@ -185,7 +207,7 @@ int build_forage_buttons(const struct discord_interaction *event, struct sd_fora
     };
 
     // highlight the button selected
-    if (event->data->custom_id[1] -48 == button_idx)
+    if (player->button_idx == button_idx)
     {
       params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
       item_type = current_item;
@@ -200,10 +222,11 @@ int build_forage_buttons(const struct discord_interaction *event, struct sd_fora
 int forage_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event->member->user->id); 
+  load_player_struct(&player, event);
 
   energy_regen(&player);
-    
+
+  // if player is not on an encounter and encounter chance: generate an encounter
   if (player.encounter == ERROR_STATUS
     && rand() % MAX_CHANCE < ENCOUNTER_CHANCE)
   {
@@ -225,7 +248,7 @@ int forage_interaction(const struct discord_interaction *event)
 
   struct sd_rewards rewards = { 0 };
 
-  rewards.item_type = build_forage_buttons(event, &params);
+  rewards.item_type = build_forage_buttons(event, &params, &player);
 
   struct sd_header_params header = { 0 };
 
@@ -269,14 +292,14 @@ int forage_interaction(const struct discord_interaction *event)
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
         .array = params.buttons,
-        .size = 3
+        .size = sizeof(params.buttons)/sizeof(*params.buttons)
       }
     },
     {
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
         .array = util_data.buttons,
-        .size = 5
+        .size = sizeof(util_data.buttons)/sizeof(*util_data.buttons)
       }
     }
   };

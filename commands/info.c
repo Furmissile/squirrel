@@ -1,14 +1,15 @@
 struct sd_squirrel_info 
 {
-  struct discord_component refresh;
+  struct discord_component button;
   char custom_id[64];
+  char label[64];
+
+  struct discord_emoji emoji;
+  char emoji_name[64];
 
   struct discord_embed_field fields[4];
   char field_names[4][64];
   char field_values[4][1024];
-
-  char footer_text[64];
-  char footer_url[128];
 };
 
 void build_general_info(struct sd_squirrel_info *params, struct sd_player *player, struct sd_scurry *scurry)
@@ -16,8 +17,6 @@ void build_general_info(struct sd_squirrel_info *params, struct sd_player *playe
   APPLY_NUM_STR(acorn_count, player->acorn_count);
   APPLY_NUM_STR(req_acorn_count, BIOME_INTERVAL * (player->biome_num +1) );
   APPLY_NUM_STR(high_acorn_count, player->high_acorn_count);
-  APPLY_NUM_STR(health, player->health);
-  APPLY_NUM_STR(max_health, player->max_health);
 
   struct sd_file_data biome_icon = biomes[player->biome].biome_icon;
 
@@ -26,12 +25,10 @@ void build_general_info(struct sd_squirrel_info *params, struct sd_player *playe
   u_snprintf(params->field_values[0], sizeof(params->field_values[0]), 
       " "INDENT" "ACORN_COUNT" Acorn Count: **%s**/%s \n"
       " "INDENT" <:%s:%ld> Biome: **%s** \n"
-      " "INDENT" "LEADER" High Score: **%s** \n"
-      " "INDENT" "HEALTH" Health: **%s**/%s \n",
+      " "INDENT" "LEADER" High Score: **%s**",
       acorn_count, req_acorn_count,
       biome_icon.emoji_name, biome_icon.emoji_id, biome_icon.formal_name,
-      (player->high_acorn_count > 0) ? high_acorn_count : acorn_count,
-      health, max_health);
+      (player->high_acorn_count > 0) ? high_acorn_count : acorn_count);
 
   if (player->scurry_id > 0)
     u_snprintf(params->field_values[0], sizeof(params->field_values[0]),
@@ -44,7 +41,8 @@ void build_resources_info(struct sd_squirrel_info *params, struct sd_player *pla
 {
   APPLY_NUM_STR(acorns, player->acorns);
   APPLY_NUM_STR(golden_acorns, player->golden_acorns);
-  APPLY_NUM_STR(conjured_acorns, player->conjured_acorns);
+  APPLY_NUM_STR(health, player->health);
+  APPLY_NUM_STR(max_health, player->max_health);
 
   params->fields[1].name = u_snprintf(params->field_names[1], sizeof(params->field_names[1]), "Resources");
 
@@ -52,9 +50,8 @@ void build_resources_info(struct sd_squirrel_info *params, struct sd_player *pla
       " "INDENT" "ENERGY" Energy: **%d**/%d \n"
       " "INDENT" "ACORNS" Acorns: **%s** \n"
       " "INDENT" "GOLDEN_ACORNS" Golden Acorns: **%s** \n"
-      " "INDENT" "CONJURED_ACORNS" Conjured Acorns: **%s** \n" ,
-      player->energy, MAX_ENERGY, acorns, 
-      golden_acorns, conjured_acorns);
+      " "INDENT" "HEALTH" Health: **%s**/%s",
+      player->energy, MAX_ENERGY, acorns, golden_acorns, health, max_health);
 
   // conditional info
   struct tm *info = get_UTC();
@@ -96,8 +93,7 @@ void build_stats_info(struct sd_squirrel_info *params, struct sd_player *player)
 void build_buffs_info(struct sd_squirrel_info *params, struct sd_player *player)
 {
   if (player->buffs.proficiency_acorn == 0
-    && player->buffs.luck_acorn == 0
-    && player->buffs.boosted_acorn == 0)
+    && player->buffs.luck_acorn == 0)
   {
     params->fields[3] = (struct discord_embed_field) {
       .name = u_snprintf(params->field_names[3], sizeof(params->field_names[3]), "Squirrel Buffs"),
@@ -107,23 +103,21 @@ void build_buffs_info(struct sd_squirrel_info *params, struct sd_player *player)
     return;
   }
 
-  int buff_durations[3] = {
+  int buff_durations[2] = {
     player->buffs.proficiency_acorn,
     player->buffs.luck_acorn,
-    player->buffs.boosted_acorn
   };
   
-  int active_buffs[3] = {
+  int active_buffs[2] = {
     BUFF_PROFICIENCY_ACORN,
     BUFF_LUCK_ACORN,
-    BUFF_BOOSTED_ACORN
   };
 
   params->fields[3] = (struct discord_embed_field) { 
     .name = u_snprintf(params->field_names[3], sizeof(params->field_names[3]), "Squirrel Buffs") 
   };
 
-  for (int buff_idx = 0; buff_idx < 3; buff_idx++)
+  for (int buff_idx = 0; buff_idx < 2; buff_idx++)
   {
     struct sd_file_data active_buff = enchanted_acorns[active_buffs[buff_idx]];
     if (buff_durations[buff_idx] > 0)
@@ -144,7 +138,7 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
   const struct discord_interaction *event = resp->keep;
 
   struct sd_player player = { 0 };
-  load_player_struct(&player, user->id);
+  load_player_struct(&player, event);
   struct sd_scurry scurry = { 0 };
   load_scurry_struct(&scurry, player.scurry_id);
 
@@ -175,15 +169,10 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
     .fields = &(struct discord_embed_fields) {
       .array = params.fields,
       .size = 4
-    },
-    .footer = &(struct discord_embed_footer)
-    {
-      .text = params.footer_text,
-      .icon_url = params.footer_url
     }
   };
 
-  params.refresh =(struct discord_component)
+  params.button = (struct discord_component)
   {
     .type = DISCORD_COMPONENT_BUTTON,
     .style = DISCORD_BUTTON_SUCCESS,
@@ -195,7 +184,7 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
   struct discord_component action_rows = {
     .type = DISCORD_COMPONENT_ACTION_ROW,
     .components = &(struct discord_components) {
-      .array = &params.refresh,
+      .array = &params.button,
       .size = 1
     }
   };
@@ -233,7 +222,8 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
 int info_from_buttons(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event->member->user->id);
+  load_player_struct(&player, event);
+
   struct sd_scurry scurry = { 0 };
   load_scurry_struct(&scurry, player.scurry_id);
 
@@ -264,24 +254,72 @@ int info_from_buttons(const struct discord_interaction *event)
     .fields = &(struct discord_embed_fields) {
       .array = params.fields,
       .size = 4
-    },
-    .footer = &(struct discord_embed_footer)
-    {
-      .text = params.footer_text,
-      .icon_url = params.footer_url
     }
   };
-
+  
   struct sd_util_info util_data = { 0 };
 
   generate_util_buttons(event, &player, &util_data);
 
-  struct discord_component action_rows = {
+  // TODO: add to params.button!
+  if (event->data->custom_id && player.button_idx == 5)
+  {
+    player.buffs.boosted_acorn += squirrels[player.squirrel].boosted_duration;
+    player.conjured_acorns -= SQUIRREL_BOOST_COST;
+  }
+
+  params.emoji = (struct discord_emoji)
+  {
+    .name = u_snprintf(params.emoji_name, sizeof(params.emoji_name), 
+            enchanted_acorns[BUFF_BOOSTED_ACORN].emoji_name),
+    .id = enchanted_acorns[BUFF_BOOSTED_ACORN].emoji_id
+  };
+
+  params.button = (struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .custom_id = u_snprintf(params.custom_id, sizeof(params.custom_id), "%c5_%ld",
+        TYPE_INFO_FROM_BUTTONS, event->member->user->id),
+    .emoji = &params.emoji
+  };
+
+  if (player.buffs.boosted_acorn > 0)
+  {
+    float duration_left = (float)player.buffs.boosted_acorn / squirrels[player.squirrel].boosted_duration;
+    params.button.label = u_snprintf(params.label, sizeof(params.label),
+        "%0.0f%% left", duration_left * 100.0f);
+    params.button.style = DISCORD_BUTTON_PRIMARY;
+    params.button.disabled = true;
+  }
+  else if (player.conjured_acorns == 10)
+  {
+    params.button.label = u_snprintf(params.label, sizeof(params.label), "Ready!");
+    params.button.style = DISCORD_BUTTON_PRIMARY;
+  }
+  else {
+    params.button.label = u_snprintf(params.label, sizeof(params.label),
+        "%d%% Charged" ,
+        player.conjured_acorns *10);
+    params.button.style = DISCORD_BUTTON_PRIMARY;
+    params.button.style = DISCORD_BUTTON_SECONDARY;
+    params.button.disabled = true;
+  }
+
+  struct discord_component action_rows[2] = {
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = &params.button,
+        .size = 1
+      }
+    },
+    {
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
         .array = util_data.buttons,
-        .size = 5
+        .size = sizeof(util_data.buttons)/sizeof(*util_data.buttons)
       }
+    }
   };
 
   struct discord_interaction_response interaction = 
@@ -296,8 +334,8 @@ int info_from_buttons(const struct discord_interaction *event)
         .size = 1
       },
       .components = &(struct discord_components) {
-        .array = &action_rows,
-        .size = 1
+        .array = action_rows,
+        .size = 2
       }
     }
 

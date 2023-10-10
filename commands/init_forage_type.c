@@ -1,27 +1,31 @@
-struct sd_init_encounter {
-  struct discord_component buttons[3];
-  char custom_ids[3][64];
+struct sd_init_encounter
+{
+  struct discord_component buttons[4];
+  char custom_ids[4][64];
 
-  struct discord_emoji emojis[3];
-  char emoji_names[3][64];
+  struct discord_emoji emojis[4];
+  char emoji_names[4][64];
 
-  char labels[3][64];
+  char labels[4][64];
 
   char image_url[128];
   char description[512];
+
+  int partial_damage;
+  int full_damage;
 };
 
 void init_encounter_buttons(const struct discord_interaction *event, struct sd_init_encounter *params, struct sd_player *player)
 {
   struct sd_encounter encounter = biomes[player->biome].sections[player->section].encounters[player->encounter];
 
-  int health_loss = 1 << (player->biome_num / BIOME_SIZE +1);
-  int golden_acorns = BIOME_ENCOUNTER_COST * (player->biome_num +1);
+  params->partial_damage = (player->biome_num +1) *2;
+  params->full_damage = (player->biome_num +1) *3;
 
   int encounter_costs[3] = {
-    health_loss * 0.75f,
-    health_loss, 
-    golden_acorns /2
+    params->partial_damage,
+    params->full_damage, 
+    BIOME_ENCOUNTER_COST * (player->biome_num +1)
   };
 
   for (int button_idx = 0; button_idx < 3; button_idx++) 
@@ -59,6 +63,28 @@ void init_encounter_buttons(const struct discord_interaction *event, struct sd_i
       params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
     }
   }
+
+  params->emojis[3] = (struct discord_emoji)
+  {
+    .name = u_snprintf(params->emoji_names[3], sizeof(params->emoji_names[3]), 
+        items[ITEM_GOLDEN_ACORN].emoji_name),
+    .id = items[ITEM_GOLDEN_ACORN].emoji_id
+  };
+
+  int heal_cost = BUFF_FACTOR * (player->stats.strength_lv + player->stats.strength_lv / STAT_EVOLUTION);
+  float full_heal = player->max_health * HEALING_FACTOR;
+
+  params->buttons[3] = (struct discord_component)
+  {
+    .type = DISCORD_COMPONENT_BUTTON,
+    .style = DISCORD_BUTTON_SUCCESS,
+    .label = u_snprintf(params->labels[3], sizeof(params->labels[3]), "(-%d) Heal (+%0.0f/%0.0f HP)", heal_cost,
+        // if heal is going to overfill health, it will fill up to the max health
+        (player->health + full_heal > player->max_health) ? player->max_health - player->health : full_heal, full_heal),
+    .emoji = &params->emojis[3],
+    .custom_id = u_snprintf(params->custom_ids[3], sizeof(params->custom_ids[3]), "%c3%c%d%d_%ld",
+          TYPE_ENCOUNTER_RESP, player->encounter + 96, player->section, player->biome, event->member->user->id)
+  };
 }
 
 int init_encounter_interaction(const struct discord_interaction *event, struct sd_player *player)
@@ -97,19 +123,24 @@ int init_encounter_interaction(const struct discord_interaction *event, struct s
 
   generate_util_buttons(event, player, &util_data);
 
+  int heal_cost = BUFF_FACTOR * (player->stats.strength_lv + player->stats.strength_lv / STAT_EVOLUTION);
+
   struct discord_component action_rows[2] = {
     {
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
         .array = params.buttons,
-        .size = 3
+
+        .size = ( (player->health <= params.partial_damage || player->max_health >= params.full_damage)
+            && player->health < player->max_health
+            && player->golden_acorns >= heal_cost) ? 4 : 3
       }
     },
     {
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
         .array = util_data.buttons,
-        .size = 5
+        .size = sizeof(util_data.buttons)/sizeof(*util_data.buttons)
       }
     }
   };
@@ -176,7 +207,7 @@ void init_forage_buttons(const struct discord_interaction *event, struct sd_init
 int init_forage_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event->member->user->id); 
+  load_player_struct(&player, event); 
 
   energy_regen(&player);
 
@@ -185,6 +216,13 @@ int init_forage_interaction(const struct discord_interaction *event)
     ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait 2 seconds.");
   
   ERROR_INTERACTION((player.energy < 2), "You need more energy!");
+
+  // if it has been longer than session expiration -- reset data!
+  if ((unsigned long)time(NULL) > player.session_data.start_time + SESSION_CD)
+  {
+    player.session_data = (struct sd_session_data) { .start_time = time(NULL) };
+    update_player_row(&player);
+  }
 
   struct sd_init_forage params = { 0 };
   init_forage_buttons(event, &params);

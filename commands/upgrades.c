@@ -26,17 +26,31 @@ void init_upgrade_fields(struct sd_upgrade_shop *params, struct sd_player *playe
 
     APPLY_NUM_STR(stat_cost, generate_price(*stat_ptrs[button_idx], stats[button_idx].price_mult));
 
-    params->fields[button_idx] = (struct discord_embed_field) {
-      .name = u_snprintf(params->field_names[button_idx], sizeof(params->field_names[button_idx]), " <:%s:%ld> %s (Lv. %d)",
-          stat_data.emoji_name, stat_data.emoji_id, stat_data.formal_name, *stat_ptrs[button_idx]),
+    params->fields[button_idx] = (struct discord_embed_field) { 0 };
 
-      .value = u_snprintf(params->field_values[button_idx], sizeof(params->field_values[button_idx]), 
-          (button_idx == STAT_STRENGTH) 
-              ? " "OFF_ARROW" %s (+**%0.0f**) \n" " *Costs* **%s** "ACORNS" Acorns"
-              : " "OFF_ARROW" %s (x**%0.1f**) \n" " *Costs* **%s** "ACORNS" Acorns",
-          stat_data.description, generate_factor(*stat_ptrs[button_idx], stats[button_idx].value_mult), stat_cost)
-    };
+    params->fields[button_idx].name = u_snprintf(params->field_names[button_idx], sizeof(params->field_names[button_idx]), " <:%s:%ld> %s (Lv. %d)",
+        stat_data.emoji_name, stat_data.emoji_id, stat_data.formal_name, *stat_ptrs[button_idx]);
 
+    u_snprintf(params->field_values[button_idx], sizeof(params->field_values[button_idx]), 
+        (button_idx == STAT_STRENGTH) 
+            ? " "OFF_ARROW" %s (+**%0.0f**) \n" " *Costs* **%s** "ACORNS" Acorns"
+            : " "OFF_ARROW" %s (x**%0.1f**) \n" " *Costs* **%s** "ACORNS" Acorns",
+        stat_data.description, generate_factor(*stat_ptrs[button_idx], stats[button_idx].value_mult), stat_cost);
+
+    if (button_idx == STAT_LUCK && player->stats.proficiency_lv < player->stats.luck_lv * STAT_DIFFERENCE)
+    {
+      u_snprintf(params->field_values[button_idx], sizeof(params->field_values[button_idx]),
+          "\n "HELP_MARKER" Requires level **%d** proficiency to upgrade!",
+          player->stats.luck_lv *STAT_DIFFERENCE);
+    }
+    else if (button_idx == STAT_STRENGTH && player->stats.luck_lv < player->stats.strength_lv * STAT_DIFFERENCE)
+    {
+      u_snprintf(params->field_values[button_idx], sizeof(params->field_values[button_idx]),
+          "\n "HELP_MARKER" Requires level **%d** luck to upgrade!",
+          player->stats.strength_lv *STAT_DIFFERENCE);
+    }
+
+    params->fields[button_idx].value = params->field_values[button_idx];
   }
 }
 
@@ -63,22 +77,49 @@ void init_upgrade_buttons(const struct discord_interaction *event, struct sd_upg
                     TYPE_UPGRADE, button_idx, ERROR_STATUS + 96, event->member->user->id)
     };
 
-    if (player->acorns >= generate_price(*stat_ptrs[button_idx], stats[button_idx].price_mult))
+    int price = generate_price(*stat_ptrs[button_idx], stats[button_idx].price_mult);
+
+    if (player->acorns >= price)
     {
-      params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
+      if (button_idx == STAT_PROFICIENCY)
+      {
+        params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
+      }
+      else if (button_idx == STAT_LUCK && player->stats.proficiency_lv >= player->stats.luck_lv * STAT_DIFFERENCE)
+      {
+        params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
+      }
+      else if (button_idx == STAT_STRENGTH && player->stats.luck_lv >= player->stats.strength_lv * STAT_DIFFERENCE)
+      {
+        params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
+      }
+      else {
+        params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
+        params->buttons[button_idx].disabled = true;
+      }
     }
     else {
       params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
       params->buttons[button_idx].disabled = true;
     }
+
+    // BETA testing
+    // if (player->acorns >= generate_price(*stat_ptrs[button_idx], stats[button_idx].price_mult))
+    // {
+    //   params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
+    // }
+    // else {
+    //   params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
+    //   params->buttons[button_idx].disabled = true;
+    // }
   }
 }
 
 void upgrade_command_state(const struct discord_interaction *event, struct sd_upgrade_shop *params, struct sd_player *player)
 {
-  if (event->data->custom_id && event->data->custom_id[1] -48 < STAT_SIZE) 
+  if (event->data->custom_id && player->button_idx < STAT_SIZE) 
   {
-    int button_idx = event->data->custom_id[1] -48;
+    int button_idx = player->button_idx;
     int* stat_ptrs[STAT_SIZE] = { &player->stats.proficiency_lv, &player->stats.luck_lv, &player->stats.strength_lv };
   
     if (player->acorns < generate_price(*(stat_ptrs[button_idx]), stats[button_idx].price_mult))
@@ -116,7 +157,7 @@ void upgrade_command_state(const struct discord_interaction *event, struct sd_up
 int init_upgrade_shop(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event->member->user->id);
+  load_player_struct(&player, event);
 
   struct sd_upgrade_shop params = { 0 };
 
@@ -170,7 +211,7 @@ int init_upgrade_shop(const struct discord_interaction *event)
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
         .array = util_data.buttons,
-        .size = 5
+        .size = sizeof(util_data.buttons)/sizeof(*util_data.buttons)
       }
     }
   };

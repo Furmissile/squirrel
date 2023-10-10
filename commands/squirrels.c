@@ -65,7 +65,13 @@ void init_squirrel_buttons(const struct discord_interaction *event, struct sd_sq
                     TYPE_SQUIRREL, button_idx, ERROR_STATUS + 96, event->member->user->id)
     };
 
-    if (player->acorn_count >= squirrels[button_idx].acorn_count_req
+    if (player->buffs.boosted_acorn > 0 
+      && button_idx != player->squirrel)
+    {
+      params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
+      params->buttons[button_idx].disabled = true;
+    }
+    else if (player->acorn_count >= squirrels[button_idx].acorn_count_req
       && button_idx != player->squirrel)
     {
       params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
@@ -84,9 +90,9 @@ void init_squirrel_buttons(const struct discord_interaction *event, struct sd_sq
 
 void squirrel_cmd_state(const struct discord_interaction *event, struct sd_squirrel_shop *params, struct sd_player *player)
 {
-  if (event->data->custom_id && event->data->custom_id[1] -48 < SQUIRREL_SIZE)
+  if (event->data->custom_id && player->button_idx < SQUIRREL_SIZE)
   {
-    int button_idx = event->data->custom_id[1] -48;
+    int button_idx = player->button_idx;
     if (player->acorn_count < squirrels[button_idx].acorn_count_req)
     {
       u_snprintf(params->footer_text, sizeof(params->footer_text), "You need a higher acorn count!");
@@ -116,7 +122,7 @@ void squirrel_cmd_state(const struct discord_interaction *event, struct sd_squir
 int squirrels_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event->member->user->id);
+  load_player_struct(&player, event);
   
   struct sd_squirrel_shop params = { 0 };
 
@@ -139,7 +145,8 @@ int squirrels_interaction(const struct discord_interaction *event)
     .title = u_snprintf(header.title, sizeof(header.title), "Squirrel Shop"),
     .description = u_snprintf(params.description, sizeof(params.description), 
         " "OFF_ARROW" Squirrels are unlocked based on your current "ACORN_COUNT" *acorn count*! \n"
-        " "OFF_ARROW" Your squirrel is reset if your new acorn count doesn't make the requirement."),
+        " "OFF_ARROW" Upon death, your squirrel is reset if your new acorn count doesn't make the requirement. \n"
+        " "OFF_ARROW" If the "BOOSTED_ACORN" *boosted acorn* is active, changing squirrel is not possible until it has depleted."),
     
     .thumbnail = &(struct discord_embed_thumbnail) {
       .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
@@ -171,7 +178,7 @@ int squirrels_interaction(const struct discord_interaction *event)
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
         .array = util_data.buttons,
-        .size = 5
+        .size = sizeof(util_data.buttons)/sizeof(*util_data.buttons)
       }
     }
   };
