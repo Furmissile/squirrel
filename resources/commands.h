@@ -15,7 +15,7 @@ enum CMD_TYPE
   CMD_MAIN_FORAGE,
   CMD_ENCOUNTER_FORAGE,
   CMD_UPGRADE,
-  CMD_BUFFS,
+  CMD_SESSION_INFO,
   CMD_INFO,
   CMD_INFO_FROM_BUTTONS,
   CMD_COLOR,
@@ -85,12 +85,12 @@ struct sd_command *cmds = (struct sd_command[])
 
     .func_cb = &init_upgrade_shop
   },
-  { // CMD_BUFFS
-    .name = "buffs",
-    .command_id = TYPE_E_ACORN,
-    .error_msg = "You cannot purchase an enchanted acorn with this embed! Please send `/buffs` to purchase them.",
+  {
+    .name = "session_info",
+    .command_id = TYPE_SESSION_INFO,
+    .error_msg = "This is someone else's adventure info! Please send `/session_info` to access session statistics.",
 
-    .func_cb = &buffs_interaction
+    .func_cb = &session_info_interaction
   },
   { // CMD_INFO
     .name = "info",
@@ -209,9 +209,9 @@ void create_commands(struct discord *client, const struct discord_ready *event)
       .description = "Upgrade your squirrel senses.",
       .type = DISCORD_APPLICATION_CHAT_INPUT
     },
-    { // buffs
-      .name = "buffs",
-      .description = "Eat an enchanted acorn to enhance gameplay!",
+    {
+      .name = "session_info",
+      .description = "View your session statistics.",
       .type = DISCORD_APPLICATION_CHAT_INPUT
     },
     { // info
