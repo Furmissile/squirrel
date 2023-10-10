@@ -12,6 +12,7 @@ struct sd_file_data
 struct sd_squirrel
 {
   int acorn_count_req;
+  int boosted_duration;
   struct sd_file_data squirrel;
 };
 
@@ -67,8 +68,8 @@ struct sd_scurry
 struct sd_stats 
 {
   int proficiency_lv;
-  int strength_lv;
   int luck_lv;
+  int strength_lv;
 };
 
 // strength and healing are not included
@@ -76,17 +77,17 @@ struct sd_buffs
 {
   int proficiency_acorn;
   int luck_acorn;
-  int strength_acorn;
-  int endurance_acorn;
   int boosted_acorn; // boosted squirrel duration
 };
 
 struct sd_buff_status
 {
   bool proficiency_acorn;
-  bool defense_acorn;
   bool luck_acorn;
   bool boosted_acorn;
+
+  bool received_proficiency_buff;
+  bool received_luck_buff;
 };
 
 struct sd_biome_story
@@ -98,12 +99,30 @@ struct sd_biome_story
   int last_acorn;
 };
 
+struct sd_session_data
+{
+  unsigned long start_time;
+  int acorn_count;
+  int acorns;
+  int golden_acorns;
+  int health_loss;
+
+  int total_forages;
+  int no_acorns;
+  int acorn_handful;
+  int acorn_mouthful;
+  int lost_stash;
+  int acorn_sack;
+};
+
 struct sd_player 
 {
   unsigned long user_id;
   unsigned long scurry_id;
   int color;
   int squirrel;
+  int squirrel_lv;
+  float squirrel_const;
 
   int energy;
   int health;
@@ -113,6 +132,7 @@ struct sd_player
   int acorn_count;
   int high_acorn_count;
   int golden_acorns;
+  int spent_golden_acorns;
   int conjured_acorns;
   int stolen_acorns;
   int catnip;
@@ -123,10 +143,12 @@ struct sd_player
   int biome_num; // total number of biomes completed
 
   time_t main_cd;
+  int button_idx;
 
   struct sd_stats stats;
   struct sd_buffs buffs;
   struct sd_biome_story story;
+  struct sd_session_data session_data;
 };
 
 struct sd_store
@@ -134,6 +156,7 @@ struct sd_store
   int item_idx;
   int cost;
   int quantity;
+  int* stat_ptr;
 };
 
 struct sd_rewards
@@ -150,6 +173,7 @@ struct sd_rewards
 
   int encounter_cost;
   int is_health;
+  int charge_ready;
 
   int seasoned_golden_acorns;
   int catnip;

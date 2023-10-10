@@ -6,7 +6,6 @@
 // OPERATION
   #define genrand(base, range) ( (rand() % (range +1)) + base ) // range +1 since rand is on [base, range)
 
-
 // PATH CONSTANTS
   #define GIT_PATH "https://github.com/Furmissile/squirrel/blob/main/src_assets/%s?raw=true"
   #define SQ_CHEM_PATH "sd_utils/sq_alchemist.png"
@@ -35,6 +34,7 @@
   #define COOLDOWN 2
   #define BASE_ENERGY_CD 180 // 3 minutes/ energy
   #define INVITE_CD 120
+  #define SESSION_CD 120
 
 
 // CHANCE DATA
@@ -57,15 +57,16 @@
 
   #define WAR_STEAL_CHANCE 50
 
+  #define LUCK_BUFF_CHANCE 90
+  #define PROFICIENCY_BUFF_CHANCE 75
+
 
 // GENERAL PROGRESSION
   #define BIOME_INTERVAL 5000
   #define BIOME_ENCOUNTER_COST 100
-  #define BIOME_ACORN_INC 15
+  #define BIOME_ACORN_INC 25
   #define BIOME_GOLDEN_ACORN_INC 10
-
   #define STEAL_MINIMUM 1000
-  #define STEAL_SCORE 1000
 
 
 // INTERACTION TYPES
@@ -83,6 +84,7 @@
   #define TYPE_INVITE 'i'
   #define TYPE_SCURRY_INFO 'x'
   #define TYPE_LEADERBOARD 'l'
+  #define TYPE_SESSION_INFO 'j'
 
   #define TYPE_PLAYER_HELP 'p'
   #define TYPE_SCURRY_HELP 'c'
@@ -101,10 +103,15 @@
 
 
 // BUFFS
-  #define HEALING_FACTOR 0.6f
-
-  #define GOLDEN_ACORN_BUFF_COST 100
+  #define HEALING_FACTOR 0.5f
   #define SQUIRREL_BOOST_COST 10
+  #define BUFF_FACTOR 100
+
+  #define GRAY_BOOST_DURATION 10 // based on energy loss
+  #define SKELETAL_BOOST_DURATION 5 // based on health regen
+  #define BOOKIE_BOOST_DURATION 15 // based on acorns
+  #define ANGELIC_BOOST_DURATION 10 // based on health loss
+  #define KING_BOOST_DURATION 15 // based on acorn count
 
   // explicitly defined to avoid confusion
   #define BUFF_CONSTANT 2
@@ -120,18 +127,18 @@
 
 // STATS
   #define STAT_EVOLUTION 5
+  #define STAT_DIFFERENCE 2 // required stat difference between stats to upgrade
   #define BASE_HEALTH_REGEN 2
 
   // Stat multiplier factors - See generate_factor() for details
   #define PROFICIENCY_FACTOR 0.1f
   #define LUCK_FACTOR 0.1f
-  // #define STRENGTH_FACTOR 100
   #define STRENGTH_FACTOR 5
 
   // Price multiplier factors - See generate_price() for details
   #define PROFICIENCY_UNIT 1500
   #define LUCK_UNIT 5000
-  #define STRENGTH_UNIT 10000
+  #define STRENGTH_UNIT 15000
 
 
 // SCURRY
@@ -201,6 +208,13 @@
   #define CONJURED_ACORNS "<:conjured_acorn:1102676336289521774>"
   #define CATNIP "<:catnip:1052250368039452732>"
 
+  // Rewards
+  #define NO_ACORNS "<:no_acorns:1044620527223975957>"
+  #define ACORN_HANDFUL "<:acorn_handful:1044620522236944384>"
+  #define ACORN_MOUTHFUL "<:acorn_mouthful:1044620523067416627>"
+  #define LOST_STASH "<:lost_stash:1044620525944705146>"
+  #define ACORN_SACK "<:acorn_sack:1044620524275380286>"
+
   // Health
   #define HEALTH "<:health:1064579080281923655>"
   #define BROKEN_HEALTH "<:broken_health:1064579097956712528>"
@@ -224,6 +238,7 @@
   #define OFF_ARROW "<:offset_arrow:1010924151063715841>"
   #define INDENT "<:empty_space:1019379796037337118>"
   #define BULLET "<:bullet:1150089464161517621>"
+  #define STAHR "<:stahr:1045705606134251601>"
 
   // Scurry
   #define GUILD_ICON "<:guild_icon:1020714354351542362>"
@@ -251,7 +266,6 @@
   #if (APPLICATION_ID == MAIN_BOT_ID)
     #define STATUS_CHANNEL 1046635264883294259
     #define FORAGE_ID "</forage:1089663881959460926>"
-    #define BUFFS_ID "</buffs:1089663883876257833>"
     #define BIOME_STORY_ID "</biome_story:1105520586706403379>"
     #define INFO_ID "</info:1089663884673167440>"
     #define SQUIRRELS_ID "</squirrels:1089663967460327525>"
@@ -266,7 +280,6 @@
   #else
     #define STATUS_CHANNEL 1049184118954528888
     #define FORAGE_ID "</forage:1089659245588381716>"
-    #define BUFFS_ID "</buffs:1089659247270297740>"
     #define BIOME_STORY_ID "</biome_story:1103730882092748940>"
     #define INFO_ID "</info:1089659248214024332>"
     #define SQUIRRELS_ID "</squirrels:1089659332003635220>"
@@ -276,6 +289,6 @@
     #define SCURRY_HELP_ID "</scurry_help:1089659334490853488>"
     #define SCURRY_KICK_ID "</scurry_kick:1089659418876059669>"
     #define SCURRY_LEAVE_ID "</scurry_leave:1089659419782037514>"
-    #define SEASON_INFO_ID "</season_info:1089659416749539348>"
+    #define SEASON_INFO_ID "</season_info:1089659504276283492>"
     #define BUNNY_ENDEAVOR_ID "</bunny_endeavor:1089659502573387836>"
   #endif

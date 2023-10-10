@@ -146,27 +146,28 @@ void num_str(char dest[], size_t dest_size, unsigned long input)
   // if num is less than 1000, return number
   if (tmp_buf_size < 4) {
     snprintf(dest, dest_size, "%s", tmp_buffer);
-    return;
+  }
+  else {
+    //define number offset by remainder of 3
+    size_t first_set_n = (tmp_buf_size % 3 == 0) ? 3 : tmp_buf_size % 3;
+
+    size_t buffer_offset = strlen(dest);
+    //apply offset and add comma
+    for (size_t tmp_offset = 0; tmp_offset < first_set_n; tmp_offset++)
+      dest[buffer_offset++] = tmp_buffer[tmp_offset];
+    dest[buffer_offset++] = ',';
+
+    //while there are still characters, add 3 numbers and a comma
+    for (size_t tmp_offset = 0; tmp_offset < tmp_buf_size -first_set_n; tmp_offset++) {
+      dest[buffer_offset++] = tmp_buffer[tmp_offset + first_set_n];
+
+      //do not apply comma if at end of string
+      if (((tmp_offset +1) % 3 == 0) && (tmp_offset + first_set_n != tmp_buf_size -1))
+        dest[buffer_offset++] = ',';
+    }
   }
 
-  //define number offset by remainder of 3
-  size_t first_set_n = (tmp_buf_size % 3 == 0) ? 3 : tmp_buf_size % 3;
-
-  size_t buffer_offset = strlen(dest);
-  //apply offset and add comma
-  for (size_t tmp_offset = 0; tmp_offset < first_set_n; tmp_offset++)
-    dest[buffer_offset++] = tmp_buffer[tmp_offset];
-  dest[buffer_offset++] = ',';
-
-  //while there are still characters, add 3 numbers and a comma
-  for (size_t tmp_offset = 0; tmp_offset < tmp_buf_size -first_set_n; tmp_offset++) {
-    dest[buffer_offset++] = tmp_buffer[tmp_offset + first_set_n];
-
-    //do not apply comma if at end of string
-    if (((tmp_offset +1) % 3 == 0) && (tmp_offset + first_set_n != tmp_buf_size -1))
-      dest[buffer_offset++] = ',';
-  }
-
+  return;
 }
 
 void lowercase(char dest[], size_t dest_size, char* input)

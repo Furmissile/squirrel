@@ -36,7 +36,7 @@ int energy_status(char* sd_description, size_t description_size, struct sd_playe
     if (is_boosted)
     {
       player->buffs.boosted_acorn--;
-      u_snprintf(sd_description, description_size, "-**1** "BOOSTED_ACORN" Boosted Acorn \n");
+      u_snprintf(sd_description, description_size, "\n-**10**%% "BOOSTED_ACORN" Squirrel Charge (**%d**%% Left)", player->buffs.boosted_acorn *10);
     }
     return 0;
   }
@@ -50,10 +50,8 @@ int energy_status(char* sd_description, size_t description_size, struct sd_playe
 
 void energy_regen(struct sd_player *player) 
 {
-  if (player->buffs.endurance_acorn > 0)
-    player->buffs.endurance_acorn = 0;
-  if (player->buffs.strength_acorn > 0)
-    player->buffs.strength_acorn = 0;
+  if (APPLICATION_ID == BETA_BOT_ID && player->energy < 2)
+    player->energy = MAX_ENERGY;
 
   struct tm *info = get_UTC();
 
@@ -81,9 +79,11 @@ int factor_season(struct sd_player *player, struct sd_rewards *rewards)
       rewards->seasoned_golden_acorns = (rewards->item_type < TYPE_ACORN_MOUTHFUL) ? genrand(25, 10)
           : (rewards->item_type < TYPE_LOST_STASH) ? genrand(50, 25) : genrand(100, 50);
 
+      rewards->seasoned_golden_acorns += (BIOME_GOLDEN_ACORN_INC * (player->biome_num + player->biome_num / BIOME_SIZE));
       rewards->seasoned_golden_acorns *= generate_factor(player->stats.luck_lv, LUCK_FACTOR);
       
       player->golden_acorns += rewards->seasoned_golden_acorns;
+      player->session_data.golden_acorns += rewards->seasoned_golden_acorns;
     }
     return SPRING_MULT;
   }
@@ -102,8 +102,9 @@ int factor_season(struct sd_player *player, struct sd_rewards *rewards)
         rewards->victual_type = VICTUALS_BLUEBERRY;
         rewards->ref_resource = ITEM_ACORN_COUNT;
         player->acorn_count += rewards->victual_amt;
+        player->session_data.acorn_count += rewards->victual_amt;
       }
-      else if (victuals_chance < CHERRY_CHANCE) 
+      else if (victuals_chance < CHERRY_CHANCE && player->health < player->max_health) 
       {
         rewards->victual_amt = genrand(BASE_HEALTH_REGEN, BASE_HEALTH_REGEN) * player->stats.strength_lv;
         rewards->victual_type = VICTUALS_CHERRY;
@@ -140,23 +141,39 @@ void print_rewards(char* sd_description, size_t description_size, struct sd_play
   APPLY_NUM_STR(acorns, rewards->acorns);
   APPLY_NUM_STR(acorn_count, rewards->acorn_count);
 
-  u_snprintf(sd_description, description_size, "\n+**%s** "ACORNS" Acorns %s \n",
-      acorns, (buff_status->boosted_acorn && player->squirrel == SQUIRREL_BOOKIE) ? "\n-**1** "BOOSTED_ACORN" Boosted Acorn" : " ");
+  u_snprintf(sd_description, description_size, "\n+**%s** "ACORNS" Acorns \n", acorns);
 
-  u_snprintf(sd_description, description_size, "\n+**%s** "ACORN_COUNT" Acorn Count %s%s \n",
-      acorn_count,
-      (buff_status->boosted_acorn && player->squirrel == KING_SQUIRREL) ? "\n-**1** "BOOSTED_ACORN" Boosted Acorn" : " ",
-      (buff_status->proficiency_acorn) ? "\n\n-**1** "PROFICIENCY_ACORN" Acorn of Proficiency" : " ");
+  if (player->squirrel == SQUIRREL_BOOKIE && buff_status->boosted_acorn)
+    u_snprintf(sd_description, description_size, "-**10**%% "BOOSTED_ACORN" Squirrel Charge (**%d**%% Left) \n", player->buffs.boosted_acorn *10);
+
+  u_snprintf(sd_description, description_size, "\n+**%s** "ACORN_COUNT" Acorn Count \n", acorn_count);
+  if (buff_status->proficiency_acorn)
+    u_snprintf(sd_description, description_size, "-**1** "PROFICIENCY_ACORN" Acorn of Proficiency (**%d** left) \n", player->buffs.proficiency_acorn);
+  if (player->squirrel == KING_SQUIRREL && buff_status->boosted_acorn)
+    u_snprintf(sd_description, description_size, "-**10**%% "BOOSTED_ACORN" Squirrel Charge (**%d**%% Left) \n", player->buffs.boosted_acorn *10);
 
   // GOLDEN ACORNS (if any)
   if (rewards->golden_acorns) 
   {
     APPLY_NUM_STR(reward, rewards->golden_acorns);
 
-    u_snprintf(sd_description, description_size, "\n+**%s** "GOLDEN_ACORNS" Golden Acorns %s%s \n", 
-        reward, (buff_status->luck_acorn) ? "\n-**1** "LUCK_ACORN" Acorn of Luck" : " ",
-        (buff_status->boosted_acorn && player->squirrel == ANGELIC_SQUIRREL) ? "\n-**1** "BOOSTED_ACORN" Boosted Acorn" : " " );
+    u_snprintf(sd_description, description_size, "\n+**%s** "GOLDEN_ACORNS" Golden Acorns \n", reward);
+        
+    if (buff_status->luck_acorn)
+      u_snprintf(sd_description, description_size, "-**1** "LUCK_ACORN" Acorn of Luck (**%d** left) \n", player->buffs.luck_acorn);
+
+    if (player->squirrel == ANGELIC_SQUIRREL && buff_status->boosted_acorn)
+      u_snprintf(sd_description, description_size,
+          "-**10**%% "BOOSTED_ACORN" Squirrel Charge (**%d**%% left) \n",
+          player->buffs.boosted_acorn *10);
   }
+
+  if (buff_status->received_proficiency_buff)
+      u_snprintf(sd_description, description_size, "\n "QUEST_MARKER" You received **%d** "PROFICIENCY_ACORN" *Acorns of Proficiency*! \n",
+          player->buffs.proficiency_acorn);
+  if (buff_status->received_luck_buff)
+      u_snprintf(sd_description, description_size, "\n "QUEST_MARKER" You received **%d** "LUCK_ACORN" *Acorns of Luck*! \n",
+          player->buffs.luck_acorn);
 
   // EVENT REWARDS (only one can occur)
   if (rewards->catnip)
@@ -180,7 +197,12 @@ void print_rewards(char* sd_description, size_t description_size, struct sd_play
 
   // conjured acorns OR war acorns can be true
   if (rewards->conjured_acorns)
-    u_snprintf(sd_description, description_size, "\n+**%d** "CONJURED_ACORNS" Conjured Acorns \n", rewards->conjured_acorns);
+    u_snprintf(sd_description, description_size, "\n+**%d**%% "CONJURED_ACORNS" Squirrel Charge \n", 
+        rewards->conjured_acorns *10, player->conjured_acorns *10);
+
+  if (rewards->charge_ready)
+    u_snprintf(sd_description, description_size, " "QUEST_MARKER" Squirrel Charge is ready! \n");
+
   // if there's war acorns, there's courage
   else if (rewards->stolen_acorns)
   {
@@ -189,6 +211,18 @@ void print_rewards(char* sd_description, size_t description_size, struct sd_play
   }
   else if (rewards->war_acorns)
     u_snprintf(sd_description, description_size, "\n+**%d** "WAR_ACORNS" War Acorns \n", rewards->war_acorns);
+
+  if (player->spent_golden_acorns)
+  {
+    APPLY_NUM_STR(golden_acorns, player->golden_acorns);
+    APPLY_NUM_STR(spent_golden_acorns, player->spent_golden_acorns);
+
+    u_snprintf(sd_description, description_size,
+        "\n-**%s** "GOLDEN_ACORNS" Golden Acorns (**%s** "GOLDEN_ACORNS" Golden Acorns Left) \n", 
+        spent_golden_acorns, golden_acorns );
+    
+    player->spent_golden_acorns = 0;
+  }
 
   // acorn count is updated before biome_num and can be used to predict when the biome will change at this stage
   if (player->acorn_count/BIOME_INTERVAL > player->biome_num)
@@ -202,14 +236,10 @@ void print_rewards(char* sd_description, size_t description_size, struct sd_play
 // base rewards includes acorns and golden acorns (if any)
 void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, struct sd_buff_status *buff_status)
 {
-  // apply base earning to acorn count BEFORE biome increase
-  rewards->acorn_count = rewards->acorns;
-
   // give a bonus BIOME_ACORN_INC after completing a cycle!
-  rewards->acorns += (BIOME_ACORN_INC * (player->biome_num + (player->biome_num % BIOME_SIZE)));
+  rewards->acorns += (BIOME_ACORN_INC * (player->biome_num + player->biome_num / BIOME_SIZE));
 
-  // stat is not included in acorn count
-  rewards->acorns *= generate_factor(player->stats.proficiency_lv, PROFICIENCY_FACTOR);
+  // CURRENT ORDER: Buff -> Squirrel -> Stat
   
   // if buff is active
   if (player->buffs.proficiency_acorn)
@@ -232,6 +262,9 @@ void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, st
     }
   }
 
+  // stat is not included in acorn count
+  rewards->acorns *= generate_factor(player->stats.proficiency_lv, PROFICIENCY_FACTOR);
+
   if (player->squirrel == KING_SQUIRREL)
   {
     rewards->acorn_count *= SQUIRREL_CONSTANT;
@@ -245,6 +278,7 @@ void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, st
   }
 
   player->acorn_count += rewards->acorn_count;
+  player->session_data.acorn_count += rewards->acorn_count;
 
   // season bonus always applies to acorns -- golden acorns are handled separately
   // season bonuses must always be displayed last on rewards
@@ -255,24 +289,13 @@ void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, st
   }
 
   player->acorns += rewards->acorns;
+  player->session_data.acorns += rewards->acorns;
 
   // GOLDEN ACORNS
-  if (rewards->golden_acorns) {
+  if (rewards->golden_acorns)
+  {
     // give a bonus BIOME_GOLDEN_ACORN_INC after completing a cycle!
-    rewards->golden_acorns += (BIOME_GOLDEN_ACORN_INC * (player->biome_num + (player->biome_num % BIOME_SIZE)));
-  
-    rewards->golden_acorns *= generate_factor(player->stats.luck_lv, LUCK_FACTOR);
-
-    if (player->squirrel == ANGELIC_SQUIRREL)
-    {
-      rewards->golden_acorns *= SQUIRREL_CONSTANT;
-      if (player->buffs.boosted_acorn > 0) 
-      {
-        rewards->golden_acorns *= BOOSTED_ACORN_CONSTANT;
-        player->buffs.boosted_acorn--;
-        buff_status->boosted_acorn = true;
-      }
-    }
+    rewards->golden_acorns += (BIOME_GOLDEN_ACORN_INC * (player->biome_num + player->biome_num / BIOME_SIZE));
 
     if (player->buffs.luck_acorn > 0) 
     {
@@ -281,7 +304,17 @@ void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, st
       buff_status->luck_acorn = true;
     }
 
+    // only source of golden acorns is from lost stashes!
+    if (player->squirrel == ANGELIC_SQUIRREL && player->buffs.boosted_acorn > 0)
+    {
+      player->buffs.boosted_acorn--;
+      buff_status->boosted_acorn = true;
+    }
+
+    rewards->golden_acorns *= generate_factor(player->stats.luck_lv + player->stats.strength_lv, LUCK_FACTOR);
+
     player->golden_acorns += rewards->golden_acorns;
+    player->session_data.golden_acorns += rewards->golden_acorns;
   }
 
 }
@@ -397,52 +430,54 @@ void generate_util_buttons(const struct discord_interaction *event, struct sd_pl
   params->emojis[2] = (struct discord_emoji)
   {
     .name = u_snprintf(params->emoji_names[2], sizeof(params->emoji_names[2]), 
-            enchanted_acorns[BUFF_PROFICIENCY_ACORN].emoji_name),
-    .id = enchanted_acorns[BUFF_PROFICIENCY_ACORN].emoji_id
+            squirrels[player->squirrel].squirrel.emoji_name),
+    .id = squirrels[player->squirrel].squirrel.emoji_id
   };
   params->buttons[2] = (struct discord_component)
   {
     .type = DISCORD_COMPONENT_BUTTON,
     .style = DISCORD_BUTTON_SECONDARY,
-    .label = u_snprintf(params->labels[2], sizeof(params->labels[2]), "Buffs"),
+    .label = u_snprintf(params->labels[2], sizeof(params->labels[2]), "Squirrels"),
     .custom_id = u_snprintf(params->custom_ids[2], sizeof(params->custom_ids[2]), "%c_%ld",
-        TYPE_E_ACORN, event->member->user->id),
+        TYPE_SQUIRREL, event->member->user->id),
     .emoji = &params->emojis[2]
   };
 
+  struct sd_file_data biome_icon = biomes[player->biome].biome_icon;
   params->emojis[3] = (struct discord_emoji)
   {
     .name = u_snprintf(params->emoji_names[3], sizeof(params->emoji_names[3]), 
-            squirrels[player->squirrel].squirrel.emoji_name),
-    .id = squirrels[player->squirrel].squirrel.emoji_id
+            biome_icon.emoji_name),
+    .id = biome_icon.emoji_id
   };
+  
   params->buttons[3] = (struct discord_component)
   {
     .type = DISCORD_COMPONENT_BUTTON,
     .style = DISCORD_BUTTON_SECONDARY,
-    .label = u_snprintf(params->labels[3], sizeof(params->labels[3]), "Squirrels"),
+    .label = u_snprintf(params->labels[3], sizeof(params->labels[3]), "Info"),
     .custom_id = u_snprintf(params->custom_ids[3], sizeof(params->custom_ids[3]), "%c_%ld",
-        TYPE_SQUIRREL, event->member->user->id),
+        TYPE_INFO_FROM_BUTTONS, event->member->user->id),
     .emoji = &params->emojis[3]
   };
 
-  struct sd_file_data biome_icon = biomes[player->biome_num % BIOME_SIZE].biome_icon;
   params->emojis[4] = (struct discord_emoji)
   {
     .name = u_snprintf(params->emoji_names[4], sizeof(params->emoji_names[4]), 
-            biome_icon.emoji_name),
-    .id = biome_icon.emoji_id
+            item_types[TYPE_NO_ACORNS].emoji_name),
+    .id = item_types[TYPE_NO_ACORNS].emoji_id
   };
   
   params->buttons[4] = (struct discord_component)
   {
     .type = DISCORD_COMPONENT_BUTTON,
     .style = DISCORD_BUTTON_SECONDARY,
-    .label = u_snprintf(params->labels[4], sizeof(params->labels[4]), "Info"),
+    .label = u_snprintf(params->labels[4], sizeof(params->labels[4]), "Session Info"),
     .custom_id = u_snprintf(params->custom_ids[4], sizeof(params->custom_ids[4]), "%c_%ld",
-        TYPE_INFO_FROM_BUTTONS, event->member->user->id),
+        TYPE_SESSION_INFO, event->member->user->id),
     .emoji = &params->emojis[4]
   };
+
 }
 
 // mechanic for reaction verification
