@@ -64,7 +64,7 @@ void send_leave_dm(struct discord *client, struct discord_response *resp, const 
 int leave_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event->member->user->id);
+  load_player_struct(&player, event);
 
   struct sd_leave_info *params = calloc(1, sizeof(struct sd_leave_info));
 

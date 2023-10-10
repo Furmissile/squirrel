@@ -25,7 +25,7 @@ int is_color(char* input, struct sd_player *player)
 int color_interaction(const struct discord_interaction *event) 
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event->member->user->id); 
+  load_player_struct(&player, event); 
 
   char* input = event->data->options->array[0].value;
   char fmtted_input[64] = { }; 

@@ -363,7 +363,7 @@ void scurry_info(const struct discord_interaction *event, struct sd_scurry_info 
   struct sd_scurry *scurry = params->scurry;
 
   // if the first button was pressed
-  if (event->data->custom_id && event->data->custom_id[1] -48 == 0)
+  if (event->data->custom_id && params->player->button_idx == 0)
   {
     if (scurry->war_flag)
       scurry->war_flag = 0;
@@ -394,7 +394,7 @@ void scurry_info(const struct discord_interaction *event, struct sd_scurry_info 
 int s_info_interaction(const struct discord_interaction *event)
 {
   struct sd_player *player = calloc(1, sizeof(struct sd_player));
-  load_player_struct(player, event->member->user->id);
+  load_player_struct(player, event);
 
   struct sd_scurry *scurry = calloc(1, sizeof(struct sd_scurry));
 
@@ -419,7 +419,7 @@ int s_info_interaction(const struct discord_interaction *event)
   }
   // if a button was pressed- use the scurry ID within the custom ID
   // "Join War" button has been handled by this point!
-  else if (event->data->custom_id && event->data->custom_id[1] -48 != 0)
+  else if (event->data->custom_id && player->button_idx != 0)
   {
     char scurry_id[64] = { };
     trim_buffer(scurry_id, sizeof(scurry_id), event->data->custom_id, '*');

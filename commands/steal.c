@@ -1,9 +1,5 @@
 
 struct sd_steal_info {
-  unsigned long t_user_id;
-  int steal_amt;
-  int golden_acorns;
-
   char username[64];
 
   struct sd_player *player;
@@ -13,6 +9,10 @@ struct sd_steal_info {
 
   char footer_text[64];
   char footer_url[128];
+
+  unsigned long t_user_id;
+  int steal_amt;
+  int golden_acorns;
 };
 
 enum TARGET_USER {
@@ -161,7 +161,7 @@ void steal_from_member(struct discord *client, struct discord_response *resp, co
 int steal_interaction(const struct discord_interaction *event) 
 {
   struct sd_player *player = calloc(1, sizeof(struct sd_player));
-  load_player_struct(player, event->member->user->id);
+  load_player_struct(player, event);
 
   energy_regen(player);
   ERROR_INTERACTION((time(NULL) < player->main_cd), "Cooldown not ready!");
@@ -171,7 +171,7 @@ int steal_interaction(const struct discord_interaction *event)
 
   int steal_min = generate_price(player->stats.proficiency_lv, PROFICIENCY_UNIT);
 
-  int relative_golden_acorns = GOLDEN_ACORN_BUFF_COST * generate_factor(player->stats.luck_lv, LUCK_FACTOR);
+  int relative_golden_acorns = (BUFF_FACTOR/2) * (player->biome_num +1);
   
   // select all players that isnt the player, game owner, within a range of acorns, or is the same scurry
   PGresult* t_user = (PGresult*) { 0 };

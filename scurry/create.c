@@ -10,7 +10,7 @@ struct sd_create_scurry
 int create_interaction(const struct discord_interaction *event) 
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event->member->user->id);
+  load_player_struct(&player, event);
 
   char* input = event->data->options->array[0].value;
 

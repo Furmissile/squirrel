@@ -170,7 +170,7 @@ void invite_response(struct discord *client, struct discord_response *resp, cons
 int invite_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event->user->id);
+  load_player_struct(&player, event);
 
   // delete EXPIRED invites
   PGresult* clean_invites = (PGresult*) { 0 };
