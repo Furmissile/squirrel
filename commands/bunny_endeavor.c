@@ -109,9 +109,9 @@ void bunny_cmd_state(const struct discord_interaction *event, struct sd_bunny_sh
     &player->acorns, &player->golden_acorns, &player->health, &player->energy
   };
 
-  if (event->data->custom_id && event->data->custom_id[1] -48 < BUNNY_STORE_SIZE)
+  if (event->data->custom_id && player->button_idx < BUNNY_STORE_SIZE)
   {
-    int button_idx = event->data->custom_id[1] -48;
+    int button_idx = player->button_idx;
 
     if (player->catnip < bunny_shop[button_idx].cost)
     {
@@ -160,7 +160,7 @@ int bunny_interaction(const struct discord_interaction *event)
   ERROR_INTERACTION((info->tm_mday < 21), "This event is not active!");
   
   struct sd_player player = { 0 };
-  load_player_struct(&player, event->member->user->id);
+  load_player_struct(&player, event);
 
   energy_regen(&player);
 
@@ -175,12 +175,12 @@ int bunny_interaction(const struct discord_interaction *event)
     },
     {
       .item_idx = ITEM_GOLDEN_ACORN,
-      .cost = 750,
+      .cost = 1000,
       .quantity = LUCK_UNIT/2 * (player.stats.luck_lv +1),
     },
     {
       .item_idx = ITEM_HEALTH,
-      .cost = 500,
+      .cost = 150,
       .quantity = player.max_health * HEALING_FACTOR,
     },
     {
