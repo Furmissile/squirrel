@@ -1,11 +1,11 @@
 int biome_story_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event->member->user->id);
+  load_player_struct(&player, event);
 
   struct sd_help_info params = { 0 };
 
-  int page_num = (event->data->custom_id) ? (event->data->custom_id[1] -48) +1 : 1;
+  int page_num = (player.button_idx != ERROR_STATUS) ? player.button_idx +1 : 1;
 
   int field_count = biomes[page_num -1].biome_size;
   params.fields = calloc(field_count, sizeof(struct discord_embed_field));

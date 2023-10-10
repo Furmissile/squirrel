@@ -228,7 +228,7 @@ int fetch_leaderboard(const struct discord_interaction *event)
   struct sd_leaderboard *params = calloc(1, sizeof(struct sd_leaderboard));
 
   params->player = calloc(1, sizeof(struct sd_player));
-  load_player_struct(params->player, event->member->user->id);
+  load_player_struct(params->player, event);
 
   // sd_leaderboard gets passed along regardless of leaderboard type
   struct discord_ret_interaction_response ret_response = { 
@@ -237,7 +237,7 @@ int fetch_leaderboard(const struct discord_interaction *event)
   };
 
   params->player_pos = (PGresult*) { 0 };
-  if (event->data->custom_id && event->data->custom_id[1] -48 == 1)
+  if (event->data->custom_id && params->player->button_idx == 1)
   {
     params->player_pos = SQL_query(params->player_pos,
       "select rank_idx, owner_id, s_name, best_acorn "

@@ -1,11 +1,11 @@
 int player_help_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event->member->user->id);
+  load_player_struct(&player, event);
 
   struct sd_help_info params = { 0 };
 
-  int page_num = (event->data->custom_id) ? (event->data->custom_id[1] -48) +1 : 1;
+  int page_num = (player.button_idx != ERROR_STATUS) ? player.button_idx +1 : 1;
 
   params.fields = calloc(1, sizeof(struct discord_embed_field));
   params.field_names = calloc(1, sizeof(*params.field_names));
@@ -21,8 +21,9 @@ int player_help_interaction(const struct discord_interaction *event)
             " "BULLET" Never heard of slash commands? No need to fret! \n"
             " "BULLET" Enter "FORAGE_ID" to get started with an adventure and press any button. \n"
             " "BULLET" After pressing `/`, click the squirrel in the left column of the menu and the description for each command should come up. \n"
-            " "BULLET" "ACORNS" *Acorn* is the main currency and "ACORN_COUNT" *acorn count* is your score in the game."
-            " "BULLET" "GOLDEN_ACORNS" *Golden acorns* can be spent on buffs to make the most of your run! Check it out using "BUFFS_ID"!")
+            " "BULLET" "ACORNS" *Acorn* is the main currency and "ACORN_COUNT" *acorn count* is your score. \n"
+            " "BULLET" "GOLDEN_ACORNS" *Golden acorns* can be spent on increasing your score and healing! \n"
+            " "BULLET" The "PROFICIENCY_ACORN" *Proficiency acorn* and "LUCK_ACORN" *luck acorn* can be found while foraging tos boost your acorn or golden acorn earnings respectively!")
       };
       break;
     case P_TOPIC_STORY:
@@ -84,13 +85,12 @@ int player_help_interaction(const struct discord_interaction *event)
         .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
             " "BULLET" "CONJURED_ACORNS" *Conjured acorns* are fragments of dark power originating from the "LAST_ACORN_ICON" **Last Acorn**. \n"
             " "BULLET" They can be found in corruption-touched areas including: \n" 
-                " "INDENT" "GRASSLANDS_ICON" *Witch Swamp*, \n" 
-                " "INDENT" "SEEPING_SANDS_ICON" *Wormhole*, \n"
-                " "INDENT" "NATURE_END_ICON" *Breached Woods*, \n"
-                " "INDENT" "DEATH_GRIP_ICON" *Necrotic Lakes*, \n"
-                " "INDENT" "LAST_ACORN_ICON" *Death's Locus* \n"
-            " "BULLET" Conjured acorns are used to buy the "BOOSTED_ACORN" *boosted acorn* buff that will boost your current squirrel's effect. This effect transfers between squirrels. \n"
-            " "BULLET" Check out the buff in "BUFFS_ID"!")
+                " "INDENT" ("GRASSLANDS_ICON") *Witch Swamp*, \n" 
+                " "INDENT" ("SEEPING_SANDS_ICON") *Wormhole*, \n"
+                " "INDENT" ("NATURE_END_ICON") *Breached Woods*, \n"
+                " "INDENT" ("DEATH_GRIP_ICON") *Necrotic Lakes*, \n"
+                " "INDENT" ("LAST_ACORN_ICON") *Death's Locus* \n"
+            " "BULLET" Conjured acorns can be collected to super charge your squirrel and boost its effect! Players cannot swap squirrels while super charge is active. \n")
       };
       break;
     case P_TOPIC_SCURRY:
@@ -112,7 +112,8 @@ int player_help_interaction(const struct discord_interaction *event)
             ""ACORNS" Reporting Issues"),
         .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
             " "BULLET" If you've found a bug or just have a question that wasn't addressed, feel free to join the [support server](https://discord.gg/Dd8Te3HmPW)! \n"
-            " "BULLET" If you encounter a bug while foraging, please screenshot the message immediately and send it to <#1047233819201261748>! Otherwise, the bug may not be handled.")
+            " "BULLET" If you encounter a bug while foraging, please screenshot the message immediately and send it to <#1047233819201261748>! Otherwise, the bug may not be handled. \n"
+            " "BULLET" Please refer to the [license](https://github.com/Furmissile/squirrel/blob/main/LICENSE) for using this project. If unauthorized copies are encountered, please immediately report it to <#1047233819201261748> with the supporting link!")
       };
   }
 

@@ -1,11 +1,11 @@
 int event_help_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event->member->user->id);
+  load_player_struct(&player, event);
 
   struct sd_help_info params = { 0 };
 
-  int page_num = (event->data->custom_id) ? (event->data->custom_id[1] -48) +1 : 1;
+  int page_num = (player.button_idx != ERROR_STATUS) ? player.button_idx +1 : 1;
 
   params.fields = calloc(1, sizeof(struct discord_embed_field));
   params.field_names = calloc(1, sizeof(*params.field_names));
@@ -20,7 +20,7 @@ int event_help_interaction(const struct discord_interaction *event)
         .value = u_snprintf(*params.field_values, sizeof(*params.field_values),
             " "BULLET" This is an ongoing event where players compete based on "ACORN_COUNT" *acorn count*. \n"
             " "BULLET" Acorn count is uneffected by your stats and buffs, so be sure to have your luck in your right pocket! \n"
-            " "BULLET" You can increase your score by "FORAGE_ID", successful steals, and applying the "PROFICIENCY_ACORN" *proficiency acorn*. \n")
+            " "BULLET" You can increase your score by "FORAGE_ID" and applying the "PROFICIENCY_ACORN" *proficiency acorn*. \n")
       };
       break;
     case E_TOPIC_ACORN_COUNT:
