@@ -49,7 +49,7 @@ void create_leaderboard_interaction(const struct discord_interaction *event, str
 
   header.embed.thumbnail = &(struct discord_embed_thumbnail) {
     .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
-        (button_idx == 0) ? items[ITEM_ACORN_COUNT].file_path : scurry_items[SCURRY_ITEM_WAR_ACORNS].file_path)
+        (button_idx == 0) ? items[ITEM_ACORN_COUNT].file_path : items[ITEM_WAR_ACORNS].file_path)
   };
 
   params->buttons[0] = (struct discord_component)

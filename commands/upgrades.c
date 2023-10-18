@@ -8,7 +8,7 @@ struct sd_upgrade_shop {
 
   struct discord_embed_field fields[STAT_SIZE];
   char field_names[STAT_SIZE][64];
-  char field_values[STAT_SIZE][256];
+  char field_values[STAT_SIZE][512];
 
   char description[512];
 

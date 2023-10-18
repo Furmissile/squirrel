@@ -324,7 +324,6 @@ enum BUFFS
 {
   BUFF_PROFICIENCY_ACORN,
   BUFF_LUCK_ACORN,
-  // BUFF_STRENGTH_ACORN,
   BUFF_BOOSTED_ACORN,
   BUFFS_SIZE
 };
@@ -347,15 +346,6 @@ struct sd_file_data enchanted_acorns[BUFFS_SIZE] = {
     .emoji_name = "luck_acorn",
     .emoji_id = 1045027183334264872
   },
-  // {
-  //   .formal_name = "Acorn of Strength",
-
-  //   .file_path = "enchanted_acorns/healing_acorn.png",
-  //   .description = "*Refills some HP*",
-
-  //   .emoji_name = "strength_acorn",
-  //   .emoji_id = 1045027180549255208
-  // },
   {
     .formal_name = "Conjured Acorn Boost",
 
@@ -364,22 +354,6 @@ struct sd_file_data enchanted_acorns[BUFFS_SIZE] = {
 
     .emoji_name = "boosted_acorn",
     .emoji_id = 1119273554886799450
-  }
-};
-
-enum SCURRY_ITEMS
-{
-  SCURRY_ITEM_WAR_ACORNS,
-  SCURRY_ITEM_SIZE
-};
-
-struct sd_file_data scurry_items[SCURRY_ITEM_SIZE] = {
-  {
-    .formal_name = "War Acorns",
-    .file_path = "scurry_utils/war_acorns.png",
-
-    .emoji_name = "war_acorns",
-    .emoji_id = 1066105193655193640
   }
 };
 
@@ -529,7 +503,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
       .emoji_id = 1007390631016017991
     },
 
-    .intro = "Welcome to the <:grasslands_icon:1007390631016017991> **Grasslands**! \n"
+    .intro = "Welcome to the "GRASSLANDS_ICON" **Grasslands**! \n"
         "The biome has luscious green forests, flourishing wildlife, and fertile soils. The land is so rich, sometimes the trees drop golden acorns! \n"
         "The main settlement is Imperium City and has been wreaking havoc on the environment due to political corruption.",
 
@@ -679,7 +653,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
       .emoji_id = 1042082262566572153
     },
 
-    .intro = "Welcome to the <:sp_icon:1042082262566572153> **Seeping Sands**! \n"
+    .intro = "Welcome to the "SEEPING_SANDS_ICON" **Seeping Sands**! \n"
         "The biome is a vast desert wasteland with little to no vegetation that sees frequent sandstorms. "
         "The main settlement here is the Forgotten City whose agriculture malpractice caused the fertile soil to errode.",
 
@@ -843,7 +817,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
       .emoji_id = 1071474392783142932
     },
 
-    .intro = "Welcome to <:ne_icon:1071474392783142932> **Nature's End**! \n"
+    .intro = "Welcome to "NATURE_END_ICON" **Nature's End**! \n"
         "This chaotic biome is characterized by gloomy skies, heavy and unpredictable rain storms, and earthquakes. It gets its name from the neighboring corruption consuming the wildlife. \n"
         "The main settlement here is Light's Refuge.",
 
@@ -992,7 +966,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
       .emoji_id = 1092903646196412426
     },
 
-    .intro = "Welcome to <:dg_icon:1092903646196412426> **Death's Grip**! \n"
+    .intro = "Welcome to "DEATH_GRIP_ICON" **Death's Grip**! \n"
         "This biome is a desolate tundra with little life. It gets its name from its naturally unforgiving climate and the growing threat of the corruption. What was once a white and bright tundra is now riddled with necrotic energy and heavy fog. \n"
         "The main settlement here is the Kingdom of Ice.",
 
@@ -1173,7 +1147,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
       .emoji_id = 1105304340400451645
     },
 
-    .intro = "Welcome to the <:la_icon:1105304340400451645> **The Last Acorn**! \n"
+    .intro = "Welcome to the "LAST_ACORN_ICON" **The Last Acorn**! \n"
         "This biome looks identical the Grasslands, but it's characterized by dense purple fog, humming dark energy, blood of the sacrificed coursing through the dirt, and crazed squirrels who once inhabited the area. Its name came from the squirrel colonies because squirrels are lured in by conjured acorns and it's the last acorn they ever see. \n"
         "There is no settlement here.",
 

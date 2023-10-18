@@ -25,7 +25,7 @@ void build_general_info(struct sd_squirrel_info *params, struct sd_player *playe
   u_snprintf(params->field_values[0], sizeof(params->field_values[0]), 
       " "INDENT" "ACORN_COUNT" Acorn Count: **%s**/%s \n"
       " "INDENT" <:%s:%ld> Biome: **%s** \n"
-      " "INDENT" "LEADER" High Score: **%s**",
+      " "INDENT" "LEADER" High Score: **%s** \n",
       acorn_count, req_acorn_count,
       biome_icon.emoji_name, biome_icon.emoji_id, biome_icon.formal_name,
       (player->high_acorn_count > 0) ? high_acorn_count : acorn_count);
