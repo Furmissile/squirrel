@@ -64,8 +64,7 @@
 // GENERAL PROGRESSION
   #define BIOME_INTERVAL 5000
   #define BIOME_ENCOUNTER_COST 100
-  #define BIOME_ACORN_INC 25
-  #define BIOME_GOLDEN_ACORN_INC 10
+  #define BIOME_ACORN_INC 0.1f
   #define STEAL_MINIMUM 1000
 
 
@@ -202,8 +201,7 @@
   // Resources
   #define ENERGY "<:energy:911642184397258752>"
   #define ACORNS "<:acorns:1045028765392187402>"
-  #define LOST_STASH "<:lost_stash:1044620525944705146>"
-  #define ACORN_COUNT "<:passive_acorns:1050407923823677502>"
+  #define ACORN_COUNT "<:acorn_count:1050407923823677502>"
   #define GOLDEN_ACORNS "<:golden_acorn:1045032005420728430>"
   #define CONJURED_ACORNS "<:conjured_acorn:1102676336289521774>"
   #define CATNIP "<:catnip:1052250368039452732>"
@@ -228,10 +226,7 @@
   #define PROFICIENCY_ACORN "<:proficiency_acorn:1045027184475123813>"
   #define LUCK_ACORN "<:luck_acorn:1045027183334264872>"
   #define BOOSTED_ACORN "<:boosted_acorn:1119273554886799450>"
-
-  // Items
-  #define LOST_STASH "<:lost_stash:1044620525944705146>"
-
+  
   // Interface
   #define QUEST_MARKER "<:quest_marker:1046493067500335104>"
   #define HELP_MARKER "<:no_acorns:1044620527223975957>"

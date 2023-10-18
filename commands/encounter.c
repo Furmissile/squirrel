@@ -47,6 +47,11 @@ void apply_conjured_acorn(struct sd_player *player, struct sd_rewards *rewards)
   if (give_conjured_acorn)
   {
     rewards->conjured_acorns = (player->button_idx == 2) ? 2 : 1;
+
+    struct tm *info = get_UTC();
+    if (info->tm_wday == 5 && info->tm_mday == 13)
+      rewards->conjured_acorns *= 2;
+    
     if (player->conjured_acorns + rewards->conjured_acorns > 10)
       player->conjured_acorns = 10;
     else
@@ -111,20 +116,20 @@ void generate_encounter_reward(struct sd_encounter_resp *params, struct sd_playe
   switch (rewards->item_type) 
   {
     case TYPE_ACORN_HANDFUL:
-      rewards->acorns = genrand(50, 25);
+      rewards->acorns = genrand(50, 5);
       player->session_data.acorn_handful++;
       break;
     case TYPE_ACORN_MOUTHFUL:
-      rewards->acorns = genrand(100, 50);
+      rewards->acorns = genrand(100, 10);
       player->session_data.acorn_mouthful++;
       break;
     case TYPE_LOST_STASH:
-      rewards->acorns = genrand(250, 50);
-      rewards->golden_acorns = genrand(50, 25);
+      rewards->acorns = genrand(250, 15);
+      rewards->golden_acorns = genrand(50, 5);
       player->session_data.lost_stash++;
       break;
     case TYPE_ACORN_SACK:
-      rewards->acorns = genrand(300, 100);
+      rewards->acorns = genrand(300, 25);
       player->session_data.acorn_sack++;
   }
 

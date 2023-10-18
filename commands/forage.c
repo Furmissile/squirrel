@@ -51,20 +51,20 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
   switch (rewards->item_type) 
   {
     case TYPE_ACORN_HANDFUL:
-      rewards->acorns = genrand(50, 25);
+      rewards->acorns = genrand(50, 5);
       player->session_data.acorn_handful++;
       break;
     case TYPE_ACORN_MOUTHFUL:
-      rewards->acorns = genrand(100, 50);
+      rewards->acorns = genrand(100, 10);
       player->session_data.acorn_mouthful++;
       break;
     case TYPE_LOST_STASH:
-      rewards->acorns = genrand(200, 50);
-      rewards->golden_acorns = genrand(50, 25);
+      rewards->acorns = genrand(200, 15);
+      rewards->golden_acorns = genrand(50, 5);
       player->session_data.lost_stash++;
       break;
     case TYPE_ACORN_SACK:
-      rewards->acorns = genrand(300, 100);
+      rewards->acorns = genrand(300, 25);
       player->session_data.acorn_sack++;
   }
 
