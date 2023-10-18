@@ -497,7 +497,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
 
     .biome_icon = {
       .formal_name = "Grasslands",
-      .file_path = "gl_content/grasslands_icon.png",
+      .file_path = "gl_content/gl_icon.png",
 
       .emoji_name = "gl_icon",
       .emoji_id = 1007390631016017991
