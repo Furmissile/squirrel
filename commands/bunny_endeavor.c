@@ -161,6 +161,7 @@ int bunny_interaction(const struct discord_interaction *event)
   
   struct sd_player player = { 0 };
   load_player_struct(&player, event);
+  player.button_idx = (event->data->custom_id) ? event->data->custom_id[1] -48 : ERROR_STATUS;
 
   energy_regen(&player);
 
@@ -176,7 +177,7 @@ int bunny_interaction(const struct discord_interaction *event)
     {
       .item_idx = ITEM_GOLDEN_ACORN,
       .cost = 1000,
-      .quantity = LUCK_UNIT/2 * (player.stats.luck_lv +1),
+      .quantity = 300 * (player.biome_num +1), // guarantee 3 encounters
     },
     {
       .item_idx = ITEM_HEALTH,
