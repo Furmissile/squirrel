@@ -84,11 +84,13 @@
   #define TYPE_SCURRY_INFO 'x'
   #define TYPE_LEADERBOARD 'l'
   #define TYPE_SESSION_INFO 'j'
+  #define TYPE_DESIGNER_SQIRRELS 'k'
 
   #define TYPE_PLAYER_HELP 'p'
   #define TYPE_SCURRY_HELP 'c'
   #define TYPE_EVENT_HELP 'v'
   #define TYPE_BIOME_STORY 'b'
+  #define TYPE_SQUIRREL_HELP 'm'
 
 
 // FIXED COSTS
@@ -170,6 +172,12 @@
   #define ANGELIC_SQUIRREL_COUNT 100000
   #define KING_SQUIRREL_COUNT 150000
 
+
+  #define FIRST_SQUIRREL 10000 // 10,000
+  #define SECOND_SQUIRREL 100000 // 100,000
+  #define THIRD_SQUIRREL 500000 // 500,000
+  #define FOURTH_SQUIRREL 1000000 // 1,000,000
+
 // GAME ERRORS
   #define ERROR_STATUS -1
 
@@ -199,61 +207,61 @@
 
 // EMOJI CONSTANTS
   // Resources
-  #define ENERGY "<:energy:911642184397258752>"
-  #define ACORNS "<:acorns:1045028765392187402>"
-  #define ACORN_COUNT "<:acorn_count:1050407923823677502>"
-  #define GOLDEN_ACORNS "<:golden_acorn:1045032005420728430>"
-  #define CONJURED_ACORNS "<:conjured_acorn:1102676336289521774>"
-  #define CATNIP "<:catnip:1052250368039452732>"
+  #define ENERGY "<:energy:1164894603648958504>"
+  #define ACORNS "<:acorn:1164894600926863360>"
+  #define ACORN_COUNT "<:acorn_count:1164894602491351113>"
+  #define GOLDEN_ACORNS "<:golden_acorn:1164894605788074066>"
+  #define CONJURED_ACORNS "<:conjured_acorn:1164897240771461151>"
+  #define CATNIP "<:catnip:1164897238749818961>"
 
   // Rewards
-  #define NO_ACORNS "<:no_acorns:1044620527223975957>"
-  #define ACORN_HANDFUL "<:acorn_handful:1044620522236944384>"
-  #define ACORN_MOUTHFUL "<:acorn_mouthful:1044620523067416627>"
-  #define LOST_STASH "<:lost_stash:1044620525944705146>"
-  #define ACORN_SACK "<:acorn_sack:1044620524275380286>"
+  #define NO_ACORNS "<:no_acorns:1164898153884029012>"
+  #define ACORN_HANDFUL "<:acorn_handful:1164898146057453638>"
+  #define ACORN_MOUTHFUL "<:acorn_mouthful:1164898147051507782>"
+  #define LOST_STASH "<:lost_stash:1164898152906764349>"
+  #define ACORN_SACK "<:acorn_sack:1164898148779577364>"
 
   // Health
-  #define HEALTH "<:health:1064579080281923655>"
-  #define BROKEN_HEALTH "<:broken_health:1064579097956712528>"
+  #define HEALTH "<:health:1164894607730028654>"
+  #define BROKEN_HEALTH "<:broken_health:1164898149979148360>"
 
   // Stats
-  #define PROFICIENCY_ICON "<:proficiency:1066084547931947141>"
-  #define LUCK_ICON "<:luck:1066084537798500372>"
-  #define STRENGTH_ICON "<:strength:1066084556110831697>"
+  #define PROFICIENCY_ICON "<:proficiency:1164899171862593568>"
+  #define LUCK_ICON "<:luck:1164899170029682781>"
+  #define STRENGTH_ICON "<:strength:1164899172789518356>"
 
   // Active Buffs
-  #define PROFICIENCY_ACORN "<:proficiency_acorn:1045027184475123813>"
-  #define LUCK_ACORN "<:luck_acorn:1045027183334264872>"
-  #define BOOSTED_ACORN "<:boosted_acorn:1119273554886799450>"
+  #define PROFICIENCY_ACORN "<:proficiency_acorn:1164899493481811989>"
+  #define LUCK_ACORN "<:luck_acorn:1164899492231925860>"
+  #define BOOSTED_ACORN "<:boosted_acorn:1164899491363696690>"
   
   // Interface
-  #define QUEST_MARKER "<:quest_marker:1046493067500335104>"
-  #define HELP_MARKER "<:no_acorns:1044620527223975957>"
+  #define QUEST_MARKER "<:quest_marker:1164898155150708736>"
+  #define HELP_MARKER "<:no_acorns:1164898153884029012>"
   #define OFF_ARROW "<:offset_arrow:1010924151063715841>"
   #define INDENT "<:empty_space:1019379796037337118>"
   #define BULLET "<:bullet:1150089464161517621>"
   #define STAHR "<:stahr:1045705606134251601>"
 
   // Scurry
-  #define GUILD_ICON "<:guild_icon:1020714354351542362>"
-  #define LEADER "<:leader:1035976066965196861>"
-  #define WAR_ACORNS "<:war_acorns:1066105193655193640>"
-  #define LIST_LEADER "<:king_squirrel:1073298108508803113>"
-  #define LIST_MEMBER "<:gl_squirrel:1014655900373504130>"
-  #define LIST_YOU "<:squirrel_bookie:1050175322286469250>"
+  #define GUILD_ICON "<:guild_icon:1164918417300668466>"
+  #define LEADER "<:leader:1164918418844164186>"
+  #define WAR_ACORNS "<:war_acorns:1164897241698418688>"
+  #define LIST_LEADER "<:king_squirrel:1164918773967495330>"
+  #define LIST_MEMBER "<:gray_squirrel:1164918772780503180>"
+  #define LIST_YOU "<:squirrel_bookie:1164918775888482394>"
 
   // Biomes
-  #define GRASSLANDS_ICON "<:grasslands_icon:1007390631016017991>"
-  #define SEEPING_SANDS_ICON "<:sp_icon:1042082262566572153>"
-  #define NATURE_END_ICON "<:ne_icon:1071474392783142932>"
-  #define DEATH_GRIP_ICON "<:dg_icon:1092903646196412426>"
-  #define LAST_ACORN_ICON "<:la_icon:1105304340400451645>"
+  #define GRASSLANDS_ICON "<:gl_icon:1164900062091018240>"
+  #define SEEPING_SANDS_ICON "<:sp_icon:1164900129850019860>"
+  #define NATURE_END_ICON "<:ne_icon:1164900105615327243>"
+  #define DEATH_GRIP_ICON "<:dg_icon:1164900043036299335>"
+  #define LAST_ACORN_ICON "<:la_icon:1164900082315968542>"
 
   // Victuals
-  #define BLUEBERRY_VICTUALS "<:blueberry_victuals:1094282921944305724>"
-  #define CHERRY_VICTUALS "<:cherry_victuals:1094282923806556251>"
-  #define SEED_VICTUALS "<:seed_victuals:1094282924750274572>"
+  #define BLUEBERRY_VICTUALS "<:blueberry_victuals:1164899712751636531>"
+  #define CHERRY_VICTUALS "<:cherry_victuals:1164899714467115089>"
+  #define SEED_VICTUALS "<:seed_victuals:1164899715456975131>"
 
 
 // COMMAND CONSTANTS

@@ -64,7 +64,9 @@ int session_info_interaction(const struct discord_interaction *event)
         ""OFF_ARROW" A session lasts until **2 minutes** has gone by without any activity. \n"),
     .thumbnail = &(struct discord_embed_thumbnail) {
       .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
-          squirrels[player.squirrel].squirrel.file_path)
+          (player.designer_squirrel == ERROR_STATUS) 
+            ? squirrels[player.squirrel].squirrel.file_path 
+            : designer_squirrels[player.designer_squirrel].squirrel.file_path)
     },
     .fields = &(struct discord_embed_fields) {
       .array = params.fields,

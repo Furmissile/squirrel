@@ -17,22 +17,24 @@ enum DB_TUPLE
   DB_CATNIP,
   DB_SECTION,
   DB_SPENT_GOLDEN_ACORNS,
+  DB_PURCHASED,
+  DB_DESIGNER_SQUIRREL,
   // skip user id
-  DB_PROFICIENCY_LV = 18,
+  DB_PROFICIENCY_LV = 20,
   DB_STRENGTH_LV,
   DB_LUCK_LV,
   // skip user id
-  DB_PROFICIENCY_ACORN = 22,
+  DB_PROFICIENCY_ACORN = 24,
   DB_LUCK_ACORN,
   DB_BOOSTED_ACORN,
   // skip user id
-  DB_GL_STORY = 26,
+  DB_GL_STORY = 28,
   DB_SP_STORY,
   DB_NE_STORY,
   DB_DG_STORY,
   DB_LA_STORY,
-
-  DB_SESSION_START_TIME = 32,
+  // skip user id
+  DB_SESSION_START_TIME = 34,
   DB_SESSION_ACORN_COUNT,
   DB_SESSION_ACORNS,
   DB_SESSION_GOLDEN_ACORNS,
@@ -103,6 +105,14 @@ enum S_TOPIC {
   S_TOPIC_SIZE
 };
 
+enum SQ_TOPIC {
+  SQ_TOPIC_SPRING,
+  SQ_TOPIC_SUMMER,
+  SQ_TOPIC_FALL,
+  SQ_TOPIC_WINTER,
+  SQ_TOPIC_SIZE
+};
+
 enum STORY_TOPIC {
   STORY_GRASSLANDS,
   STORY_SEEPING_SANDS,
@@ -139,57 +149,57 @@ struct sd_file_data items[ITEM_SIZE] = {
     .formal_name = "Acorns",
     .file_path = "items/acorn.png",
 
-    .emoji_name = "acorns",
-    .emoji_id = 1045028765392187402
+    .emoji_name = "acorn",
+    .emoji_id = 1164894600926863360
   },
   {
     .formal_name = "Acorn Count",
     .file_path = "items/acorn_count.png",
 
     .emoji_name = "acorn_count",
-    .emoji_id = 1050407923823677502
+    .emoji_id = 1164894602491351113
   },
   {
     .formal_name = "Golden Acorns",
     .file_path = "items/golden_acorn.png",
 
     .emoji_name = "golden_acorn",
-    .emoji_id = 1045032005420728430
+    .emoji_id = 1164894605788074066
   },
   {
     .formal_name = "War Acorns",
-    .file_path = "scurry_utils/war_acorns.png",
+    .file_path = "items/war_acorns.png",
 
     .emoji_name = "war_acorns",
-    .emoji_id = 1066105193655193640
+    .emoji_id = 1164897241698418688
   },
   {
     .formal_name = "Energy",
     .file_path = "items/energy.png",
 
     .emoji_name = "energy",
-    .emoji_id = 911642184397258752
+    .emoji_id = 1164894603648958504
   },
   {
     .formal_name = "HP",
     .file_path = "items/health.png",
 
     .emoji_name = "health",
-    .emoji_id = 1064579080281923655
+    .emoji_id = 1164894607730028654
   },
   {
     .formal_name = "Conjured Acorn",
     .file_path = "items/conjured_acorn.png",
 
     .emoji_name = "conjured_acorn",
-    .emoji_id = 1102676336289521774
+    .emoji_id = 1164897240771461151
   },
   {
     .formal_name = "Catnip",
     .file_path = "items/catnip.png",
 
     .emoji_name = "catnip",
-    .emoji_id = 1052250368039452732
+    .emoji_id = 1164897238749818961
   }
 };
 
@@ -216,56 +226,56 @@ struct sd_file_data item_types[TYPE_SIZE] = {
     .file_path = "item_types/no_acorns.png",
 
     .emoji_name = "no_acorns",
-    .emoji_id = 1044620527223975957
+    .emoji_id = 1164898153884029012
   },
   {
     .formal_name = "a Handful of Acorns",
     .file_path = "item_types/acorn_handful.png",
 
     .emoji_name = "acorn_handful",
-    .emoji_id = 1044620522236944384
+    .emoji_id = 1164898146057453638
   },
   {
     .formal_name = "a Mouthful of Acorns",
     .file_path = "item_types/acorn_mouthful.png",
 
     .emoji_name = "acorn_mouthful",
-    .emoji_id = 1044620523067416627
+    .emoji_id = 1164898147051507782
   },
   {
     .formal_name = "a Lost Stash",
     .file_path = "item_types/lost_stash.png",
 
     .emoji_name = "lost_stash",
-    .emoji_id = 1044620525944705146
+    .emoji_id = 1164898152906764349
   },
   {
     .formal_name = "a Sack of Acorns",
     .file_path = "item_types/acorn_sack.png",
 
     .emoji_name = "acorn_sack",
-    .emoji_id = 1044620524275380286
+    .emoji_id = 1164898148779577364
   },
   {
     .formal_name = "Dirt Pile",
     .file_path = "item_types/dirt_pile.png",
 
     .emoji_name = "dirt_pile",
-    .emoji_id = 1044620525365895168
+    .emoji_id = 1164898151967236246
   },
   {
     .formal_name = "an Encounter",
     .file_path = "item_types/quest_marker.png",
 
     .emoji_name = "quest_marker",
-    .emoji_id = 1046493067500335104
+    .emoji_id = 1164898155150708736
   },
   {
     .formal_name = "HP Lost",
     .file_path = "item_types/broken_health.png",
 
     .emoji_name = "broken_health",
-    .emoji_id = 1064579097956712528
+    .emoji_id = 1164898149979148360
   }
 
 };
@@ -286,7 +296,7 @@ struct sd_obj_stats stats[STAT_SIZE] = {
       .description = "*Multiplies acorn "ACORNS" earnings*",
 
       .emoji_name = "proficiency",
-      .emoji_id = 1066084547931947141
+      .emoji_id = 1164899171862593568
     },
 
     .price_mult = PROFICIENCY_UNIT,
@@ -299,7 +309,7 @@ struct sd_obj_stats stats[STAT_SIZE] = {
       .description = "*Multiplies golden acorn "GOLDEN_ACORNS" earnings*",
 
       .emoji_name = "luck",
-      .emoji_id = 1066084537798500372
+      .emoji_id = 1164899170029682781
     },
 
     .price_mult = LUCK_UNIT,
@@ -312,7 +322,7 @@ struct sd_obj_stats stats[STAT_SIZE] = {
       .description = "*Adds 5 max "HEALTH" chances*",
 
       .emoji_name = "strength",
-      .emoji_id = 1066084556110831697
+      .emoji_id = 1164899172789518356
     },
 
     .price_mult = STRENGTH_UNIT,
@@ -335,7 +345,7 @@ struct sd_file_data enchanted_acorns[BUFFS_SIZE] = {
     .description = "*Doubles acorn earnings and acorn count*",
 
     .emoji_name = "proficiency_acorn",
-    .emoji_id = 1045027184475123813
+    .emoji_id = 1164899493481811989
   },
   {
     .formal_name = "Acorn of Luck",
@@ -344,7 +354,7 @@ struct sd_file_data enchanted_acorns[BUFFS_SIZE] = {
     .description = "*Doubles golden acorn earnings*",
 
     .emoji_name = "luck_acorn",
-    .emoji_id = 1045027183334264872
+    .emoji_id = 1164899492231925860
   },
   {
     .formal_name = "Conjured Acorn Boost",
@@ -353,7 +363,7 @@ struct sd_file_data enchanted_acorns[BUFFS_SIZE] = {
     .description = "*1.5x squirrel effect*",
 
     .emoji_name = "boosted_acorn",
-    .emoji_id = 1119273554886799450
+    .emoji_id = 1164899491363696690
   }
 };
 
@@ -379,21 +389,21 @@ struct sd_file_data victuals[VICTUALS_SIZE] = {
     .file_path = "victuals/blueberry_victuals.png",
 
     .emoji_name = "blueberry_victuals",
-    .emoji_id = 1094282921944305724
+    .emoji_id = 1164899712751636531
   },
   {
     .formal_name = "Cherries",
     .file_path = "victuals/cherry_victuals.png",
 
     .emoji_name = "cherry_victuals",
-    .emoji_id = 1094282923806556251,
+    .emoji_id = 1164899714467115089
   },
   {
     .formal_name = "Seeds",
     .file_path = "victuals/seed_victuals.png",
 
     .emoji_name = "seed_victuals",
-    .emoji_id = 1094282924750274572
+    .emoji_id = 1164899715456975131
   }
 };
 
@@ -414,11 +424,11 @@ struct sd_squirrel squirrels[SQUIRREL_SIZE] = {
     
     .squirrel = {
       .formal_name = "Gray Squirrel",
-      .file_path = "squirrels/gl_squirrel.png",
+      .file_path = "squirrels/gray_squirrel.png",
 
       .description = "*Chance to not consume energy*",
 
-      .emoji_name = "gl_squirrel",
+      .emoji_name = "gray_squirrel",
       .emoji_id = 1014655900373504130
     }
   },
@@ -480,6 +490,208 @@ struct sd_squirrel squirrels[SQUIRREL_SIZE] = {
   }
 };
 
+struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
+  // SPRING
+  {
+    .golden_acorn_req = FIRST_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Floral Squirrel",
+      .file_path = "squirrels/spring_squirrels/floral_squirrel.png",
+
+      .description = "*Stuck his nose in one too many flowers*",
+
+      .emoji_name = "floral_squirrel",
+      .emoji_id = 1167134584425697401
+    }
+  },
+  {
+    .golden_acorn_req = SECOND_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Golden Squirrel",
+      .file_path = "squirrels/spring_squirrels/golden_squirrel.png",
+
+      .description = "*Did he eat a golden acorn?*",
+
+      .emoji_name = "golden_squirrel",
+      .emoji_id = 1167134585306501130
+    }
+  },
+  {
+    .golden_acorn_req = THIRD_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Black Squirrel",
+      .file_path = "squirrels/spring_squirrels/black_squirrel.png",
+
+      .description = "*Something about him is unsettling...*",
+
+      .emoji_name = "black_squirrel",
+      .emoji_id = 1167134583414853733
+    }
+  },
+  {
+    .golden_acorn_req = FOURTH_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Acron",
+      .file_path = "squirrels/spring_squirrels/acron.png",
+
+      .description = "*Always searching for the next golden acorn.*",
+
+      .emoji_name = "acron",
+      .emoji_id = 1167134581686808597
+    }
+  },
+
+  // SUMMER
+  {
+    .golden_acorn_req = FIRST_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Floaty Squirrel",
+      .file_path = "squirrels/summer_squirrels/floaty_squirrel.png",
+
+      .description = "*Proper party crasher.*",
+
+      .emoji_name = "floaty_squirrel",
+      .emoji_id = 1167134612468809899
+    }
+  },
+  {
+    .golden_acorn_req = SECOND_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Beach Squirrel",
+      .file_path = "squirrels/summer_squirrels/beach_squirrel.png",
+
+      .description = "*What happened to the beach?*",
+
+      .emoji_name = "beach_squirrel",
+      .emoji_id = 1167134608727486485
+    }
+  },
+  {
+    .golden_acorn_req = THIRD_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Squirrel Pirate",
+      .file_path = "squirrels/summer_squirrels/squirrel_pirate.png",
+
+      .description = "*Proper party crasher.*",
+
+      .emoji_name = "squirrel_pirate",
+      .emoji_id = 1167134613697740880
+    }
+  },
+  {
+    .golden_acorn_req = FOURTH_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Veggie Snatcher",
+      .file_path = "squirrels/summer_squirrels/veggie_snatcher.png",
+
+      .description = "*Raided more gardens than you can count!*",
+
+      .emoji_name = "veggie_snatcher",
+      .emoji_id = 1167134610572980244
+    }
+  },
+
+  // FALL
+  {
+    .golden_acorn_req = FIRST_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Red Squirrel",
+      .file_path = "squirrels/fall_squirrels/red_squirrel.png",
+
+      .description = "*Blends with the Fall leaves.*",
+
+      .emoji_name = "red_squirrel",
+      .emoji_id = 1167134556965585006
+    }
+  },
+  {
+    .golden_acorn_req = SECOND_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Squirrel Alchemist",
+      .file_path = "squirrels/fall_squirrels/squirrel_alchemist.png",
+
+      .description = "*Ready to create the next enchanted acorn.*",
+
+      .emoji_name = "squirrel_alchemist",
+      .emoji_id = 1167134558190321744
+    }
+  },
+  {
+    .golden_acorn_req = THIRD_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Demonic Squirrel",
+      .file_path = "squirrels/fall_squirrels/demonic_squirrel.png",
+
+      .description = "*Fresh from the depths of Hell.*",
+
+      .emoji_name = "demonic_squirrel",
+      .emoji_id = 1167134555338178560
+    }
+  },
+  {
+    .golden_acorn_req = FOURTH_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Archwizard Flooftail",
+      .file_path = "squirrels/fall_squirrels/archwizard_flooftail.png",
+
+      .description = "*Sourcerer with powers of an unknown origin.*",
+
+      .emoji_name = "archwizard_flooftail",
+      .emoji_id = 1167134553098440794
+    }
+  },
+
+  // WINTER
+  {
+    .golden_acorn_req = FIRST_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Frost Squirrel",
+      .file_path = "squirrels/winter_squirrels/frost_squirrel.png",
+
+      .description = "*An arctic squirrel that loves the snow a little too much.*",
+
+      .emoji_name = "frost_squirrel",
+      .emoji_id = 1167134638712557579
+    }
+  },
+  {
+    .golden_acorn_req = SECOND_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Frost Squirrel",
+      .file_path = "squirrels/winter_squirrels/hoarder_squirrel.png",
+
+      .description = "*His face has seen a lot of snow...*",
+
+      .emoji_name = "hoarder_squirrel",
+      .emoji_id = 1167134639748546570
+    }
+  },
+  {
+    .golden_acorn_req = THIRD_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Santa Squirrel",
+      .file_path = "squirrels/winter_squirrels/santa_squirrel.png",
+
+      .description = "*The inventor of acorn.*",
+
+      .emoji_name = "santa_squirrel",
+      .emoji_id = 1167134642466455612
+    }
+  },
+  {
+    .golden_acorn_req = FOURTH_SQUIRREL,
+    .squirrel = {
+      .formal_name = "Infurno",
+      .file_path = "squirrels/winter_squirrels/infurno.png",
+
+      .description = "*Fluffy jellybe- spawn of Hell.*",
+
+      .emoji_name = "infurno",
+      .emoji_id = 1167134641577279548
+    }
+  },
+};
+
 enum BIOME 
 {
   GRASSLANDS,
@@ -500,7 +712,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
       .file_path = "gl_content/gl_icon.png",
 
       .emoji_name = "gl_icon",
-      .emoji_id = 1007390631016017991
+      .emoji_id = 1164900062091018240
     },
 
     .intro = "Welcome to the "GRASSLANDS_ICON" **Grasslands**! \n"
@@ -650,7 +862,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
       .file_path = "sp_content/sp_icon.png",
 
       .emoji_name = "sp_icon",
-      .emoji_id = 1042082262566572153
+      .emoji_id = 1164900129850019860
     },
 
     .intro = "Welcome to the "SEEPING_SANDS_ICON" **Seeping Sands**! \n"
@@ -814,7 +1026,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
       .formal_name = "Nature's End",
       .file_path = "ne_content/ne_icon.png",
       .emoji_name = "ne_icon",
-      .emoji_id = 1071474392783142932
+      .emoji_id = 1164900105615327243
     },
 
     .intro = "Welcome to "NATURE_END_ICON" **Nature's End**! \n"
@@ -963,7 +1175,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
       .file_path = "dg_content/dg_icon.png",
 
       .emoji_name = "dg_icon",
-      .emoji_id = 1092903646196412426
+      .emoji_id = 1164900043036299335
     },
 
     .intro = "Welcome to "DEATH_GRIP_ICON" **Death's Grip**! \n"
@@ -1144,7 +1356,7 @@ struct sd_biome biomes[BIOME_SIZE] = {
       .file_path = "la_content/la_icon.png",
 
       .emoji_name = "la_icon",
-      .emoji_id = 1105304340400451645
+      .emoji_id = 1164900082315968542
     },
 
     .intro = "Welcome to the "LAST_ACORN_ICON" **The Last Acorn**! \n"

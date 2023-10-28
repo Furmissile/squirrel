@@ -237,7 +237,6 @@ void print_rewards(char* sd_description, size_t description_size, struct sd_play
 void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, struct sd_buff_status *buff_status)
 {
   // give a bonus BIOME_ACORN_INC after completing a cycle!
-  // rewards->acorns += (BIOME_ACORN_INC * (player->biome_num + player->biome_num / BIOME_SIZE));
   rewards->acorns *= 1 + (BIOME_ACORN_INC * (player->biome_num + player->biome_num / BIOME_SIZE));
 
   // CURRENT ORDER: Buff -> Squirrel -> Stat
@@ -296,9 +295,7 @@ void apply_base_rewards(struct sd_player *player, struct sd_rewards *rewards, st
   if (rewards->golden_acorns)
   {
     // give a bonus BIOME_GOLDEN_ACORN_INC after completing a cycle!
-    // rewards->golden_acorns += (BIOME_GOLDEN_ACORN_INC * (player->biome_num + player->biome_num / BIOME_SIZE));
     rewards->golden_acorns *= 1 + (BIOME_ACORN_INC * (player->biome_num + player->biome_num / BIOME_SIZE));
-    printf("x%0.2f golden acorn \n\n", 1 + (BIOME_ACORN_INC * (player->biome_num + player->biome_num / BIOME_SIZE)));
 
     if (player->buffs.luck_acorn > 0) 
     {

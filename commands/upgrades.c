@@ -158,6 +158,7 @@ int init_upgrade_shop(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
   load_player_struct(&player, event);
+  player.button_idx = (event->data->custom_id) ? event->data->custom_id[1] -48 : ERROR_STATUS;
 
   struct sd_upgrade_shop params = { 0 };
 
@@ -183,7 +184,9 @@ int init_upgrade_shop(const struct discord_interaction *event)
         "**Balance**: \n "INDENT" "ACORNS" Acorns: **%s**", acorns),
     .thumbnail = &(struct discord_embed_thumbnail) {
       .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
-          squirrels[player.squirrel].squirrel.file_path)
+          (player.designer_squirrel == ERROR_STATUS) 
+            ? squirrels[player.squirrel].squirrel.file_path 
+            : designer_squirrels[player.designer_squirrel].squirrel.file_path)
     },
     .fields = &(struct discord_embed_fields) {
       .array = params.fields,

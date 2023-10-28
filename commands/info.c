@@ -19,15 +19,18 @@ void build_general_info(struct sd_squirrel_info *params, struct sd_player *playe
   APPLY_NUM_STR(high_acorn_count, player->high_acorn_count);
 
   struct sd_file_data biome_icon = biomes[player->biome].biome_icon;
+  struct sd_file_data squirrel = squirrels[player->squirrel].squirrel;
 
   params->fields[0].name = u_snprintf(params->field_names[0], sizeof(params->field_names[0]), "General Info");
 
   u_snprintf(params->field_values[0], sizeof(params->field_values[0]), 
       " "INDENT" "ACORN_COUNT" Acorn Count: **%s**/%s \n"
       " "INDENT" <:%s:%ld> Biome: **%s** \n"
+      " "INDENT" <:%s:%ld> Squirrel: **%s** \n"
       " "INDENT" "LEADER" High Score: **%s** \n",
       acorn_count, req_acorn_count,
       biome_icon.emoji_name, biome_icon.emoji_id, biome_icon.formal_name,
+      squirrel.emoji_name, squirrel.emoji_id, squirrel.formal_name,
       (player->high_acorn_count > 0) ? high_acorn_count : acorn_count);
 
   if (player->scurry_id > 0)
@@ -50,7 +53,7 @@ void build_resources_info(struct sd_squirrel_info *params, struct sd_player *pla
       " "INDENT" "ENERGY" Energy: **%d**/%d \n"
       " "INDENT" "ACORNS" Acorns: **%s** \n"
       " "INDENT" "GOLDEN_ACORNS" Golden Acorns: **%s** \n"
-      " "INDENT" "HEALTH" Health: **%s**/%s",
+      " "INDENT" "HEALTH" Health: **%s**/%s \n",
       player->energy, MAX_ENERGY, acorns, golden_acorns, health, max_health);
 
   // conditional info
@@ -124,7 +127,7 @@ void build_buffs_info(struct sd_squirrel_info *params, struct sd_player *player)
     {
       APPLY_NUM_STR(duration, buff_durations[buff_idx]);
       u_snprintf(params->field_values[3], sizeof(params->field_values[3]),
-          "<:%s:%ld> *%s* (**%s**) \n",
+          " "INDENT" <:%s:%ld> *%s* (**%s**) \n",
           active_buff.emoji_name, active_buff.emoji_id, active_buff.formal_name, duration);
     }
   }
@@ -164,7 +167,9 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
     .title = u_snprintf(header.title, sizeof(header.title), "Player Info"),
     .thumbnail = &(struct discord_embed_thumbnail) {
       .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
-          squirrels[player.squirrel].squirrel.file_path)
+          (player.designer_squirrel == ERROR_STATUS) 
+            ? squirrels[player.squirrel].squirrel.file_path 
+            : designer_squirrels[player.designer_squirrel].squirrel.file_path)
     },
     .fields = &(struct discord_embed_fields) {
       .array = params.fields,
@@ -249,7 +254,9 @@ int info_from_buttons(const struct discord_interaction *event)
     .title = u_snprintf(header.title, sizeof(header.title), "Player Info"),
     .thumbnail = &(struct discord_embed_thumbnail) {
       .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
-          squirrels[player.squirrel].squirrel.file_path)
+          (player.designer_squirrel == ERROR_STATUS) 
+            ? squirrels[player.squirrel].squirrel.file_path 
+            : designer_squirrels[player.designer_squirrel].squirrel.file_path)
     },
     .fields = &(struct discord_embed_fields) {
       .array = params.fields,
@@ -261,7 +268,6 @@ int info_from_buttons(const struct discord_interaction *event)
 
   generate_util_buttons(event, &player, &util_data);
 
-  // TODO: add to params.button!
   if (event->data->custom_id && player.button_idx == 5)
   {
     player.buffs.boosted_acorn += squirrels[player.squirrel].boosted_duration;

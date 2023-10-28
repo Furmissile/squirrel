@@ -29,7 +29,7 @@ void load_player_struct(struct sd_player *player_res, const struct discord_inter
     PQclear(search_player);
     search_player = SQL_query(search_player,
         "BEGIN; \n"
-        "insert into public.player values(%ld, 0, 0, 0, 100, 10, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0); \n"
+        "insert into public.player values(%ld, 0, 0, 0, 100, 10, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, -1); \n"
         "insert into public.stats values(%ld, 1, 1, 1); \n"
         "insert into public.buffs values(%ld, 0, 0, 0); \n"
         "insert into public.biome_story values(%ld, 0, 0, 0, 0, 0); \n"
@@ -71,6 +71,8 @@ void load_player_struct(struct sd_player *player_res, const struct discord_inter
     .section = strtoint( PQgetvalue(search_player, 0 , DB_SECTION) ),
     .encounter = strtoint( PQgetvalue(search_player, 0, DB_ENCOUNTER) ),
     .main_cd = strtobigint( PQgetvalue(search_player, 0, DB_MAIN_CD) ),
+    .purchased = strtobigint( PQgetvalue(search_player, 0, DB_PURCHASED) ),
+    .designer_squirrel = strtobigint( PQgetvalue(search_player, 0, DB_DESIGNER_SQUIRREL) ),
 
     .stats = {
       .proficiency_lv = strtoint( PQgetvalue(search_player, 0, DB_PROFICIENCY_LV) ),
@@ -110,10 +112,8 @@ void load_player_struct(struct sd_player *player_res, const struct discord_inter
   player_res->biome = player_res->acorn_count/BIOME_INTERVAL % BIOME_SIZE;
   player_res->biome_num = player_res->acorn_count/BIOME_INTERVAL;
   player_res->max_health = generate_factor(player_res->stats.strength_lv, STRENGTH_FACTOR) + MAX_HEALTH;
-  player_res->button_idx = (event->data->custom_id) ? event->data->custom_id[1] -48 : ERROR_STATUS;
 
   struct sd_session_data *data = &player_res->session_data;
-
   player_res->session_data.total_forages = data->no_acorns + data->acorn_handful + data->acorn_mouthful + data->lost_stash + data->acorn_sack;
 
   PQclear(search_player);
@@ -161,7 +161,7 @@ void load_scurry_struct(struct sd_scurry *scurry_res, unsigned long scurry_id)
 
 void update_player_row(struct sd_player *player_res)
 {
-  char sql_str[2048] = { };
+  char sql_str[4096] = { };
 
   u_snprintf(sql_str, sizeof(sql_str),
       "BEGIN; \n"
@@ -181,12 +181,15 @@ void update_player_row(struct sd_player *player_res)
         "catnip = %d, "
         "encounter = %d, "
         "section = %d, "
+        "purchased = %d, "
+        "designer_squirrel = %d, "
         "main_cd = %ld \n"
       "where user_id = %ld; \n",
       player_res->scurry_id, player_res->color, player_res->squirrel, player_res->energy, 
       player_res->health,player_res->acorns, player_res->acorn_count, player_res->high_acorn_count, 
       player_res->golden_acorns, player_res->spent_golden_acorns, player_res->conjured_acorns, player_res->stolen_acorns, 
-      player_res->catnip, player_res->encounter, player_res->section, player_res->main_cd,
+      player_res->catnip, player_res->encounter, player_res->section, player_res->purchased, 
+      player_res->designer_squirrel, player_res->main_cd,
       player_res->user_id);
     
   u_snprintf(sql_str, sizeof(sql_str),

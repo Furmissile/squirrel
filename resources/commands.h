@@ -21,6 +21,7 @@ enum CMD_TYPE
   CMD_COLOR,
   CMD_STEAL,
   CMD_SQUIRREL,
+  CMD_DESIGNER_SQUIRRELS,
 
   CMD_EVENT_HELP,
   CMD_SEASON_INFO,
@@ -120,6 +121,20 @@ struct sd_command *cmds = (struct sd_command[])
     .error_msg = "You cannot swap squirrels with this embed! Please send `/squirrels` to change your current squirrel.",
 
     .func_cb = &squirrels_interaction
+  },
+  { // CMD_DESIGNER_SQUIRRELS
+    .name = "designer_squirrels",
+    .command_id = TYPE_DESIGNER_SQIRRELS,
+    .error_msg = "You cannot swap squirrels with this embed! Please send `/designer_squirrels` to change your current squirrel.",
+
+    .func_cb = &designer_squirrels_interaction
+  },
+  { // CMD_DESIGNER_SQUIRRELS
+    .name = "designer_squirrels",
+    .command_id = TYPE_SQUIRREL_HELP,
+    .error_msg = "You cannot swap squirrels with this embed! Please send `/designer_squirrels` to change your current squirrel.",
+
+    .func_cb = &designer_squirrels_interaction
   },
   { // CMD_LEADERBOARD
     .name = "leaderboard",
@@ -260,9 +275,9 @@ void create_commands(struct discord *client, const struct discord_ready *event)
       .description = "Swap to a different squirrel!",
       .type = DISCORD_APPLICATION_CHAT_INPUT
     },
-    { // vengeance_mode
-      .name = "vengeance_mode",
-      .description = "Enable or disable Vengeance Mode!",
+    { // squirrel customs
+      .name = "designer_squirrels",
+      .description = "Change the appearance of your squirrel!",
       .type = DISCORD_APPLICATION_CHAT_INPUT
     },
 

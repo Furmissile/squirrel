@@ -16,6 +16,12 @@ struct sd_squirrel
   struct sd_file_data squirrel;
 };
 
+struct sd_designer_squirrel
+{
+  int golden_acorn_req;
+  struct sd_file_data squirrel;
+};
+
 struct sd_encounter
 {
   char* name;
@@ -121,8 +127,10 @@ struct sd_player
   unsigned long scurry_id;
   int color;
   int squirrel;
+  int designer_squirrel;
   int squirrel_lv;
   float squirrel_const;
+  unsigned long purchased;
 
   int energy;
   int health;
