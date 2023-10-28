@@ -260,7 +260,7 @@ int designer_squirrels_interaction(const struct discord_interaction *event)
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
-    .title = u_snprintf(header.title, sizeof(header.title), "Designer Squirrels (%s List)", seasons[season_idx]),
+    .title = u_snprintf(header.title, sizeof(header.title), "Designer Squirrels (%s List)", seasons[page_num -1]),
     .description = u_snprintf(params.description, sizeof(params.description), 
         " "OFF_ARROW" Purchase a squirrel custom with "GOLDEN_ACORNS" *golden acorns*! \n"
         " "OFF_ARROW" If you lose your squirrel from death, the custom will still be active. \n"
