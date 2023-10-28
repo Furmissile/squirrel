@@ -223,6 +223,7 @@ int forage_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
   load_player_struct(&player, event);
+  player.button_idx = (event->data->custom_id) ? event->data->custom_id[1] -48 : ERROR_STATUS;
 
   energy_regen(&player);
 

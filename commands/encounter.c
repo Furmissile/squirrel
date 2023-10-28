@@ -208,12 +208,6 @@ void build_encounter_buttons(const struct discord_interaction *event, struct sd_
   }
 
   potential_types[2] = (rand() % MAX_CHANCE > 20) ? TYPE_ACORN_SACK : TYPE_ACORN_MOUTHFUL; // golden acorns -- for score
-
-  // int potential_types[3] = { 
-  //   (rand() % MAX_CHANCE > 40) ? TYPE_ACORN_MOUTHFUL : TYPE_LOST_STASH, // half damage -- for defense
-  //   (rand() % MAX_CHANCE > 20) ? TYPE_LOST_STASH : TYPE_ACORN_SACK, // full damage -- for golden acorns
-  //   (rand() % MAX_CHANCE > 20) ? TYPE_ACORN_SACK : TYPE_ACORN_MOUTHFUL // golden acorns -- for score
-  // };
   
   rewards->item_type = potential_types[player->button_idx];
 
@@ -368,6 +362,7 @@ int encounter_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
   load_player_struct(&player, event);
+  player.button_idx = (event->data->custom_id) ? event->data->custom_id[1] -48 : ERROR_STATUS;
 
   // heal was used!
   if (player.button_idx == 3)

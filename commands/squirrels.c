@@ -1,10 +1,10 @@
 struct sd_squirrel_shop {
-  struct discord_component buttons[SQUIRREL_SIZE];
+  struct discord_component buttons[SQUIRREL_SIZE +1];
   char custom_ids[SQUIRREL_SIZE +1][64]; // +1 for refresh button
   char labels[SQUIRREL_SIZE +1][64];
 
-  struct discord_emoji emojis[SQUIRREL_SIZE];
-  char emoji_names[SQUIRREL_SIZE][64];
+  struct discord_emoji emojis[SQUIRREL_SIZE +1];
+  char emoji_names[SQUIRREL_SIZE +1][64];
 
   struct discord_embed_field fields[SQUIRREL_SIZE +1]; // +1 offset for score field
   char field_names[SQUIRREL_SIZE +1][64];
@@ -29,6 +29,7 @@ void init_squirrel_fields(struct sd_squirrel_shop *params, struct sd_player *pla
   for (int field_idx = 1; field_idx < SQUIRREL_SIZE +1; field_idx++)
   {
     struct sd_file_data squirrel_data = squirrels[field_idx -1].squirrel;
+
     APPLY_NUM_STR(squirrel_req, squirrels[field_idx -1].acorn_count_req);
 
     params->fields[field_idx] = (struct discord_embed_field) {
@@ -123,6 +124,7 @@ int squirrels_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
   load_player_struct(&player, event);
+  player.button_idx = (event->data->custom_id) ? event->data->custom_id[1] -48 : ERROR_STATUS;
   
   struct sd_squirrel_shop params = { 0 };
 
