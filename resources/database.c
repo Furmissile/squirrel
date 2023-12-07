@@ -14,11 +14,8 @@ PGconn* establish_connection(char* conninfo)
   return db_conn;
 }
 
-// void load_player_struct(struct sd_player *player_res, unsigned long user_id)
-void load_player_struct(struct sd_player *player_res, const struct discord_interaction *event)
-{
-  unsigned long user_id = (event->member) ? event->member->user->id : event->user->id;
-
+void load_player_struct(struct sd_player *player_res, unsigned long user_id, char* custom_id)
+{  
   PGresult* search_player = (PGresult*) { 0 };
   search_player = SQL_query(search_player, 
       "select * from public.player where user_id = %ld",
@@ -27,15 +24,17 @@ void load_player_struct(struct sd_player *player_res, const struct discord_inter
   if (PQntuples(search_player) == 0)
   {
     PQclear(search_player);
+    struct tm *info = get_UTC();
     search_player = SQL_query(search_player,
         "BEGIN; \n"
-        "insert into public.player values(%ld, 0, 0, 0, 100, 10, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, -1); \n"
+        "insert into public.player values(%ld, 0, 0, 0, 100, 10, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1, 0, 0); \n"
         "insert into public.stats values(%ld, 1, 1, 1); \n"
         "insert into public.buffs values(%ld, 0, 0, 0); \n"
         "insert into public.biome_story values(%ld, 0, 0, 0, 0, 0); \n"
-        "insert into public.session_data values(%ld, %ld, 0, 0, 0, 0, 0, 0, 0, 0, 0); \n"
+        "insert into public.session_data values(%ld, %ld, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); \n"
+        "insert into public.daily values (%ld, %d, 0, 0, 0, 0, 0, 0, 0);"
         "COMMIT;", 
-        user_id, user_id, user_id, user_id, user_id, time(NULL));
+        user_id, user_id, user_id, user_id, user_id, time(NULL), user_id, info->tm_mday);
   }
 
   PQclear(search_player);
@@ -46,6 +45,7 @@ void load_player_struct(struct sd_player *player_res, const struct discord_inter
       "join public.buffs on player.user_id = buffs.user_id \n"
       "join public.biome_story on player.user_id = biome_story.user_id \n"
       "join public.session_data on player.user_id = session_data.user_id \n"
+      "join public.daily on player.user_id = daily.user_id \n"
       "where player.user_id = %ld",
       user_id);
 
@@ -63,8 +63,8 @@ void load_player_struct(struct sd_player *player_res, const struct discord_inter
     .acorn_count = strtoint( PQgetvalue(search_player, 0, DB_ACORN_COUNT) ),
     .high_acorn_count = strtoint( PQgetvalue(search_player, 0, DB_HIGH_ACORN_COUNT) ),
     .golden_acorns = strtoint( PQgetvalue(search_player, 0, DB_GOLDEN_ACORNS) ),
-    .spent_golden_acorns = strtoint( PQgetvalue(search_player, 0, DB_SPENT_GOLDEN_ACORNS) ),
-    .conjured_acorns = strtoint( PQgetvalue(search_player, 0, DB_CONJURED_ACORNS)),
+    .stored_golden_acorns = strtoint( PQgetvalue(search_player, 0, DB_STORED_GOLDEN_ACORNS) ),
+    .conjured_acorns = strtoint( PQgetvalue(search_player, 0, DB_CONJURED_ACORNS) ),
     .stolen_acorns = strtoint( PQgetvalue(search_player, 0, DB_STOLEN_ACORNS) ),
     .catnip = strtoint( PQgetvalue(search_player, 0, DB_CATNIP) ),
   
@@ -73,6 +73,7 @@ void load_player_struct(struct sd_player *player_res, const struct discord_inter
     .main_cd = strtobigint( PQgetvalue(search_player, 0, DB_MAIN_CD) ),
     .purchased = strtobigint( PQgetvalue(search_player, 0, DB_PURCHASED) ),
     .designer_squirrel = strtobigint( PQgetvalue(search_player, 0, DB_DESIGNER_SQUIRREL) ),
+    .regen_rate = strtoint( PQgetvalue(search_player, 0, DB_REGEN_RATE) ),
 
     .stats = {
       .proficiency_lv = strtoint( PQgetvalue(search_player, 0, DB_PROFICIENCY_LV) ),
@@ -105,10 +106,23 @@ void load_player_struct(struct sd_player *player_res, const struct discord_inter
       .acorn_handful = strtoint( PQgetvalue(search_player, 0, DB_SESSION_ACORN_HANDFUL) ),
       .acorn_mouthful = strtoint( PQgetvalue(search_player, 0, DB_SESSION_ACORN_MOUTHFUL) ),
       .lost_stash = strtoint( PQgetvalue(search_player, 0, DB_SESSION_LOST_STASH) ),
-      .acorn_sack = strtoint( PQgetvalue(search_player, 0, DB_SESSION_ACORN_SACK) )
+      .acorn_sack = strtoint( PQgetvalue(search_player, 0, DB_SESSION_ACORN_SACK) ),
+      .ribboned_acorns = strtoint( PQgetvalue(search_player, 0, DB_SESSION_RIBBONED_ACORNS) )
+    },
+
+    .daily = {
+      .active_tasks = strtoint( PQgetvalue(search_player, 0, DB_DAILY_ACTIVE_TASKS) ),
+      .tm_mday = strtoint( PQgetvalue(search_player, 0, DB_DAILY_DAY) ),
+      .primary = strtoint( PQgetvalue(search_player, 0, DB_DAILY_PRIMARY) ),
+      .secondary = strtoint( PQgetvalue(search_player, 0, DB_DAILY_SECONDARY) ),
+      .tertiary = strtoint( PQgetvalue(search_player, 0, DB_DAILY_TERTIARY) ),
+      .primary_complete = strtoint( PQgetvalue(search_player, 0, DB_DAILY_PRIMARY_COMPLETE) ),
+      .secondary_complete = strtoint( PQgetvalue(search_player, 0, DB_DAILY_SECONDARY_COMPLETE) ),
+      .tertiary_complete = strtoint( PQgetvalue(search_player, 0, DB_DAILY_TERTIARY_COMPLETE) )
     }
   };
 
+  player_res->button_idx = (custom_id) ? custom_id[1] -48 : ERROR_STATUS;
   player_res->biome = player_res->acorn_count/BIOME_INTERVAL % BIOME_SIZE;
   player_res->biome_num = player_res->acorn_count/BIOME_INTERVAL;
   player_res->max_health = generate_factor(player_res->stats.strength_lv, STRENGTH_FACTOR) + MAX_HEALTH;
@@ -171,11 +185,11 @@ void update_player_row(struct sd_player *player_res)
         "squirrel = %d, "
         "energy = %d, "
         "health = %d, "
+        "regen_rate = %d, "
         "acorns = %d, "
         "acorn_count = %d, "
         "high_acorn_count = %d, "
         "golden_acorns = %d, "
-        "spent_golden_acorns = %d, "
         "conjured_acorns = %d, "
         "stolen_acorns = %d, "
         "catnip = %d, "
@@ -183,13 +197,15 @@ void update_player_row(struct sd_player *player_res)
         "section = %d, "
         "purchased = %d, "
         "designer_squirrel = %d, "
+        "stored_golden_acorns = %d, "
         "main_cd = %ld \n"
       "where user_id = %ld; \n",
       player_res->scurry_id, player_res->color, player_res->squirrel, player_res->energy, 
-      player_res->health,player_res->acorns, player_res->acorn_count, player_res->high_acorn_count, 
-      player_res->golden_acorns, player_res->spent_golden_acorns, player_res->conjured_acorns, player_res->stolen_acorns, 
-      player_res->catnip, player_res->encounter, player_res->section, player_res->purchased, 
-      player_res->designer_squirrel, player_res->main_cd,
+      player_res->health, player_res->regen_rate, player_res->acorns, player_res->acorn_count, 
+      player_res->high_acorn_count, player_res->golden_acorns, player_res->conjured_acorns, 
+      player_res->stolen_acorns, player_res->catnip, player_res->encounter, player_res->section, 
+      player_res->purchased, player_res->designer_squirrel, player_res->stored_golden_acorns, 
+      player_res->main_cd,
       player_res->user_id);
     
   u_snprintf(sql_str, sizeof(sql_str),
@@ -233,13 +249,30 @@ void update_player_row(struct sd_player *player_res)
         "acorn_handful = %d, "
         "acorn_mouthful = %d, "
         "lost_stash = %d, "
-        "acorn_sack = %d "
-      "where user_id = %ld; \n"
-      "COMMIT; \n",
+        "acorn_sack = %d, "
+        "ribboned_acorns = %d "
+      "where user_id = %ld; \n",
       (unsigned long)time(NULL), player_res->session_data.acorn_count, player_res->session_data.acorns,
       player_res->session_data.golden_acorns, player_res->session_data.health_loss, player_res->session_data.no_acorns, 
       player_res->session_data.acorn_handful, player_res->session_data.acorn_mouthful, player_res->session_data.lost_stash, 
-      player_res->session_data.acorn_sack,
+      player_res->session_data.acorn_sack, player_res->session_data.ribboned_acorns,
+      player_res->user_id);
+
+  u_snprintf(sql_str, sizeof(sql_str),
+      "update public.daily set "
+        "active_tasks = %d, "
+        "tm_mday = %d, "
+        "t_primary = %d, "
+        "t_secondary = %d, "
+        "t_tertiary = %d, "
+        "primary_complete = %d, "
+        "secondary_complete = %d, "
+        "tertiary_complete = %d "
+      "where user_id = %ld; \n"
+      "COMMIT; \n",
+      player_res->daily.active_tasks, player_res->daily.tm_mday, player_res->daily.primary,
+      player_res->daily.secondary, player_res->daily.tertiary, player_res->daily.primary_complete,
+      player_res->daily.secondary_complete, player_res->daily.tertiary_complete,
       player_res->user_id);
 
   PGresult* player_update = (PGresult*) { 0 };

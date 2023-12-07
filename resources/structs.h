@@ -48,6 +48,15 @@ struct sd_biome
   int biome_size;
 };
 
+struct sd_daily_task
+{
+  char* task_name;
+  char* description;
+
+  int count_req;
+  int is_event;
+};
+
 struct sd_obj_stats
 {
   struct sd_file_data stat;
@@ -119,6 +128,24 @@ struct sd_session_data
   int acorn_mouthful;
   int lost_stash;
   int acorn_sack;
+  int ribboned_acorns;
+};
+
+struct sd_daily
+{
+  int active_tasks;
+  int tm_mday;
+  int primary;
+  int secondary;
+  int tertiary;
+
+  int primary_complete;
+  int secondary_complete;
+  int tertiary_complete;
+
+  int claim_primary;
+  int claim_secondary;
+  int claim_tertiary;
 };
 
 struct sd_player 
@@ -135,12 +162,13 @@ struct sd_player
   int energy;
   int health;
   int max_health;
+  int regen_rate;
 
   int acorns;
   int acorn_count;
   int high_acorn_count;
   int golden_acorns;
-  int spent_golden_acorns;
+  int stored_golden_acorns;
   int conjured_acorns;
   int stolen_acorns;
   int catnip;
@@ -157,6 +185,7 @@ struct sd_player
   struct sd_buffs buffs;
   struct sd_biome_story story;
   struct sd_session_data session_data;
+  struct sd_daily daily;
 };
 
 struct sd_store
@@ -188,6 +217,10 @@ struct sd_rewards
   int victual_amt;
   int victual_type;
   int ref_resource;
+
+  int ribboned_acorn;
+  int christmas_health;
+  int christmas_energy;
 };
 
 // For listing members...
@@ -218,14 +251,41 @@ struct sd_util_info
   char emoji_names[5][64];
 };
 
-struct sd_help_info 
+struct sd_pages
 {
   struct discord_component buttons[4];
   char custom_ids[4][64];
+  char labels[4][64];
 
   struct discord_emoji emojis[4];
   char emoji_names[4][64];
-  
+};
+
+struct sd_help_info 
+{
+  struct discord_embed_field field;
+  char field_name[64];
+  char field_value[1024];
+
+  char description[512];
+  char image_url[128];
+
+  char footer_text[64];
+  char footer_url[128];
+};
+
+struct sd_help_buttons
+{
+  struct discord_component buttons[3];
+  char custom_ids[3][64];
+  char labels[3][64];
+
+  struct discord_emoji emojis[3];
+  char emoji_names[3][64];
+};
+
+struct sd_biome_info
+{
   struct discord_embed_field *fields;
   char (*field_names)[64];
   char (*field_values)[1024];
@@ -234,6 +294,27 @@ struct sd_help_info
 
   char footer_text[64];
   char footer_url[128];
+};
+
+struct sd_statistics
+{
+  struct discord_component buttons[3];
+  char custom_ids[3][64];
+  char labels[3][64];
+
+  struct discord_emoji emojis[3];
+  char emoji_names[3][64];
+};
+
+struct sd_secondary
+{
+  struct discord_component buttons[5];
+  char custom_ids[5][64];
+  char labels[5][64];
+  int button_size; // size of DISPLAYED buttons
+
+  struct discord_emoji emojis[5];
+  char emoji_names[5][64];
 };
 
 struct sd_welcome_info 

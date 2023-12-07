@@ -3,6 +3,28 @@
   #define OWNER_ID 582648847881338961
 
 
+  // differences between beta and main automatic!!
+  #if (APPLICATION_ID == MAIN_BOT_ID)
+    #define STATUS_CHANNEL 1046635264883294259
+
+    #define START_ID "</start:...>"
+    #define COLOR_ID "</color:...>"
+    #define SCURRY_CREATE_ID "</scurry_create:...>"
+    #define SCURRY_DISBAND_ID "</scurry_disband:...>"
+    #define SCURRY_KICK_ID "</scurry_kick:...>"
+    #define SCURRY_RENAME_ID "</scurry_rename:...>"
+  #else
+    #define STATUS_CHANNEL 1049184118954528888
+
+    #define START_ID "</start:1178372476045103194>"
+    #define COLOR_ID "</color:1089659248595714111>"
+    #define SCURRY_CREATE_ID "</scurry_create:1089659500916650004>"
+    #define SCURRY_DISBAND_ID "</scurry_disband:1179508464465215529>"
+    #define SCURRY_KICK_ID "</scurry_kick:1179508461730537504>"
+    #define SCURRY_RENAME_ID "</scurry_rename:1179414106051186688>"
+  #endif
+
+
 // OPERATION
   #define genrand(base, range) ( (rand() % (range +1)) + base ) // range +1 since rand is on [base, range)
 
@@ -10,7 +32,6 @@
   #define GIT_PATH "https://github.com/Furmissile/squirrel/blob/main/src_assets/%s?raw=true"
   #define SQ_CHEM_PATH "sd_utils/sq_alchemist.png"
   #define SQ_BOOKIE_PATH "sd_utils/squirrel_bookie.png"
-  #define WELCOME_MSG_PATH "sd_utils/welcome_gif.gif"
   #define RULES_BK_PATH "sd_utils/rules_book.png"
   #define BUNNY_ED_PATH "sd_utils/bunny.png"
   #define VERIFY_PLUS_PATH "symbols/plus.png"
@@ -37,7 +58,7 @@
   #define SESSION_CD 120
 
 
-// CHANCE DATA
+// CHANCE
   #define JUNK_CHANCE      10  // 10 % -- No acorns
   #define COMMON_CHANCE    60  // 50 % -- Handful of acorns
   #define UNCOMMON_CHANCE  80  // 20 % -- Mouthful of acorns 
@@ -47,7 +68,7 @@
   #define ENCOUNTER_CHANCE 20 // 20 % -- checked separately
   #define STORY_CHANCE 80     // 20 %
 
-  #define STEAL_CHANCE 30
+  #define STEAL_CHANCE 35
 
   #define VICTUALS_CHANCE 80
 
@@ -64,7 +85,7 @@
 // GENERAL PROGRESSION
   #define BIOME_INTERVAL 5000
   #define BIOME_ENCOUNTER_COST 100
-  #define BIOME_ACORN_INC 0.1f
+  #define BIOME_ACORN_INC 0.2f
   #define STEAL_MINIMUM 1000
 
 
@@ -85,12 +106,18 @@
   #define TYPE_LEADERBOARD 'l'
   #define TYPE_SESSION_INFO 'j'
   #define TYPE_DESIGNER_SQIRRELS 'k'
+  #define TYPE_DAILY 'o'
+  #define TYPE_BANK 'q'
+  #define TYPE_INIT_STEAL 'w'
+  #define TYPE_STEAL 't'
+  #define TYPE_SCURRY_LEAVE 'z'
 
   #define TYPE_PLAYER_HELP 'p'
   #define TYPE_SCURRY_HELP 'c'
   #define TYPE_EVENT_HELP 'v'
   #define TYPE_BIOME_STORY 'b'
   #define TYPE_SQUIRREL_HELP 'm'
+  #define TYPE_INIT_INVITE 'y'
 
 
 // FIXED COSTS
@@ -104,9 +131,9 @@
 
 
 // BUFFS
+  #define REGEN_RATE 5
   #define HEALING_FACTOR 0.5f
   #define SQUIRREL_BOOST_COST 10
-  #define BUFF_FACTOR 100
 
   #define GRAY_BOOST_DURATION 10 // based on energy loss
   #define SKELETAL_BOOST_DURATION 5 // based on health regen
@@ -128,7 +155,6 @@
 
 // STATS
   #define STAT_EVOLUTION 5
-  #define STAT_DIFFERENCE 2 // required stat difference between stats to upgrade
   #define BASE_HEALTH_REGEN 2
 
   // Stat multiplier factors - See generate_factor() for details
@@ -138,13 +164,13 @@
 
   // Price multiplier factors - See generate_price() for details
   #define PROFICIENCY_UNIT 1500
-  #define LUCK_UNIT 5000
-  #define STRENGTH_UNIT 15000
+  #define STRENGTH_UNIT 5000
+  #define LUCK_UNIT 15000
 
 
 // SCURRY
-  #define SCURRY_MEMBER_MAX 15
-  #define SCURRY_MEMBER_REQ 4 // requirement to participate in wars
+  #define SCURRY_MEMBER_MAX 5
+  #define SCURRY_MEMBER_REQ 3 // requirement to participate in wars
   #define SCURRY_CREATION_COST 50000
   #define WAR_STASH_FACTOR 250
   #define DEFAULT_WAR_STASH 1000
@@ -165,6 +191,7 @@
 
   // Multiply into rank
   #define BASE_ACORN_MULT 0.05f
+  #define RECOVER_WAR_ACORNS 100
 
   #define GRAY_SQUIRREL_COUNT 0
   #define SKELETAL_SQUIRREL_COUNT 25000
@@ -177,6 +204,8 @@
   #define SECOND_SQUIRREL 100000 // 100,000
   #define THIRD_SQUIRREL 500000 // 500,000
   #define FOURTH_SQUIRREL 1000000 // 1,000,000
+
+  #define CHRISTMAS_MONTH 11
 
 // GAME ERRORS
   #define ERROR_STATUS -1
@@ -200,11 +229,6 @@
     char buffer[64] = { }; \
     num_str(buffer, sizeof(buffer), value);
 
-#define LOG_COMMAND(name) \
-    FILE* fp = fopen("crash.log", "a+"); \
-    fprintf(fp, "%s\n", name); \
-    fclose(fp);
-
 // EMOJI CONSTANTS
   // Resources
   #define ENERGY "<:energy:1164894603648958504>"
@@ -220,6 +244,8 @@
   #define ACORN_MOUTHFUL "<:acorn_mouthful:1164898147051507782>"
   #define LOST_STASH "<:lost_stash:1164898152906764349>"
   #define ACORN_SACK "<:acorn_sack:1164898148779577364>"
+  #define RIBBONED_ACORN "<:ribboned_acorn:1180504068750311515>"
+  #define COAL "<:coal:1180327193524580362>"
 
   // Health
   #define HEALTH "<:health:1164894607730028654>"
@@ -242,14 +268,17 @@
   #define INDENT "<:empty_space:1019379796037337118>"
   #define BULLET "<:bullet:1150089464161517621>"
   #define STAHR "<:stahr:1045705606134251601>"
+  #define ADD "<:plus:1177068547973849130>"
+  #define MINUS "<:minus:1177071484011819109>"
+  #define WEATHER "<:weather:1178018949267476550>"
 
   // Scurry
   #define GUILD_ICON "<:guild_icon:1164918417300668466>"
   #define LEADER "<:leader:1164918418844164186>"
   #define WAR_ACORNS "<:war_acorns:1164897241698418688>"
-  #define LIST_LEADER "<:king_squirrel:1164918773967495330>"
-  #define LIST_MEMBER "<:gray_squirrel:1164918772780503180>"
-  #define LIST_YOU "<:squirrel_bookie:1164918775888482394>"
+  #define LIST_LEADER "<:king_squirrel:1073298108508803113>"
+  #define LIST_MEMBER "<:gray_squirrel:1014655900373504130>"
+  #define LIST_YOU "<:squirrel_bookie:1050175322286469250>"
 
   // Biomes
   #define GRASSLANDS_ICON "<:gl_icon:1164900062091018240>"
@@ -262,36 +291,3 @@
   #define BLUEBERRY_VICTUALS "<:blueberry_victuals:1164899712751636531>"
   #define CHERRY_VICTUALS "<:cherry_victuals:1164899714467115089>"
   #define SEED_VICTUALS "<:seed_victuals:1164899715456975131>"
-
-
-// COMMAND CONSTANTS
-  // make differences between beta and main automatic!!
-  #if (APPLICATION_ID == MAIN_BOT_ID)
-    #define STATUS_CHANNEL 1046635264883294259
-    #define FORAGE_ID "</forage:1089663881959460926>"
-    #define BIOME_STORY_ID "</biome_story:1105520586706403379>"
-    #define INFO_ID "</info:1089663884673167440>"
-    #define SQUIRRELS_ID "</squirrels:1089663967460327525>"
-    #define COLOR_ID "</color:1089663885692370954>"
-    #define STEAL_ID "</steal:1089663966520819865>"
-    #define SCURRY_INFO_ID "</scurry_info:1089664056320852000>"
-    #define SCURRY_HELP_ID "</scurry_help:1089663969721065592>"
-    #define SCURRY_KICK_ID "</scurry_kick:1089664058225066155>"
-    #define SCURRY_LEAVE_ID "</scurry_leave:1089664058879377548>"
-    #define SEASON_INFO_ID "</season_info:1089664143419768972>"
-    #define BUNNY_ENDEAVOR_ID "</bunny_endeavor:1089664142203424769>"
-  #else
-    #define STATUS_CHANNEL 1049184118954528888
-    #define FORAGE_ID "</forage:1089659245588381716>"
-    #define BIOME_STORY_ID "</biome_story:1103730882092748940>"
-    #define INFO_ID "</info:1089659248214024332>"
-    #define SQUIRRELS_ID "</squirrels:1089659332003635220>"
-    #define COLOR_ID "</color:1089659248595714111>"
-    #define STEAL_ID "</steal:1089659330674036766>"
-    #define SCURRY_INFO_ID "</scurry_info:1089659416749539348>"
-    #define SCURRY_HELP_ID "</scurry_help:1089659334490853488>"
-    #define SCURRY_KICK_ID "</scurry_kick:1089659418876059669>"
-    #define SCURRY_LEAVE_ID "</scurry_leave:1089659419782037514>"
-    #define SEASON_INFO_ID "</season_info:1089659504276283492>"
-    #define BUNNY_ENDEAVOR_ID "</bunny_endeavor:1089659502573387836>"
-  #endif

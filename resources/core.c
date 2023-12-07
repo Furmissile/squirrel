@@ -106,13 +106,12 @@ void trim_buffer(char dest[], size_t dest_size, char* input, char separator)
     dest[buffer_idx++] = tmp_buffer[tmp_buffer_idx++];
   }
 }
-
 int strtoint(const char* str)
 {
   int num = 0;
   size_t max_len = strlen(str);
 
-  size_t is_negative = (str[0] == '-') ? 1 : 0;
+  int is_negative = (str[0] == '-') ? 1 : 0;
 
   for (size_t str_idx = is_negative; str_idx < max_len; str_idx++)
   {
@@ -130,7 +129,7 @@ int strtoint(const char* str)
   return num;
 }
 
-void num_str(char dest[], size_t dest_size, unsigned long input) 
+void num_str(char dest[], size_t dest_size, signed long input) 
 {
   char tmp_buffer[64];
 
@@ -143,15 +142,22 @@ void num_str(char dest[], size_t dest_size, unsigned long input)
 
   size_t tmp_buf_size = strlen(tmp_buffer);
 
+  size_t is_negative = (input < 0) ? 1 : 0;
+
   // if num is less than 1000, return number
-  if (tmp_buf_size < 4) {
+  if (tmp_buf_size < 4 + is_negative) {
     snprintf(dest, dest_size, "%s", tmp_buffer);
   }
   else {
     //define number offset by remainder of 3
     size_t first_set_n = (tmp_buf_size % 3 == 0) ? 3 : tmp_buf_size % 3;
 
+    // if comma is second character and the number is negative, move up one set!
+    if (is_negative && first_set_n == 1)
+      first_set_n += 3;
+
     size_t buffer_offset = strlen(dest);
+
     //apply offset and add comma
     for (size_t tmp_offset = 0; tmp_offset < first_set_n; tmp_offset++)
       dest[buffer_offset++] = tmp_buffer[tmp_offset];
