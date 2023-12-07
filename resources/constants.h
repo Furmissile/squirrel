@@ -7,12 +7,12 @@
   #if (APPLICATION_ID == MAIN_BOT_ID)
     #define STATUS_CHANNEL 1046635264883294259
 
-    #define START_ID "</start:...>"
-    #define COLOR_ID "</color:...>"
-    #define SCURRY_CREATE_ID "</scurry_create:...>"
-    #define SCURRY_DISBAND_ID "</scurry_disband:...>"
-    #define SCURRY_KICK_ID "</scurry_kick:...>"
-    #define SCURRY_RENAME_ID "</scurry_rename:...>"
+    #define START_ID "</start:1182163458133864571>"
+    #define COLOR_ID "</color:1182163461715808276>"
+    #define SCURRY_CREATE_ID "</scurry_create:1182163462688886926>"
+    #define SCURRY_DISBAND_ID "</scurry_disband:1182163544687530096>"
+    #define SCURRY_KICK_ID "</scurry_kick:1182163543408246935>"
+    #define SCURRY_RENAME_ID "</scurry_rename:1182163545723523072>"
   #else
     #define STATUS_CHANNEL 1049184118954528888
 
