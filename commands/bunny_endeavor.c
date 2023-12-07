@@ -1,7 +1,7 @@
 struct sd_bunny_shop {
   struct discord_component buttons[BUNNY_STORE_SIZE];
-  char custom_ids[BUNNY_STORE_SIZE +1][64]; // +1 for refresh button
-  char labels[BUNNY_STORE_SIZE +1][64];
+  char custom_ids[BUNNY_STORE_SIZE][64];
+  char labels[BUNNY_STORE_SIZE][64];
 
   struct discord_emoji emojis[4];
   char emoji_names[BUNNY_STORE_SIZE][64];
@@ -74,7 +74,7 @@ void init_bunny_buttons(const struct discord_interaction *event, struct sd_bunny
       .type = DISCORD_COMPONENT_BUTTON,
       .emoji = &params->emojis[button_idx],
       .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), item.formal_name),
-      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c_%ld",
+      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c.%ld",
                     TYPE_BUNNY, button_idx, ERROR_STATUS + 96, event->member->user->id)
     };
 
@@ -103,13 +103,13 @@ void init_bunny_buttons(const struct discord_interaction *event, struct sd_bunny
   }
 }
 
-void bunny_cmd_state(const struct discord_interaction *event, struct sd_bunny_shop *params, struct sd_player *player, struct sd_store *bunny_shop)
+void bunny_cmd_state(struct sd_bunny_shop *params, struct sd_player *player, struct sd_store *bunny_shop)
 {
   int* stat_ptr[BUNNY_STORE_SIZE] = {
     &player->acorns, &player->golden_acorns, &player->health, &player->energy
   };
 
-  if (event->data->custom_id && player->button_idx < BUNNY_STORE_SIZE)
+  if (player->button_idx < BUNNY_STORE_SIZE)
   {
     int button_idx = player->button_idx;
 
@@ -160,8 +160,7 @@ int bunny_interaction(const struct discord_interaction *event)
   ERROR_INTERACTION((info->tm_mday < 21), "This event is not active!");
   
   struct sd_player player = { 0 };
-  load_player_struct(&player, event);
-  player.button_idx = (event->data->custom_id) ? event->data->custom_id[1] -48 : ERROR_STATUS;
+  load_player_struct(&player, event->member->user->id, event->data->custom_id);
 
   energy_regen(&player);
 
@@ -177,7 +176,7 @@ int bunny_interaction(const struct discord_interaction *event)
     {
       .item_idx = ITEM_GOLDEN_ACORN,
       .cost = 1000,
-      .quantity = 300 * (player.biome_num +1), // guarantee 3 encounters
+      .quantity = 3 * BIOME_ENCOUNTER_COST * (player.biome_num +1),
     },
     {
       .item_idx = ITEM_HEALTH,
@@ -191,35 +190,9 @@ int bunny_interaction(const struct discord_interaction *event)
     }
   };
 
-  bunny_cmd_state(event, &params, &player, bunny_shop);
+  bunny_cmd_state(&params, &player, bunny_shop);
 
   init_bunny_buttons(event, &params, &player, bunny_shop);
-
-  struct discord_component refresh = (struct discord_component)
-  {
-    .type = DISCORD_COMPONENT_BUTTON,
-    .style = DISCORD_BUTTON_SUCCESS,
-    .label = u_snprintf(params.labels[BUNNY_STORE_SIZE], sizeof(params.labels[BUNNY_STORE_SIZE]), "Refresh"),
-    .custom_id = u_snprintf(params.custom_ids[BUNNY_STORE_SIZE], sizeof(params.custom_ids[BUNNY_STORE_SIZE]), "%c%d_%ld",
-        TYPE_BUNNY, BUNNY_STORE_SIZE, event->member->user->id)
-  };
-
-  struct discord_component action_rows[2] = {
-    {
-      .type = DISCORD_COMPONENT_ACTION_ROW,
-      .components = &(struct discord_components) {
-        .array = params.buttons,
-        .size = BUNNY_STORE_SIZE
-      }
-    },
-    {
-      .type = DISCORD_COMPONENT_ACTION_ROW,
-      .components = &(struct discord_components) {
-        .array = &refresh,
-        .size = 1
-      }
-    }
-  };
 
   init_bunny_fields(&params, &player, bunny_shop);
 
@@ -230,7 +203,7 @@ int bunny_interaction(const struct discord_interaction *event)
     .color = player.color,
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
@@ -252,9 +225,41 @@ int bunny_interaction(const struct discord_interaction *event)
     }
   };
 
+  struct sd_secondary secondary = { 0 };
+
+  generate_secondary_buttons(event, &secondary, &player);
+
+  struct sd_util_info util_data = { 0 };
+
+  generate_util_buttons(event, &player, &util_data);
+
+  struct discord_component action_rows[3] = {
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = params.buttons,
+        .size = BUNNY_STORE_SIZE
+      }
+    },
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = secondary.buttons,
+        .size = secondary.button_size
+      }
+    },
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = util_data.buttons,
+        .size = sizeof(util_data.buttons)/sizeof(*util_data.buttons)
+      }
+    }
+  };
+
   struct discord_interaction_response interaction = 
   {
-    .type = (event->data->custom_id) ? DISCORD_INTERACTION_UPDATE_MESSAGE : DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
+    .type = DISCORD_INTERACTION_UPDATE_MESSAGE,
 
     .data = &(struct discord_interaction_callback_data) 
     {
@@ -265,7 +270,7 @@ int bunny_interaction(const struct discord_interaction *event)
       },
       .components = &(struct discord_components) {
         .array = action_rows,
-        .size = 2
+        .size = 3
       }
     }
 

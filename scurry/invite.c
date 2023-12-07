@@ -21,7 +21,7 @@ void invite_expired(const struct discord_interaction *event, struct sd_invite_in
     .color = (int)ACTION_UNDEFINED,
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->user->id, event->user->avatar)
     },
@@ -169,8 +169,9 @@ void invite_response(struct discord *client, struct discord_response *resp, cons
 // the owner will trigger this interaction and takes place entirely in DM
 int invite_interaction(const struct discord_interaction *event)
 {
+  unsigned long user_id = (event->member) ? event->member->user->id : event->user->id;
   struct sd_player player = { 0 };
-  load_player_struct(&player, event);
+  load_player_struct(&player, user_id, event->data->custom_id);
 
   // delete EXPIRED invites
   PGresult* clean_invites = (PGresult*) { 0 };

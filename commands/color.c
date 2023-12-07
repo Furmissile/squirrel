@@ -21,12 +21,11 @@ int is_color(char* input, struct sd_player *player)
   return 0;
 }
 
-/* Listens for slash command interactions */
 int color_interaction(const struct discord_interaction *event) 
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event); 
-
+  load_player_struct(&player, event->member->user->id, event->data->custom_id);
+  
   char* input = event->data->options->array[0].value;
   char fmtted_input[64] = { }; 
   lowercase(fmtted_input, sizeof(fmtted_input), input);
@@ -40,7 +39,7 @@ int color_interaction(const struct discord_interaction *event)
     .color = player.color,
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },

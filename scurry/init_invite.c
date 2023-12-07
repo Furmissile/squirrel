@@ -36,7 +36,7 @@ void update_invite_user(struct discord *client, struct discord_response *resp, c
     .color = (int)ACTION_SUCCESS,
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
@@ -109,7 +109,7 @@ void send_invite_dm(struct discord *client, struct discord_response *resp, const
     .color = (int)ACTION_SUCCESS,
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
@@ -125,7 +125,7 @@ void send_invite_dm(struct discord *client, struct discord_response *resp, const
     .style = DISCORD_BUTTON_SUCCESS,
     .label = "Accept",
     .custom_id = u_snprintf(params->custom_ids[0], sizeof(params->custom_ids[0]),
-        "%c0_%ld", TYPE_INVITE, params->owner_id)
+        "%c0.%ld", TYPE_INVITE, params->owner_id)
   };
   params->buttons[1] = (struct discord_component)
   {
@@ -133,7 +133,7 @@ void send_invite_dm(struct discord *client, struct discord_response *resp, const
     .style = DISCORD_BUTTON_DANGER,
     .label = "Decline",
     .custom_id = u_snprintf(params->custom_ids[1], sizeof(params->custom_ids[1]),
-        "%c1_%ld", TYPE_INVITE, params->owner_id)
+        "%c1.%ld", TYPE_INVITE, params->owner_id)
   };
 
   struct discord_component action_rows = {
@@ -171,7 +171,7 @@ void send_invite_dm(struct discord *client, struct discord_response *resp, const
 int init_invite_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event);
+  load_player_struct(&player, event->member->user->id, event->data->custom_id);
 
   // delete EXPIRED invites
   PGresult* clean_invites = (PGresult*) { 0 };
@@ -179,9 +179,12 @@ int init_invite_interaction(const struct discord_interaction *event)
   PQclear(clean_invites);
 
   // check scurry status and existence
+  char scurry_id_buffer[64] = { };
+  trim_buffer(scurry_id_buffer, sizeof(scurry_id_buffer), event->data->custom_id, '*');
+  unsigned long scurry_id = strtobigint(scurry_id_buffer);
+
   PGresult* scurry_info = (PGresult*) { 0 };
-  scurry_info = SQL_query(scurry_info, "select * from public.scurry where s_name like '%s'", 
-      event->data->options->array[0].value);
+  scurry_info = SQL_query(scurry_info, "select * from public.scurry where owner_id = %ld", scurry_id);
   
   ERROR_DATABASE_RET((PQntuples(scurry_info) == 0), "Sorry, this scurry doesn't exist!", scurry_info);
   

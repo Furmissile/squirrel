@@ -1,10 +1,10 @@
 struct sd_init_encounter
 {
-  struct discord_component buttons[4];
-  char custom_ids[4][64];
+  struct discord_component buttons[3];
+  char custom_ids[3][64];
 
-  struct discord_emoji emojis[4];
-  char emoji_names[4][64];
+  struct discord_emoji emojis[3];
+  char emoji_names[3][64];
 
   char labels[4][64];
 
@@ -46,7 +46,7 @@ void init_encounter_buttons(const struct discord_interaction *event, struct sd_i
       .emoji = &params->emojis[button_idx],
       .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), "(-%s) %s", 
           encounter_cost, encounter.solutions[button_idx]),
-      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c%d%d -%d-_%ld",
+      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c%d%d -%d-.%ld",
           TYPE_ENCOUNTER_RESP, button_idx, player->encounter + 96, player->section, player->biome, encounter_costs[button_idx], event->member->user->id)
     };
 
@@ -64,27 +64,6 @@ void init_encounter_buttons(const struct discord_interaction *event, struct sd_i
     }
   }
 
-  params->emojis[3] = (struct discord_emoji)
-  {
-    .name = u_snprintf(params->emoji_names[3], sizeof(params->emoji_names[3]), 
-        items[ITEM_GOLDEN_ACORN].emoji_name),
-    .id = items[ITEM_GOLDEN_ACORN].emoji_id
-  };
-
-  int heal_cost = BUFF_FACTOR * (player->stats.strength_lv + player->stats.strength_lv / STAT_EVOLUTION);
-  float full_heal = player->max_health * HEALING_FACTOR;
-
-  params->buttons[3] = (struct discord_component)
-  {
-    .type = DISCORD_COMPONENT_BUTTON,
-    .style = DISCORD_BUTTON_SUCCESS,
-    .label = u_snprintf(params->labels[3], sizeof(params->labels[3]), "(-%d) Heal (+%0.0f/%0.0f HP)", heal_cost,
-        // if heal is going to overfill health, it will fill up to the max health
-        (player->health + full_heal > player->max_health) ? player->max_health - player->health : full_heal, full_heal),
-    .emoji = &params->emojis[3],
-    .custom_id = u_snprintf(params->custom_ids[3], sizeof(params->custom_ids[3]), "%c3%c%d%d_%ld",
-          TYPE_ENCOUNTER_RESP, player->encounter + 96, player->section, player->biome, event->member->user->id)
-  };
 }
 
 int init_encounter_interaction(const struct discord_interaction *event, struct sd_player *player)
@@ -100,7 +79,7 @@ int init_encounter_interaction(const struct discord_interaction *event, struct s
     .color = player->color,
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
@@ -123,17 +102,12 @@ int init_encounter_interaction(const struct discord_interaction *event, struct s
 
   generate_util_buttons(event, player, &util_data);
 
-  int heal_cost = BUFF_FACTOR * (player->stats.strength_lv + player->stats.strength_lv / STAT_EVOLUTION);
-
   struct discord_component action_rows[2] = {
     {
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
         .array = params.buttons,
-
-        .size = ( (player->health <= params.partial_damage || player->max_health >= params.full_damage)
-            && player->health < player->max_health
-            && player->golden_acorns >= heal_cost) ? 4 : 3
+        .size = 3
       }
     },
     {
@@ -198,7 +172,7 @@ void init_forage_buttons(const struct discord_interaction *event, struct sd_init
       .type = DISCORD_COMPONENT_BUTTON,
       .style = DISCORD_BUTTON_PRIMARY,
       .emoji = params->emojis,
-      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c_%ld",
+      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c.%ld",
                     TYPE_FORAGE_RESP, button_idx, ERROR_STATUS + 96, event->member->user->id)
     };
   }
@@ -207,7 +181,7 @@ void init_forage_buttons(const struct discord_interaction *event, struct sd_init
 int init_forage_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event); 
+  load_player_struct(&player, event->member->user->id, event->data->custom_id);
 
   energy_regen(&player);
 
@@ -242,7 +216,7 @@ int init_forage_interaction(const struct discord_interaction *event)
     .color = player.color,
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
@@ -259,7 +233,7 @@ int init_forage_interaction(const struct discord_interaction *event)
 
   struct discord_interaction_response interaction = 
   {
-    .type = (event->data->custom_id) ? DISCORD_INTERACTION_UPDATE_MESSAGE : DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
+    .type = DISCORD_INTERACTION_UPDATE_MESSAGE,
 
     .data = &(struct discord_interaction_callback_data) 
     {

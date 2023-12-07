@@ -95,7 +95,7 @@ int kick_interaction(const struct discord_interaction *event)
   struct sd_kick_info *params = calloc(1, sizeof(struct sd_kick_info));
 
   params->player = calloc(1, sizeof(struct sd_player));
-  load_player_struct(params->player, event);
+  load_player_struct(params->player, event->member->user->id, event->data->custom_id);
 
   struct sd_player *player = params->player;
 
