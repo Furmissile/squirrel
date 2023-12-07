@@ -19,7 +19,7 @@ void create_verify(struct discord *client, struct discord_response *resp, const 
     .color = (int)strtol("0EDF0A", NULL, 16),
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           user->id, user->avatar)
     },

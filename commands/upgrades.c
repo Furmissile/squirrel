@@ -18,7 +18,7 @@ struct sd_upgrade_shop {
 
 void init_upgrade_fields(struct sd_upgrade_shop *params, struct sd_player *player)
 {
-  int* stat_ptrs[3] = { &player->stats.proficiency_lv, &player->stats.luck_lv, &player->stats.strength_lv };
+  int* stat_ptrs[3] = { &player->stats.proficiency_lv, &player->stats.strength_lv, &player->stats.luck_lv };
 
   for (int button_idx = 0; button_idx < 3; button_idx++) 
   {
@@ -37,26 +37,13 @@ void init_upgrade_fields(struct sd_upgrade_shop *params, struct sd_player *playe
             : " "OFF_ARROW" %s (x**%0.1f**) \n" " *Costs* **%s** "ACORNS" Acorns",
         stat_data.description, generate_factor(*stat_ptrs[button_idx], stats[button_idx].value_mult), stat_cost);
 
-    if (button_idx == STAT_LUCK && player->stats.proficiency_lv < player->stats.luck_lv * STAT_DIFFERENCE)
-    {
-      u_snprintf(params->field_values[button_idx], sizeof(params->field_values[button_idx]),
-          "\n "HELP_MARKER" Requires level **%d** proficiency to upgrade!",
-          player->stats.luck_lv *STAT_DIFFERENCE);
-    }
-    else if (button_idx == STAT_STRENGTH && player->stats.luck_lv < player->stats.strength_lv * STAT_DIFFERENCE)
-    {
-      u_snprintf(params->field_values[button_idx], sizeof(params->field_values[button_idx]),
-          "\n "HELP_MARKER" Requires level **%d** luck to upgrade!",
-          player->stats.strength_lv *STAT_DIFFERENCE);
-    }
-
     params->fields[button_idx].value = params->field_values[button_idx];
   }
 }
 
 void init_upgrade_buttons(const struct discord_interaction *event, struct sd_upgrade_shop *params, struct sd_player *player)
 {
-  int* stat_ptrs[STAT_SIZE] = { &player->stats.proficiency_lv, &player->stats.luck_lv, &player->stats.strength_lv };
+  int* stat_ptrs[STAT_SIZE] = { &player->stats.proficiency_lv, &player->stats.strength_lv, &player->stats.luck_lv };
 
   for (int button_idx = 0; button_idx < STAT_SIZE; button_idx++) 
   {    
@@ -73,7 +60,7 @@ void init_upgrade_buttons(const struct discord_interaction *event, struct sd_upg
       .emoji = &params->emojis[button_idx],
       .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), 
           ((*stat_ptrs[button_idx] +1) % STAT_EVOLUTION == 0) ? "EVOLVE" : stat_data.formal_name),
-      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c_%ld",
+      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c.%ld",
                     TYPE_UPGRADE, button_idx, ERROR_STATUS + 96, event->member->user->id)
     };
 
@@ -81,46 +68,22 @@ void init_upgrade_buttons(const struct discord_interaction *event, struct sd_upg
 
     if (player->acorns >= price)
     {
-      if (button_idx == STAT_PROFICIENCY)
-      {
-        params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
-      }
-      else if (button_idx == STAT_LUCK && player->stats.proficiency_lv >= player->stats.luck_lv * STAT_DIFFERENCE)
-      {
-        params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
-      }
-      else if (button_idx == STAT_STRENGTH && player->stats.luck_lv >= player->stats.strength_lv * STAT_DIFFERENCE)
-      {
-        params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
-      }
-      else {
-        params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
-        params->buttons[button_idx].disabled = true;
-      }
+      params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
     }
     else {
       params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
       params->buttons[button_idx].disabled = true;
     }
-
-    // BETA testing
-    // if (player->acorns >= generate_price(*stat_ptrs[button_idx], stats[button_idx].price_mult))
-    // {
-    //   params->buttons[button_idx].style = DISCORD_BUTTON_PRIMARY;
-    // }
-    // else {
-    //   params->buttons[button_idx].style = DISCORD_BUTTON_SECONDARY;
-    //   params->buttons[button_idx].disabled = true;
-    // }
+    
   }
 }
 
 void upgrade_command_state(const struct discord_interaction *event, struct sd_upgrade_shop *params, struct sd_player *player)
 {
-  if (event->data->custom_id && player->button_idx < STAT_SIZE) 
+  if (player->button_idx < STAT_SIZE) 
   {
     int button_idx = player->button_idx;
-    int* stat_ptrs[STAT_SIZE] = { &player->stats.proficiency_lv, &player->stats.luck_lv, &player->stats.strength_lv };
+    int* stat_ptrs[STAT_SIZE] = { &player->stats.proficiency_lv, &player->stats.strength_lv, &player->stats.luck_lv };
   
     if (player->acorns < generate_price(*(stat_ptrs[button_idx]), stats[button_idx].price_mult))
     {
@@ -133,6 +96,7 @@ void upgrade_command_state(const struct discord_interaction *event, struct sd_up
         if (button_idx == stat_idx) {
           player->acorns -= generate_price(*(stat_ptrs[stat_idx]), stats[stat_idx].price_mult);
           (*stat_ptrs[stat_idx])++;
+          daily_task_progression(event, player, TASK_INVESTOR);
 
           struct sd_file_data stat_data = stats[stat_idx].stat;
           u_snprintf(params->footer_text, sizeof(params->footer_text), "You received the stat of %s", stat_data.formal_name);
@@ -154,11 +118,10 @@ void upgrade_command_state(const struct discord_interaction *event, struct sd_up
   }
 }
 
-int init_upgrade_shop(const struct discord_interaction *event)
+int upgrade_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event);
-  player.button_idx = (event->data->custom_id) ? event->data->custom_id[1] -48 : ERROR_STATUS;
+  load_player_struct(&player, event->member->user->id, event->data->custom_id);
 
   struct sd_upgrade_shop params = { 0 };
 
@@ -175,7 +138,7 @@ int init_upgrade_shop(const struct discord_interaction *event)
     .color = player.color,
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
@@ -219,30 +182,51 @@ int init_upgrade_shop(const struct discord_interaction *event)
     }
   };
 
-  struct discord_interaction_response interaction = 
+  if (player.daily.claim_primary 
+    || player.daily.claim_secondary 
+    || player.daily.claim_tertiary)
   {
-    .type = (event->data->custom_id) ? DISCORD_INTERACTION_UPDATE_MESSAGE : DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
-
-    .data = &(struct discord_interaction_callback_data) 
-    {
-      .embeds = &(struct discord_embeds) 
+    discord_edit_message(client, event->channel_id, event->message->id,
+      &(struct discord_edit_message)
       {
-        .array = &header.embed,
-        .size = 1
+        .embeds = &(struct discord_embeds) 
+        {
+          .array = &header.embed,
+          .size = 1
+        },
+        .components = &(struct discord_components) {
+          .array = action_rows,
+          .size = 2
+        }
       },
-      .components = &(struct discord_components) {
-        .array = action_rows,
-        .size = 2
+      NULL);
+  }
+  else {
+    struct discord_interaction_response interaction = 
+    {
+      .type = DISCORD_INTERACTION_UPDATE_MESSAGE,
+
+      .data = &(struct discord_interaction_callback_data) 
+      {
+        .embeds = &(struct discord_embeds) 
+        {
+          .array = &header.embed,
+          .size = 1
+        },
+        .components = &(struct discord_components) {
+          .array = action_rows,
+          .size = 2
+        }
       }
-    }
 
-  };
+    };
 
-  char values[16384];
-  discord_interaction_response_to_json(values, sizeof(values), &interaction);
-  fprintf(stderr, "%s \n", values);
+    char values[16384];
+    discord_interaction_response_to_json(values, sizeof(values), &interaction);
+    fprintf(stderr, "%s \n", values);
 
-  discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+    discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+  }
 
   return 0;
 }

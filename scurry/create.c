@@ -10,7 +10,7 @@ struct sd_create_scurry
 int create_interaction(const struct discord_interaction *event) 
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event);
+  load_player_struct(&player, event->member->user->id, event->data->custom_id);
 
   char* input = event->data->options->array[0].value;
 
@@ -59,7 +59,7 @@ int create_interaction(const struct discord_interaction *event)
     .color = ACTION_SUCCESS,
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },

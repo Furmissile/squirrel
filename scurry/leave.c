@@ -40,6 +40,9 @@ void create_leave_interaction(const struct discord_interaction *event, struct sd
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
   leave_info_cleanup(params);
+
+  // go back to info!
+  info_from_buttons(event);
 }
 
 void send_leave_dm(struct discord *client, struct discord_response *resp, const struct discord_channel *channel)
@@ -64,7 +67,7 @@ void send_leave_dm(struct discord *client, struct discord_response *resp, const 
 int leave_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event);
+  load_player_struct(&player, event->member->user->id, event->data->custom_id);
 
   struct sd_leave_info *params = calloc(1, sizeof(struct sd_leave_info));
 
@@ -75,17 +78,14 @@ int leave_interaction(const struct discord_interaction *event)
 
   params->owner_id = player.scurry_id;
 
-  char* input = event->data->options->array[0].value;
-  size_t input_len = strlen(input);
-
   if (player.scurry_id == 0)
   {
-    error_message(event, "You are not in a scurry yet!");
+    error_message(event, "You are not in a scurry!");
     leave_info_cleanup(params);
   }
   else if (scurry->war_flag == 1)
   {
-    error_message(event, "You cannot leave your scurry while at war! Ask the owner to retreat if you wish to leave.");
+    error_message(event, "You cannot leave your scurry while at war! Please wait until the war is finished or the leader has retreated.");
     leave_info_cleanup(params);
   }
   else if (player.scurry_id == player.user_id)
@@ -93,17 +93,7 @@ int leave_interaction(const struct discord_interaction *event)
     error_message(event, "You can't leave your own scurry, silly!");
     leave_info_cleanup(params);
   }
-  else if (input_len != 3)
-  {
-    error_message(event, "Please enter 'yes' to verify!");
-    leave_info_cleanup(params);
-  }
   else {
-    // strlen is checked before to prevent buffer overflow
-    char lowercase_input[32] = { };
-    lowercase(lowercase_input, sizeof(lowercase_input), input);
-    ERROR_INTERACTION((strcmp(lowercase_input, "yes") != 0), "Please enter 'yes' to verify!");
-
     PGresult* leave_cmd = (PGresult*) { 0 };
     leave_cmd = SQL_query(leave_cmd, "update public.player set scurry_id = 0 where user_id = %ld",
         event->member->user->id);

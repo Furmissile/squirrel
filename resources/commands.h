@@ -2,203 +2,181 @@ struct sd_command
 {
   char* name;
   char command_id; // custom id prefix (if one exists)
-  char* error_msg;
 
   int (*func_cb)(const struct discord_interaction *event);
 };
 
-enum CMD_TYPE
+enum APP_TYPE
 {
-  CMD_PLAYER_HELP,
-  CMD_BIOME_STORY,
-  CMD_INIT_FORAGE,
-  CMD_MAIN_FORAGE,
-  CMD_ENCOUNTER_FORAGE,
-  CMD_UPGRADE,
-  CMD_SESSION_INFO,
-  CMD_INFO,
-  CMD_INFO_FROM_BUTTONS,
-  CMD_COLOR,
-  CMD_STEAL,
-  CMD_SQUIRREL,
-  CMD_DESIGNER_SQUIRRELS,
-
-  CMD_EVENT_HELP,
-  CMD_SEASON_INFO,
-  CMD_BUNNY_ENDEAVOR,
-
-  CMD_LEADERBOARD,
-
-  CMD_SCURRY_HELP,
-  CMD_SCURRY_INFO,
-  CMD_SCURRY_INVITE,
-  CMD_SCURRY_INVITE_RESP,
-  CMD_SCURRY_KICK,
-  CMD_SCURRY_LEAVE,
-  CMD_SCURRY_CREATE,
-
-  CMD_SIZE
+  APP_START,
+  APP_PLAYER,
+  APP_COLOR,
+  APPL_SCURR_CREATE,
+  APP_SCURRY_RENAME,
+  APP_SCURRY_DISBAND,
+  APP_SIZE
 };
 
-struct sd_command *cmds = (struct sd_command[])
+struct sd_command *app_commands = (struct sd_command[])
 {
-  // MAIN COMMANDS
-  { // CMD_PLAYER_HELP
-    .name = "player_help",
-    .command_id = TYPE_PLAYER_HELP,
-    .error_msg = "This help embed belongs to someone else! Please send `/player_help` for support.",
-
-    .func_cb = &player_help_interaction,
-  },
-  // CMD_BIOME_STORY
   {
-    .name = "biome_story",
-    .command_id = TYPE_BIOME_STORY,
-    .error_msg = "This info embed belongs to someone else! Please send `/biome_story to read through it.",
-
-    .func_cb = &biome_story_interaction
-  },
-  { // CMD_INIT_FORAGE -- in case "forage again" is pressed
-    .name = "forage",
-    .command_id = TYPE_FORAGE_INIT,
-    .error_msg = "This is someone else's adventure! Please send `/forage` to start your own adventure!",
-
-    .func_cb = &init_forage_interaction
-  },
-  { // CMD_MAIN_FORAGE
-    .name = "forage",
-    .command_id = TYPE_FORAGE_RESP,
-    .error_msg = "This is someone else's adventure! Please send `/forage` to start your own adventure!",
-
-    .func_cb = &forage_interaction
-  },
-  { // CMD_ENCOUNTER_FORAGE
-    .name = "forage",
-    .command_id = TYPE_ENCOUNTER_RESP,
-    .error_msg = "This is someone else's adventure! Please send `/forage` to start your own adventure!",
-
-    .func_cb = &encounter_interaction
-  },
-  { // CMD_UPGRADE
-    .name = "upgrade",
-    .command_id = TYPE_UPGRADE,
-    .error_msg = "You cannot upgrade your stats with this embed! Please send `/upgrade` to access upgrades.",
-
-    .func_cb = &init_upgrade_shop
+    .name = "start",
+    .func_cb = &init_welcome_interaction
   },
   {
-    .name = "session_info",
-    .command_id = TYPE_SESSION_INFO,
-    .error_msg = "This is someone else's adventure info! Please send `/session_info` to access session statistics.",
-
-    .func_cb = &session_info_interaction
-  },
-  { // CMD_INFO
-    .name = "info",
-    .command_id = TYPE_INFO,
-    .error_msg = "This info embed belongs to someone else! Pkease send `/info` to view your own info.",
-    
+    .name = "Player",
     .func_cb = &info_interaction
   },
-  { // CMD_INFO_FROM_BUTTONS
-    .name = "info",
-    .command_id = TYPE_INFO_FROM_BUTTONS,
-    .error_msg = "This info embed belongs to someone else! Pkease send `/info` to view your own info.",
-
-    .func_cb = &info_from_buttons
-  },
-  { // CMD_COLOR
+  {
     .name = "color",
     .func_cb = &color_interaction
   },
-  { // CMD_STEAL
-    .name = "steal",
+  {
+    .name = "scurry_create",
+    .func_cb = &create_interaction
+  },
+  {
+    .name = "scurry_rename",
+    .func_cb = &rename_interaction
+  },
+  {
+    .name = "scurry_disband",
+    .func_cb = &disband_interaction
+  }
+};
+
+enum BUTTON_TYPE
+{
+  BUTTON_PLAYER_HELP,
+  BUTTON_BIOME_STORY,
+  BUTTON_INIT_FORAGE,
+  BUTTON_MAIN_FORAGE,
+  BUTTON_ENCOUNTER_FORAGE,
+  BUTTON_UPGRADE,
+  BUTTON_SESSION_INFO,
+  BUTTON_INFO,
+  BUTTON_INFO_FROM_BUTTONS,
+  BUTTON_INIT_STEAL,
+  BUTTON_STEAL,
+  BUTTON_SQUIRREL,
+  BUTTON_DESIGNER_SQUIRRELS,
+  BUTTON_HELP_DESIGNER_SQUIRRELS,
+  BUTTON_DAILY_TASKS,
+  BUTTON_BANK,
+
+  BUTTON_LEADERBOARD,
+
+  BUTTON_EVENT_HELP,
+  BUTTON_BUNNY_ENDEAVOR,
+
+  BUTTON_SCURRY_INFO,
+  BUTTON_SCURRY_INIT_INVITE,
+  BUTTON_SCURRY_INVITE_RESP,
+  BUTTON_SCURRY_HELP,
+  BUTTON_SCURRY_LEAVE,
+
+  BUTTON_SIZE
+};
+
+struct sd_command *button_types = (struct sd_command[])
+{
+  { // BUTTON_PLAYER_HELP
+    .command_id = TYPE_PLAYER_HELP,
+    .func_cb = &player_help_interaction,
+  },
+  { // BUTTON_BIOME_STORY
+    .command_id = TYPE_BIOME_STORY,
+    .func_cb = &biome_story_interaction
+  },
+  { // BUTTON_INIT_FORAGE -- in case "forage again" is pressed
+    .command_id = TYPE_FORAGE_INIT,
+    .func_cb = &init_forage_interaction
+  },
+  { // BUTTON_MAIN_FORAGE
+    .command_id = TYPE_FORAGE_RESP,
+    .func_cb = &forage_interaction
+  },
+  { // BUTTON_ENCOUNTER_FORAGE
+    .command_id = TYPE_ENCOUNTER_RESP,
+    .func_cb = &encounter_interaction
+  },
+  { // BUTTON_UPGRADE
+    .command_id = TYPE_UPGRADE,
+    .func_cb = &upgrade_interaction
+  },
+  { // BUTTON_SESSION_INFO
+    .command_id = TYPE_SESSION_INFO,
+    .func_cb = &session_info_interaction
+  },
+  { // BUTTON_INFO
+    .command_id = TYPE_INFO,    
+    .func_cb = &info_interaction
+  },
+  { // BUTTON_INFO_FROM_BUTTONS
+    .command_id = TYPE_INFO_FROM_BUTTONS,
+    .func_cb = &info_from_buttons
+  },
+  { // BUTTON_INIT_STEAL
+    .command_id = TYPE_INIT_STEAL,    
+    .func_cb = &init_steal_interaction
+  },
+  { // BUTTON_STEAL
+    .command_id = TYPE_STEAL,    
     .func_cb = &steal_interaction
   },
-  { // CMD_SQUIRREL
-    .name = "squirrels",
+  { // BUTTON_SQUIRREL
     .command_id = TYPE_SQUIRREL,
-    .error_msg = "You cannot swap squirrels with this embed! Please send `/squirrels` to change your current squirrel.",
-
     .func_cb = &squirrels_interaction
   },
-  { // CMD_DESIGNER_SQUIRRELS
-    .name = "designer_squirrels",
+  { // BUTTON_DESIGNER_SQUIRRELS
     .command_id = TYPE_DESIGNER_SQIRRELS,
-    .error_msg = "You cannot swap squirrels with this embed! Please send `/designer_squirrels` to change your current squirrel.",
-
     .func_cb = &designer_squirrels_interaction
   },
-  { // CMD_DESIGNER_SQUIRRELS
-    .name = "designer_squirrels",
+  { // BUTTON_HELP_DESIGNER_SQUIRRELS
     .command_id = TYPE_SQUIRREL_HELP,
-    .error_msg = "You cannot swap squirrels with this embed! Please send `/designer_squirrels` to change your current squirrel.",
-
     .func_cb = &designer_squirrels_interaction
   },
-  { // CMD_LEADERBOARD
-    .name = "leaderboard",
+  { // BUTTON_DAILY_TASKS
+    .command_id = TYPE_DAILY,
+    .func_cb = &daily_interaction
+  },
+  { // BUTTON_BANK
+    .command_id = TYPE_BANK,
+    .func_cb = &bank_interaction
+  },
+  { // BUTTON_LEADERBOARD
     .command_id = TYPE_LEADERBOARD,
-    .error_msg = "This leaderboard belongs to someone else! Please send `/leaderboard` to interact.",
-
     .func_cb = &fetch_leaderboard
   },
   // EVENT COMMANDS
-  { // CMD_EVENT_HELP
-    .name = "event_help",
+  { // BUTTON_EVENT_HELP
     .command_id = TYPE_EVENT_HELP,
-    .error_msg = "This help embed belongs to someone else! Please send `/event_help` for support.",
-
     .func_cb = &event_help_interaction
   },
-  { // CMD_SEASON_INFO
-    .name = "season_info",
-    .func_cb = &get_season_event
-  },
-  { // CMD_BUNNY_ENDEAVOR
-    .name = "bunny_endeavor",
+  { // BUTTON_BUNNY_ENDEAVOR
     .command_id = TYPE_BUNNY,
-    .error_msg = "You cannot purchase an item off this embed! Please send `/bunny_endeavor` to make a purchase.",
-
     .func_cb = &bunny_interaction
   },
   // SCURRY COMMANDS
-  { // CMD_SCURRY_HELP
-    .name = "scurry_help",
-    .command_id = TYPE_SCURRY_HELP,
-    .error_msg = "This help embed belongs to someone else! Please send `/scurry_help` for support.",
-    
-    .func_cb = &scurry_help_interaction
-  },
-  { // CMD_SCURRY_INFO
-    .name = "scurry_info",
+  { // BUTTON_SCURRY_INFO
     .command_id = TYPE_SCURRY_INFO,
-    .error_msg = "You either do not have permission to press this button or this embed belongs to someone else!",
-
     .func_cb = &s_info_interaction
   },
-  { // CMD_SCURRY_INVITE
-    .name = "scurry_invite",
-    .func_cb = &init_invite_interaction,
+  { // BUTTON_SCURRY_INIT_INVITE
+    .command_id = TYPE_INIT_INVITE,
+    .func_cb = &init_invite_interaction
   },
-  { // CMD_SCURRY_INVITE_RESP
-    .name = "scurry_invite",
-    .func_cb = &invite_interaction,
-    // no match is needed since this is done through DM with the bot
-
-    .command_id = TYPE_INVITE
+  { // BUTTON_SCURRY_INVITE_RESP
+    .command_id = TYPE_INVITE,
+    .func_cb = &invite_interaction
   },
-  { // CMD_SCURRY_KICK
-    .name = "scurry_kick",
-    .func_cb = &kick_interaction
+  { // BUTTON_SCURRY_HELP
+    .command_id = TYPE_SCURRY_HELP,    
+    .func_cb = &scurry_help_interaction
   },
-  { // CMD_SCURRY_LEAVE
-    .name = "scurry_leave",
+  { // BUTTON_SCURRY_LEAVE
+    .command_id = TYPE_SCURRY_LEAVE,
     .func_cb = &leave_interaction
-  },
-  { // CMD_SCURRY_CREATE
-    .name = "scurry_create",
-    .func_cb = &create_interaction
   }
 };
 
@@ -209,46 +187,23 @@ void create_commands(struct discord *client, const struct discord_ready *event)
   struct discord_create_global_application_command commands[] =
   {
     {
-      .name = "biome_story",
-      .description = "Background about the biomes.",
+      .name = "start",
+      .description = "Begin your adventure here!",
       .type = DISCORD_APPLICATION_CHAT_INPUT
     },
-    // MAIN COMMANDS
-    { // forage
-      .name = "forage",
-      .description = "Send to find some goodies! (Costs 2 energy)",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
+    { // user preferences
+      .name = "Player",
+      .type = DISCORD_APPLICATION_USER,
+      .description = " "
     },
-    { // upgrade
-      .name = "upgrade",
-      .description = "Upgrade your squirrel senses.",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
+    { // user preferences
+      .name = "Scurry",
+      .type = DISCORD_APPLICATION_USER,
+      .description = " "
     },
     {
-      .name = "session_info",
-      .description = "View your session statistics.",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
-    },
-    { // info
-      .name = "info",
-      .description = "View your player statistics.",
-      .type = DISCORD_APPLICATION_CHAT_INPUT,
-      .options = &(struct discord_application_command_options)
-      {
-        .array = (struct discord_application_command_option[])
-        {
-          {
-          .type = DISCORD_APPLICATION_OPTION_STRING,
-          .name = "user",
-          .description = "Mention the user or use their id",
-          }
-        },
-        .size = 1
-      }
-    },
-    { // color
       .name = "color",
-      .description = "Change the color of your embed tab.",
+      .description = "Set the color of your embed!",
       .type = DISCORD_APPLICATION_CHAT_INPUT,
       
       .options = &(struct discord_application_command_options)
@@ -265,122 +220,9 @@ void create_commands(struct discord *client, const struct discord_ready *event)
         .size = 1
       }
     },
-    { // steal
-      .name = "steal",
-      .description = "Steal someone's acorns. (Costs 20 energy)",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
-    },
-    { // squirrels
-      .name = "squirrels",
-      .description = "Swap to a different squirrel!",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
-    },
-    { // squirrel customs
-      .name = "designer_squirrels",
-      .description = "Change the appearance of your squirrel!",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
-    },
-
-    // HELP COMMANDS
-    { // player_help
-      .name = "player_help",
-      .description = "Looking for help?",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
-    },
-    { // event_help
-      .name = "event_help",
-      .description = "Looking for help on events?",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
-    },
-    { // scurry_help
-      .name = "scurry_help",
-      .description = "Looking for help on scurries?",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
-    },
-
-    { // leaderboard
-      .name = "leaderboard",
-      .description = "View the acorn leaderboard! (Top 10)",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
-    },
-
-    // SCURRY COMMANDS
-    { // scurry_info
-      .name = "scurry_info",
-      .description = "View your scurry information.",
-      .type = DISCORD_APPLICATION_CHAT_INPUT,
-      .options = &(struct discord_application_command_options)
-      {
-        .array = (struct discord_application_command_option[])
-        {
-          {
-            .type = DISCORD_APPLICATION_OPTION_STRING,
-            .name = "scurry",
-            .description = "Name the scurry",
-          }
-        },
-        .size = 1
-      }
-    },
-    { // scurry_invite
-      .name = "scurry_invite",
-      .description = "Request an invite using a scurry name.",
-      .type = DISCORD_APPLICATION_CHAT_INPUT,
-      .options = &(struct discord_application_command_options)
-      {
-        .array = (struct discord_application_command_option[])
-        {
-          {
-            .type = DISCORD_APPLICATION_OPTION_STRING,
-            .name = "scurry",
-            .description = "Name the scurry",
-            .required = true
-          }
-        },
-        .size = 1
-      }
-    },
-    { // scurry_kick
-      .name = "scurry_kick",
-      .description = "Kick a member from your scurry.",
-      .type = DISCORD_APPLICATION_CHAT_INPUT,
-      .options = &(struct discord_application_command_options)
-      {
-        .array = (struct discord_application_command_option[])
-        {
-          {
-            .type = DISCORD_APPLICATION_OPTION_STRING,
-            .name = "user",
-            .description = "Mention the user",
-            .required = true
-          }
-        },
-        .size = 1
-      }
-    },
-    { // scurry_leave
-      .name = "scurry_leave",
-      .description = "Leave your current scurry.",
-      .type = DISCORD_APPLICATION_CHAT_INPUT,
-      .options = &(struct discord_application_command_options)
-      {
-        .array = (struct discord_application_command_option[])
-        {
-          {
-            .type = DISCORD_APPLICATION_OPTION_STRING,
-            .name = "verify",
-            .description = "Verify that you would like to leave this scurry by entering 'yes'. You can always rejoin!",
-            .required = true
-          }
-        },
-        .size = 1
-      }
-    },
-
-    { // scurry_create
+    {
       .name = "scurry_create",
       .description = "Create a scurry for 50,000 acorns.",
-
       .type = DISCORD_APPLICATION_CHAT_INPUT,
       .options = &(struct discord_application_command_options)
       {
@@ -389,24 +231,66 @@ void create_commands(struct discord *client, const struct discord_ready *event)
           {
             .type = DISCORD_APPLICATION_OPTION_STRING,
             .name = "name",
-            .description = "What would you like to name your scurry? (Keep it SFW)",
+            .description = "Name your scurry (1 - 16 characters)",
             .required = true
           }
         },
         .size = 1
       }
     },
-
-    // EVENT COMMANDS
-    { // bunny_endeavor
-      .name = "bunny_endeavor",
-      .description = "Buy all sorts of resources with catnip (Only available during the in-game Winter!)",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
+    {
+      .name = "scurry_kick",
+      .description = "Kick a scurry member.",
+      .type = DISCORD_APPLICATION_CHAT_INPUT,
+      .options = &(struct discord_application_command_options)
+      {
+        .array = (struct discord_application_command_option[])
+        {
+          {
+            .type = DISCORD_APPLICATION_OPTION_STRING,
+            .name = "user",
+            .description = "mention the user or use their ID",
+            .required = true
+          }
+        },
+        .size = 1
+      }
     },
-    { // season_info
-      .name = "season_info",
-      .description = "Unsure of what the in-game season is?",
-      .type = DISCORD_APPLICATION_CHAT_INPUT
+    {
+      .name = "scurry_disband",
+      .description = "DISBAND your scurry.",
+      .type = DISCORD_APPLICATION_CHAT_INPUT,
+      .options = &(struct discord_application_command_options)
+      {
+        .array = (struct discord_application_command_option[])
+        {
+          {
+            .type = DISCORD_APPLICATION_OPTION_STRING,
+            .name = "verify",
+            .description = "Enter the name of your scurry",
+            .required = true
+          }
+        },
+        .size = 1
+      }
+    },
+    {
+      .name = "scurry_rename",
+      .description = "Rename your scurry for 50,000 acorns. (Keep it SFW)",
+      .type = DISCORD_APPLICATION_CHAT_INPUT,
+      .options = &(struct discord_application_command_options)
+      {
+        .array = (struct discord_application_command_option[])
+        {
+          {
+            .type = DISCORD_APPLICATION_OPTION_STRING,
+            .name = "name",
+            .description = "Name your scurry (1 - 16 characters)",
+            .required = true
+          }
+        },
+        .size = 1
+      }
     }
   };
 

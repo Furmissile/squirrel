@@ -38,7 +38,7 @@ void create_leaderboard_interaction(const struct discord_interaction *event, str
     .title = "Leaderboard",
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
@@ -58,7 +58,7 @@ void create_leaderboard_interaction(const struct discord_interaction *event, str
     .style = (button_idx == 0) ? DISCORD_BUTTON_SECONDARY : DISCORD_BUTTON_PRIMARY,
     .label = "Acorn Count",
     .custom_id = u_snprintf(params->custom_ids[0], sizeof(params->custom_ids[0]),
-        "%c0_%ld", TYPE_LEADERBOARD, event->member->user->id),
+        "%c0.%ld", TYPE_LEADERBOARD, event->member->user->id),
     .disabled = (button_idx == 0) ? true : false
   };
 
@@ -68,15 +68,39 @@ void create_leaderboard_interaction(const struct discord_interaction *event, str
     .style = (button_idx == 1) ? DISCORD_BUTTON_SECONDARY : DISCORD_BUTTON_PRIMARY,
     .label = "War Acorns",
     .custom_id = u_snprintf(params->custom_ids[1], sizeof(params->custom_ids[1]),
-        "%c1_%ld", TYPE_LEADERBOARD, event->member->user->id),
+        "%c1.%ld", TYPE_LEADERBOARD, event->member->user->id),
     .disabled = (button_idx == 1) ? true : false
   };
 
-  struct discord_component action_rows = {
-    .type = DISCORD_COMPONENT_ACTION_ROW,
-    .components = &(struct discord_components) {
-      .array = params->buttons,
-      .size = 2
+  struct sd_statistics stats = { 0 };
+
+  init_statistics_buttons(event, &stats, player);
+
+  struct sd_util_info util_data = { 0 };
+
+  generate_util_buttons(event, player, &util_data);
+
+  struct discord_component action_rows[3] = {
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = params->buttons,
+        .size = 2
+      }
+    },
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = stats.buttons,
+        .size = sizeof(stats.buttons)/sizeof(*stats.buttons)
+      }
+    },
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = util_data.buttons,
+        .size = sizeof(util_data.buttons)/sizeof(*util_data.buttons)
+      }
     }
   };
 
@@ -88,8 +112,8 @@ void create_leaderboard_interaction(const struct discord_interaction *event, str
       .size = 1
     },
     .components = &(struct discord_components) {
-      .array = &action_rows,
-      .size = 1
+      .array = action_rows,
+      .size = 3
     }
   };
 
@@ -228,7 +252,7 @@ int fetch_leaderboard(const struct discord_interaction *event)
   struct sd_leaderboard *params = calloc(1, sizeof(struct sd_leaderboard));
 
   params->player = calloc(1, sizeof(struct sd_player));
-  load_player_struct(params->player, event);
+  load_player_struct(params->player, event->member->user->id, event->data->custom_id);
 
   // sd_leaderboard gets passed along regardless of leaderboard type
   struct discord_ret_interaction_response ret_response = { 

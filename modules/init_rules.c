@@ -67,18 +67,15 @@ void create_rules(struct discord *client, struct discord_response *resp, const s
     .color = (int)strtol("0EDF0A", NULL, 16),
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           user->id, user->avatar)
     },
     .title = u_snprintf(header.title, sizeof(header.title), "Rules"),
     .description = u_snprintf(params.description, sizeof(params.description), "Before we get started, let's establish some rules first."),
-
     .image = &(struct discord_embed_image) {
-      .url = u_snprintf(params.image_url, sizeof(params.image_url), GIT_PATH, WELCOME_MSG_PATH)
-    },
-    .thumbnail = &(struct discord_embed_thumbnail) {
-      .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH, RULES_BK_PATH)
+      .url = u_snprintf(params.image_url, sizeof(params.image_url), GIT_PATH, 
+          misc[MISC_WELCOME].file_path)
     },
     .fields = &(struct discord_embed_fields) {
       .array = params.fields,

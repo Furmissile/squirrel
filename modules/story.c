@@ -1,9 +1,9 @@
 int biome_story_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event);
+  load_player_struct(&player, event->member->user->id, event->data->custom_id);
 
-  struct sd_help_info params = { 0 };
+  struct sd_biome_info params = { 0 };
 
   int page_num = (player.button_idx != ERROR_STATUS) ? player.button_idx +1 : 1;
 
@@ -56,8 +56,6 @@ int biome_story_interaction(const struct discord_interaction *event)
 
   }
 
-  init_help_buttons(event, &params, page_num -1, TYPE_BIOME_STORY, STORY_TOPIC_SIZE -1);
-
   struct sd_header_params header = { 0 };
 
   char image_url[128] = { };
@@ -67,7 +65,7 @@ int biome_story_interaction(const struct discord_interaction *event)
     .color = player.color,
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
@@ -89,23 +87,38 @@ int biome_story_interaction(const struct discord_interaction *event)
     }
   };
 
+  struct sd_pages pages = { 0 };
+
+  init_page_buttons(event, &pages, page_num -1, TYPE_BIOME_STORY, STORY_TOPIC_SIZE -1);
+
+  struct sd_statistics stats = { 0 };
+
+  init_statistics_buttons(event, &stats, &player);
+
   struct sd_util_info util_data = { 0 };
 
   generate_util_buttons(event, &player, &util_data);
 
-  struct discord_component action_rows[2] = {
+  struct discord_component action_rows[3] = {
     {
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
-        .array = params.buttons,
-        .size = 4
+        .array = pages.buttons,
+        .size = sizeof(pages.buttons)/sizeof(*pages.buttons)
+      }
+    },
+    {
+      .type = DISCORD_COMPONENT_ACTION_ROW,
+      .components = &(struct discord_components) {
+        .array = stats.buttons,
+        .size = sizeof(stats.buttons)/sizeof(*stats.buttons)
       }
     },
     {
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
         .array = util_data.buttons,
-        .size = 5
+        .size = sizeof(util_data.buttons)/sizeof(*util_data.buttons)
       }
     }
   };
@@ -123,7 +136,7 @@ int biome_story_interaction(const struct discord_interaction *event)
       },
       .components = &(struct discord_components) {
         .array = action_rows,
-        .size = 2
+        .size = 3
       }
     }
 
@@ -134,6 +147,10 @@ int biome_story_interaction(const struct discord_interaction *event)
   fprintf(stderr, "%s \nCCODE: %d \n", values, code);
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+
+  free(params.fields);
+  free(params.field_names);
+  free(params.field_values);
 
   return 0;
 }
