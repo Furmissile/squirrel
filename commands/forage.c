@@ -6,20 +6,36 @@ struct sd_forage_resp {
   struct discord_emoji emojis[3];
   char emoji_names[3][64];
 
-  char description[512];
+  char description[1024];
   char image_url[128];
-  char footer_txt[64];
+  char footer_text[64];
   char footer_url[128];
 };
 
-void factor_war(struct sd_player *player, struct sd_scurry *scurry, struct sd_rewards *rewards)
+void factor_war(const struct discord_interaction *event, struct sd_player *player, struct sd_scurry *scurry, struct sd_rewards *rewards)
 {
+  if (rand() % MAX_CHANCE > UNCOMMON_CHANCE)
+  {
+    scurry->war_acorns -= rewards->acorns;
+    
+    if (scurry->war_acorns <= 0) 
+    {
+      scurry->war_acorns = 0;
+      scurry->war_flag = 0;
+    }
+  }
+
+  if (rand() % MAX_CHANCE < UNCOMMON_CHANCE)
+    return;
+
+  rewards->stolen_acorns = rewards->acorns;
+
   // search for another scurry
   PGresult* opponents = (PGresult*) { 0 };
   opponents = SQL_query(opponents, "select owner_id from public.scurry where owner_id != %ld and war_flag = 1",
       scurry->scurry_owner_id);
   
-  if (PQntuples(opponents) > 0)
+  if (PQntuples(opponents) > 0) // steal from opponent
   {
     int rand_idx = rand() % PQntuples(opponents);
     unsigned long opponent_scurry_id = strtobigint(PQgetvalue(opponents, rand_idx, DB_SCURRY_OWNER_ID));
@@ -27,7 +43,6 @@ void factor_war(struct sd_player *player, struct sd_scurry *scurry, struct sd_re
     struct sd_scurry opponent = { 0 };
     load_scurry_struct(&opponent, opponent_scurry_id);
 
-    rewards->stolen_acorns = rewards->acorns;
     opponent.war_acorns -= rewards->stolen_acorns;
     
     player->stolen_acorns += rewards->stolen_acorns;
@@ -42,11 +57,18 @@ void factor_war(struct sd_player *player, struct sd_scurry *scurry, struct sd_re
     update_scurry_row(&opponent);
   }
 
+  player->stolen_acorns += rewards->stolen_acorns;
+  scurry->total_stolen_acorns += rewards->stolen_acorns;
+
+  daily_task_progression(event, player, TASK_GREEDY);
+
   PQclear(opponents);
 }
 
-void generate_forage_reward(char* sd_description, size_t description_size, struct sd_player *player, struct sd_rewards *rewards)
+void generate_forage_reward(const struct discord_interaction *event, struct sd_forage_resp *params, struct sd_player *player, struct sd_rewards *rewards)
 {
+  struct sd_buff_status buff_status = { 0 };
+
   // case on item type
   switch (rewards->item_type) 
   {
@@ -60,12 +82,25 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
       break;
     case TYPE_LOST_STASH:
       rewards->acorns = genrand(200, 15);
-      rewards->golden_acorns = genrand(50, 5);
+      rewards->golden_acorns = genrand(50, 25);
+      daily_task_progression(event, player, TASK_PORCH_PIRATE);
       player->session_data.lost_stash++;
       break;
     case TYPE_ACORN_SACK:
       rewards->acorns = genrand(300, 25);
       player->session_data.acorn_sack++;
+      break;
+    case TYPE_RIBBONED_ACORN:
+      if (rand() % MAX_CHANCE < JUNK_CHANCE)
+      {
+        u_snprintf(params->description, sizeof(params->description), "\nBut it only contains "COAL" *coal*... \n");
+      }
+      else {
+        rewards->acorns = genrand(500, 50);
+        rewards->golden_acorns = genrand(100, 10);
+        generate_christmas_rewards(player, rewards);
+        daily_task_progression(event, player, TASK_GRINCH);
+      }
   }
 
   if (rewards->acorns) 
@@ -76,19 +111,20 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
       struct sd_scurry scurry = { 0 };
       load_scurry_struct(&scurry, player->scurry_id);
 
-      // general chance to either steal or recover war acorns
-      int scurry_chance = rand() % MAX_CHANCE;
-
-      if (scurry.war_flag == 0
-        && scurry_chance > 65)
+      if (scurry.war_flag == 1)
       {
-        rewards->war_acorns = (scurry.war_acorns + rewards->acorns >= scurry.war_acorn_cap)
-            ? scurry.war_acorn_cap - scurry.war_acorns : rewards->acorns;
+        factor_war(event, player, &scurry, rewards);
+      }
+      else if (scurry.war_acorns < scurry.war_acorn_cap
+        && rand() % MAX_CHANCE > COMMON_CHANCE)
+      {
+        int received_war_acorns = RECOVER_WAR_ACORNS * (scurry.rank +1);
+
+        rewards->war_acorns = (scurry.war_acorns + received_war_acorns >= scurry.war_acorn_cap)
+            ? scurry.war_acorn_cap - scurry.war_acorns : received_war_acorns;
 
         scurry.war_acorns += rewards->war_acorns;
       }
-      else if (scurry_chance > 65)
-        factor_war(player, &scurry, rewards);
     
       update_scurry_row(&scurry);
 
@@ -98,8 +134,8 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
     // apply base earning to acorn count BEFORE increases
     rewards->acorn_count = rewards->acorns;
 
-    struct sd_buff_status buff_status = { 0 };
-    apply_base_rewards(player, rewards, &buff_status);
+    apply_base_rewards(event, player, rewards, &buff_status);
+    daily_task_progression(event, player, TASK_FORAGER);
 
     // must be right chance for right button
     if (player->buffs.proficiency_acorn == 0 && rand() % MAX_CHANCE > PROFICIENCY_BUFF_CHANCE && player->button_idx == rand() % 3)
@@ -114,18 +150,23 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
       player->buffs.luck_acorn += genrand(5, 5);
     }
 
-    print_rewards(sd_description, description_size, player, rewards, &buff_status);
+    if (buff_status.received_proficiency_buff || buff_status.received_luck_buff)
+      daily_task_progression(event, player, TASK_ENCHANTER);
+
+    print_rewards(params->description, sizeof(params->description), player, rewards, &buff_status);
   }
   else {
     player->session_data.no_acorns++;
-    u_snprintf(sd_description, description_size, "\nYou received no earnings! \n");
+    u_snprintf(params->description, sizeof(params->description), "\nYou received no earnings! \n");
   }
 
-  struct sd_buff_status buff_status = { 0 }; // for boosted_acorn
-
+  if (player->regen_rate < REGEN_RATE)
+    player->regen_rate++; // regen occurs at a const rate!
   if (player->health < player->max_health
-    && rand() % MAX_CHANCE > 70)
+    && player->regen_rate == REGEN_RATE)
   {
+    player->regen_rate = 0;
+
     int hp_difference = player->max_health - player->health;
     // scales per strength evolution!
     int health_regen = player->stats.strength_lv +1;
@@ -148,12 +189,14 @@ void generate_forage_reward(char* sd_description, size_t description_size, struc
 
     APPLY_NUM_STR(renew_health, health_regen);
     APPLY_NUM_STR(health, player->health);
-    u_snprintf(sd_description, description_size,
-      "\n+**%s** "HEALTH" HP (**%s** "HEALTH" HP Left) \n", 
+    u_snprintf(params->description, sizeof(params->description),
+      "\n+**%s** "HEALTH" HP regen (**%s** "HEALTH" HP Left) \n", 
       renew_health, health);
     
     if (player->squirrel == SKELETAL_SQUIRREL && buff_status.boosted_acorn)
-      u_snprintf(sd_description, description_size, "\n-**10**%% "BOOSTED_ACORN" Squirrel Charge (**%d**%% left)", player->buffs.boosted_acorn *10);
+      u_snprintf(params->description, sizeof(params->description), 
+          "\n-**10**%% "BOOSTED_ACORN" Squirrel Charge (**%d**%% left)", 
+          player->buffs.boosted_acorn *10);
   }
 }
 
@@ -166,6 +209,7 @@ int build_forage_buttons(const struct discord_interaction *event, struct sd_fora
   for (int button_idx = 0; button_idx < 3; button_idx++)
   {
     chance = rand() % MAX_CHANCE;
+
     button_items[button_idx] = 
         (chance < JUNK_CHANCE) ? TYPE_NO_ACORNS
       : (chance < COMMON_CHANCE) ? TYPE_ACORN_HANDFUL
@@ -173,13 +217,17 @@ int build_forage_buttons(const struct discord_interaction *event, struct sd_fora
       : (chance < CONTAINER_CHANCE) ? TYPE_LOST_STASH : TYPE_ACORN_SACK;
   }
 
-  // if all buttons are one reward: introduce random lost stash
-  if (button_items[0] == button_items[1] && button_items[1] == button_items[2])
+  struct tm *info = get_UTC();
+  if (info->tm_mon == CHRISTMAS_MONTH && rand() % MAX_CHANCE > 70)
+    button_items[rand() % 3] = TYPE_RIBBONED_ACORN;
+
+  // if all buttons are no acorns: introduce random lost stash
+  if (button_items[0] == TYPE_NO_ACORNS && button_items[1] == button_items[0] && button_items[2] == button_items[0])
     button_items[rand() % 3] = TYPE_LOST_STASH;
 
   if (player->squirrel == ANGELIC_SQUIRREL 
     && button_items[player->button_idx] != TYPE_LOST_STASH
-    && rand() % MAX_CHANCE > ((player->buffs.boosted_acorn > 0) ? 40 : 70))
+    && rand() % MAX_CHANCE > ((player->buffs.boosted_acorn > 0) ? 60 : 80))
   {
     button_items[player->button_idx] = TYPE_LOST_STASH;
   }
@@ -201,7 +249,7 @@ int build_forage_buttons(const struct discord_interaction *event, struct sd_fora
     { 
       .type = DISCORD_COMPONENT_BUTTON,
       .emoji = &params->emojis[button_idx],
-      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c_%ld",
+      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d%c.%ld",
                     TYPE_FORAGE_RESP, button_idx, ERROR_STATUS + 96, event->member->user->id),
       .disabled = true
     };
@@ -222,8 +270,7 @@ int build_forage_buttons(const struct discord_interaction *event, struct sd_fora
 int forage_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event);
-  player.button_idx = (event->data->custom_id) ? event->data->custom_id[1] -48 : ERROR_STATUS;
+  load_player_struct(&player, event->member->user->id, event->data->custom_id);
 
   energy_regen(&player);
 
@@ -251,18 +298,18 @@ int forage_interaction(const struct discord_interaction *event)
 
   rewards.item_type = build_forage_buttons(event, &params, &player);
 
-  struct sd_header_params header = { 0 };
-
-  generate_forage_reward(params.description, sizeof(params.description), &player, &rewards);
+  generate_forage_reward(event, &params, &player, &rewards);
 
   int energy_loss = energy_status(params.description, sizeof(params.description), &player, 2);
+
+  struct sd_header_params header = { 0 };
 
   header.embed = (struct discord_embed) 
   {
     .color = player.color,
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
@@ -278,8 +325,8 @@ int forage_interaction(const struct discord_interaction *event)
     },
     .footer = &(struct discord_embed_footer) 
     {
-      .text = (energy_loss) ? u_snprintf(params.footer_txt, sizeof(params.footer_txt), "You have %d energy left!", player.energy)
-          : u_snprintf(params.footer_txt, sizeof(params.footer_txt), "\n No energy was lost! \n"),
+      .text = (energy_loss) ? u_snprintf(params.footer_text, sizeof(params.footer_text), "You have %d energy left!", player.energy)
+          : u_snprintf(params.footer_text, sizeof(params.footer_text), "\n No energy was lost! \n"),
       .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, items[ITEM_ENERGY].file_path)
     }
   };
@@ -305,30 +352,51 @@ int forage_interaction(const struct discord_interaction *event)
     }
   };
 
-  struct discord_interaction_response interaction = 
+  if (player.daily.claim_primary 
+    || player.daily.claim_secondary 
+    || player.daily.claim_tertiary)
   {
-    .type = DISCORD_INTERACTION_UPDATE_MESSAGE,
-
-    .data = &(struct discord_interaction_callback_data) 
-    {
-      .embeds = &(struct discord_embeds) 
+    discord_edit_message(client, event->channel_id, event->message->id,
+      &(struct discord_edit_message)
       {
-        .array = &header.embed,
-        .size = 1
+        .embeds = &(struct discord_embeds) 
+        {
+          .array = &header.embed,
+          .size = 1
+        },
+        .components = &(struct discord_components) {
+          .array = action_rows,
+          .size = 2
+        }
       },
-      .components = &(struct discord_components) {
-        .array = action_rows,
-        .size = 2
+      NULL);
+  }
+  else {
+    struct discord_interaction_response interaction = 
+    {
+      .type = DISCORD_INTERACTION_UPDATE_MESSAGE,
+
+      .data = &(struct discord_interaction_callback_data) 
+      {
+        .embeds = &(struct discord_embeds) 
+        {
+          .array = &header.embed,
+          .size = 1
+        },
+        .components = &(struct discord_components) {
+          .array = action_rows,
+          .size = 2
+        }
       }
-    }
 
-  };
+    };
 
-  char values[16384];
-  discord_interaction_response_to_json(values, sizeof(values), &interaction);
-  fprintf(stderr, "%s \n", values);
+    char values[16384];
+    discord_interaction_response_to_json(values, sizeof(values), &interaction);
+    fprintf(stderr, "%s \n", values);
 
-  discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+    discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+  }
 
   player.main_cd = time(NULL) + COOLDOWN;
 

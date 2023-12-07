@@ -1,10 +1,10 @@
 struct sd_encounter_resp {
-  struct discord_component buttons[4];
-  char custom_ids[4][64];
-  char labels[4][64];
+  struct discord_component buttons[3];
+  char custom_ids[3][64];
+  char labels[3][64];
 
-  struct discord_emoji emojis[4];
-  char emoji_names[4][64];
+  struct discord_emoji emojis[3];
+  char emoji_names[3][64];
 
   char image_url[128];
   char description[1024];
@@ -96,14 +96,14 @@ void complete_encounter(struct sd_encounter_resp *params, struct sd_player *play
 }
 
 // void generate_encounter_reward(char* e_description, size_t description_size, struct sd_player *player, struct sd_rewards *rewards)
-void generate_encounter_reward(struct sd_encounter_resp *params, struct sd_player *player, struct sd_rewards *rewards)
+void generate_encounter_reward(const struct discord_interaction *event, struct sd_encounter_resp *params, struct sd_player *player, struct sd_rewards *rewards)
 {
   struct sd_buff_status buff_status = { 0 };
 
   if (player->button_idx == 2)
   {
     player->golden_acorns -= rewards->encounter_cost;
-    player->spent_golden_acorns += rewards->encounter_cost;
+    player->session_data.golden_acorns -= rewards->encounter_cost;
   }
   else 
   {
@@ -125,13 +125,15 @@ void generate_encounter_reward(struct sd_encounter_resp *params, struct sd_playe
       break;
     case TYPE_LOST_STASH:
       rewards->acorns = genrand(250, 15);
-      rewards->golden_acorns = genrand(50, 5);
+      rewards->golden_acorns = genrand(50, 25);
       player->session_data.lost_stash++;
       break;
     case TYPE_ACORN_SACK:
       rewards->acorns = genrand(300, 25);
       player->session_data.acorn_sack++;
   }
+
+  daily_task_progression(event, player, TASK_CONQUEROR);
 
   // only fill when charge isn't ready or in use!
   if (player->buffs.boosted_acorn == 0 && player->conjured_acorns < 10)
@@ -140,7 +142,7 @@ void generate_encounter_reward(struct sd_encounter_resp *params, struct sd_playe
   // apply golden acorn cost boost to acorn count! (3rd button)
   rewards->acorn_count = (player->button_idx == 2) ? rewards->acorns *2 : rewards->acorns;
 
-  apply_base_rewards(player, rewards, &buff_status);
+  apply_base_rewards(event, player, rewards, &buff_status);
 
   print_rewards(params->description, sizeof(params->description), player, rewards, &buff_status);
 
@@ -230,27 +232,13 @@ void build_encounter_buttons(const struct discord_interaction *event, struct sd_
       .style = (player->button_idx == button_idx) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
       .emoji = &params->emojis[button_idx],
       // adding player->biome as a character is not a breaking change! It's only encounters that need it
-      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d_%ld",
+      .custom_id = u_snprintf(params->custom_ids[button_idx], sizeof(params->custom_ids[button_idx]), "%c%d.%ld",
                     TYPE_ENCOUNTER_RESP, button_idx, event->member->user->id),
       .label = u_snprintf(params->labels[button_idx], sizeof(params->labels[button_idx]), encounter.solutions[button_idx]),
       .disabled = true
     };
   }
 
-  params->emojis[3] = (struct discord_emoji) {
-    .name = u_snprintf(params->emoji_names[3], sizeof(params->emoji_names[3]), 
-            item_types[TYPE_ENCOUNTER].emoji_name),
-    .id = item_types[TYPE_ENCOUNTER].emoji_id
-  };
-  params->buttons[3] = (struct discord_component)
-  {
-    .type = DISCORD_COMPONENT_BUTTON,
-    .style = DISCORD_BUTTON_SUCCESS,
-    .emoji = &params->emojis[3],
-    .custom_id = u_snprintf(params->custom_ids[3], sizeof(params->custom_ids[3]), "%c%d_%ld*%ld",
-      TYPE_BIOME_STORY, player->biome, event->member->user->id, event->member->user->id),
-    .label = "Biome Story"
-  };
 }
 
 void encounter_error(const struct discord_interaction *event, struct sd_player *player)
@@ -277,7 +265,7 @@ void encounter_error(const struct discord_interaction *event, struct sd_player *
       .style = (player->button_idx == button_idx) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
       .emoji = &params.emojis[button_idx],
       .label = u_snprintf(params.labels[button_idx], sizeof(params.labels[button_idx]), encounter.solutions[button_idx]),
-      .custom_id = u_snprintf(params.custom_ids[button_idx], sizeof(params.custom_ids[button_idx]), "%c%d%c_%ld",
+      .custom_id = u_snprintf(params.custom_ids[button_idx], sizeof(params.custom_ids[button_idx]), "%c%d%c.%ld",
                     TYPE_ENCOUNTER_RESP, button_idx, original_encounter_idx + 96, event->member->user->id),
       .disabled = true
     };
@@ -311,7 +299,7 @@ void encounter_error(const struct discord_interaction *event, struct sd_player *
     .color = player->color,
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
@@ -332,59 +320,64 @@ void encounter_error(const struct discord_interaction *event, struct sd_player *
     }
   };
 
-  struct discord_interaction_response interaction = 
+  if (player->daily.claim_primary 
+    || player->daily.claim_secondary 
+    || player->daily.claim_tertiary)
   {
-    .type = DISCORD_INTERACTION_UPDATE_MESSAGE,
-
-    .data = &(struct discord_interaction_callback_data) 
-    {
-      .embeds = &(struct discord_embeds) 
+    discord_edit_message(client, event->channel_id, event->message->id,
+      &(struct discord_edit_message)
       {
-        .array = &header.embed,
-        .size = 1
+        .embeds = &(struct discord_embeds) 
+        {
+          .array = &header.embed,
+          .size = 1
+        },
+        .components = &(struct discord_components) {
+          .array = action_rows,
+          .size = 2
+        }
       },
-      .components = &(struct discord_components) {
-        .array = action_rows,
-        .size = 2
+      NULL);
+  }
+  else {
+    struct discord_interaction_response interaction = 
+    {
+      .type = DISCORD_INTERACTION_UPDATE_MESSAGE,
+
+      .data = &(struct discord_interaction_callback_data) 
+      {
+        .embeds = &(struct discord_embeds) 
+        {
+          .array = &header.embed,
+          .size = 1
+        },
+        .components = &(struct discord_components) {
+          .array = action_rows,
+          .size = 2
+        }
       }
-    }
 
-  };
+    };
 
-  char values[16384];
-  discord_interaction_response_to_json(values, sizeof(values), &interaction);
-  fprintf(stderr, "%s \n", values);
+    char values[16384];
+    discord_interaction_response_to_json(values, sizeof(values), &interaction);
+    fprintf(stderr, "%s \n", values);
 
-  discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+    discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+  }
+
 }
 
 int encounter_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
-  load_player_struct(&player, event);
-  player.button_idx = (event->data->custom_id) ? event->data->custom_id[1] -48 : ERROR_STATUS;
+  load_player_struct(&player, event->member->user->id, event->data->custom_id);
 
-  // heal was used!
-  if (player.button_idx == 3)
-  {
-    int full_heal = player.max_health * HEALING_FACTOR;
-    int heal_cost = (BUFF_FACTOR * (player.stats.strength_lv + player.stats.strength_lv / STAT_EVOLUTION));
-
-    player.health = (player.health + full_heal > player.max_health) ? player.max_health : player.health + full_heal;
-    player.golden_acorns -= heal_cost;
-    player.spent_golden_acorns += heal_cost;
-
-    // re-initialize encounter!
-    init_encounter_interaction(event, &player);
-    update_player_row(&player);
-    return 0;
-  }
-  // error handle if this was a prior encounter and not the current encounter if one is active
-  else if (player.encounter == ERROR_STATUS
+  if (player.encounter == ERROR_STATUS
     || player.encounter != event->data->custom_id[2] - 96)
   {
-    // temorarily recall the encounter index through the custom id
-    // this value will not be retained by the database!!
+    // temporarily recall the encounter index through the custom id
+    // value will not be retained by the database!!
     player.encounter = event->data->custom_id[2] - 96;
     encounter_error(event, &player);
     return ERROR_STATUS;
@@ -405,7 +398,7 @@ int encounter_interaction(const struct discord_interaction *event)
   u_snprintf(params.description, sizeof(params.description), encounter.conflict);
 
   // then add rewards
-  generate_encounter_reward(&params, &player, &rewards);
+  generate_encounter_reward(event, &params, &player, &rewards);
   
   int energy_loss = energy_status(params.description, sizeof(params.description), &player, 2);
 
@@ -416,7 +409,7 @@ int encounter_interaction(const struct discord_interaction *event)
     .color = player.color,
     .author = &(struct discord_embed_author) {
       .name = u_snprintf(header.username, sizeof(header.username), event->member->user->username),
-      .url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
+      .icon_url = u_snprintf(header.avatar_url, sizeof(header.avatar_url), 
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
