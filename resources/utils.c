@@ -1,11 +1,18 @@
 
 /* Returns total factor based on stat level and if it's a multiplier or incrementer */
-float generate_factor(int stat_lv, double value_factor)
+float generate_factor(int stat_idx, int stat_lv)
 {
-  if (value_factor == STRENGTH_FACTOR)
-    return (value_factor * (stat_lv -1)) + (5 * (stat_lv/STAT_EVOLUTION));
-  else
-    return (value_factor * (stat_lv -1)) + (value_factor * (stat_lv/STAT_EVOLUTION)) +1;
+  switch (stat_idx)
+  {
+    case STAT_PROFICIENCY:
+      return (PROFICIENCY_FACTOR * (stat_lv -1)) + (PROFICIENCY_FACTOR * (stat_lv/STAT_EVOLUTION)) +1;
+    case STAT_STRENGTH:
+      return (STRENGTH_FACTOR * (stat_lv -1)) + (5 * (stat_lv/STAT_EVOLUTION));
+    case STAT_LUCK:
+      return stat_lv;
+    default:
+      return ERROR_STATUS;
+  }
 }
 
 /* Returns a total price based on stat level, currency unit, and a value multiplier */
@@ -207,7 +214,7 @@ int factor_season(const struct discord_interaction *event, struct sd_player *pla
           : (rewards->item_type < TYPE_LOST_STASH) ? genrand(50, 25) : genrand(100, 50);
 
       rewards->seasoned_golden_acorns += 1 + (BIOME_ACORN_INC * (player->biome_num + player->biome_num / BIOME_SIZE));
-      rewards->seasoned_golden_acorns *= generate_factor(player->stats.luck_lv, LUCK_FACTOR);
+      rewards->seasoned_golden_acorns *= generate_factor(STAT_LUCK, player->stats.luck_lv);
       
       player->golden_acorns += rewards->seasoned_golden_acorns;
       player->session_data.golden_acorns += rewards->seasoned_golden_acorns;
@@ -434,7 +441,7 @@ void apply_base_rewards(const struct discord_interaction *event, struct sd_playe
   }
 
   // stat is not included in acorn count
-  rewards->acorns *= generate_factor(player->stats.proficiency_lv, PROFICIENCY_FACTOR);
+  rewards->acorns *= generate_factor(STAT_PROFICIENCY, player->stats.proficiency_lv);
 
   if (player->squirrel == KING_SQUIRREL)
   {
@@ -465,9 +472,6 @@ void apply_base_rewards(const struct discord_interaction *event, struct sd_playe
   // GOLDEN ACORNS
   if (rewards->golden_acorns)
   {
-    // give a bonus BIOME_GOLDEN_ACORN_INC after completing a cycle!
-    rewards->golden_acorns *= 1 + (BIOME_ACORN_INC * (player->biome_num + player->biome_num / BIOME_SIZE));
-
     if (player->buffs.luck_acorn > 0) 
     {
       rewards->golden_acorns *= BUFF_CONSTANT;
@@ -482,7 +486,7 @@ void apply_base_rewards(const struct discord_interaction *event, struct sd_playe
       buff_status->boosted_acorn = true;
     }
 
-    rewards->golden_acorns *= generate_factor(player->stats.luck_lv, LUCK_FACTOR);
+    rewards->golden_acorns *= generate_factor(STAT_LUCK, player->stats.luck_lv);
 
     player->golden_acorns += rewards->golden_acorns;
     player->session_data.golden_acorns += rewards->golden_acorns;

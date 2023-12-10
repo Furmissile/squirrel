@@ -35,7 +35,8 @@ void init_upgrade_fields(struct sd_upgrade_shop *params, struct sd_player *playe
         (button_idx == STAT_STRENGTH) 
             ? " "OFF_ARROW" %s (+**%0.0f**) \n" " *Costs* **%s** "ACORNS" Acorns"
             : " "OFF_ARROW" %s (x**%0.1f**) \n" " *Costs* **%s** "ACORNS" Acorns",
-        stat_data.description, generate_factor(*stat_ptrs[button_idx], stats[button_idx].value_mult), stat_cost);
+        stat_data.description, generate_factor(button_idx, *stat_ptrs[button_idx]), stat_cost);
+        // button idx matches stat ptrs!
 
     params->fields[button_idx].value = params->field_values[button_idx];
   }

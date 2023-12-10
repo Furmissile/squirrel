@@ -97,19 +97,19 @@ void build_stats_info(struct sd_squirrel_info *params, struct sd_player *player)
   params->fields[2].name = u_snprintf(params->field_names[2], sizeof(params->field_names[2]), "Squirrel Stats");
 
   // proficiency stat (init field)
-  float proficiency_value = generate_factor(player->stats.proficiency_lv, PROFICIENCY_FACTOR);
+  float proficiency_value = generate_factor(STAT_PROFICIENCY, player->stats.proficiency_lv);
   u_snprintf(params->field_values[2], sizeof(params->field_values[2]), 
       " "INDENT" "PROFICIENCY_ICON" *%s*  (Lv **%d**)  x**%0.1f** \n",
       stats[STAT_PROFICIENCY].stat.formal_name, player->stats.proficiency_lv, proficiency_value);
 
   // strength stat
-  float strength_value = generate_factor(player->stats.strength_lv, STRENGTH_FACTOR);
+  float strength_value = generate_factor(STAT_STRENGTH, player->stats.strength_lv);
   u_snprintf(params->field_values[2], sizeof(params->field_values[2]),
       " "INDENT" "STRENGTH_ICON" *%s*  (Lv. **%d**)  +**%0.0f** \n",
       stats[STAT_STRENGTH].stat.formal_name, player->stats.strength_lv, strength_value);
 
   // luck stat
-  float luck_value = generate_factor(player->stats.luck_lv, LUCK_FACTOR);
+  float luck_value = generate_factor(STAT_LUCK, player->stats.luck_lv);
   u_snprintf(params->field_values[2], sizeof(params->field_values[2]),
       " "INDENT" "LUCK_ICON" *%s*  (Lv **%d**)  x**%0.1f** \n",
       stats[STAT_LUCK].stat.formal_name, player->stats.luck_lv, luck_value);
@@ -245,7 +245,7 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
 
   struct discord_interaction_response interaction = 
   {
-    .type = DISCORD_INTERACTION_UPDATE_MESSAGE,
+    .type = DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
 
     .data = &(struct discord_interaction_callback_data) 
     {

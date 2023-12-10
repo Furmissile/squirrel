@@ -171,7 +171,7 @@ void generate_encounter_reward(const struct discord_interaction *event, struct s
     u_snprintf(params->description, sizeof(params->description),
         "\n **%s** "ACORN_COUNT" Final acorn count", old_acorn_count);
 
-    player->health = MAX_HEALTH + generate_factor(player->stats.strength_lv, STRENGTH_FACTOR);
+    player->health = MAX_HEALTH + generate_factor(STAT_STRENGTH, player->stats.strength_lv);
 
     if (player->acorn_count > (BIOME_INTERVAL * BIOME_SIZE)) {
       player->acorn_count /= 2;

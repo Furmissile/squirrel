@@ -125,7 +125,7 @@ void load_player_struct(struct sd_player *player_res, unsigned long user_id, cha
   player_res->button_idx = (custom_id) ? custom_id[1] -48 : ERROR_STATUS;
   player_res->biome = player_res->acorn_count/BIOME_INTERVAL % BIOME_SIZE;
   player_res->biome_num = player_res->acorn_count/BIOME_INTERVAL;
-  player_res->max_health = generate_factor(player_res->stats.strength_lv, STRENGTH_FACTOR) + MAX_HEALTH;
+  player_res->max_health = generate_factor(STAT_STRENGTH, player_res->stats.strength_lv) + MAX_HEALTH;
 
   struct sd_session_data *data = &player_res->session_data;
   player_res->session_data.total_forages = data->no_acorns + data->acorn_handful + data->acorn_mouthful + data->lost_stash + data->acorn_sack;
