@@ -114,7 +114,7 @@ void init_squirrel_buttons(const struct discord_interaction *event, struct sd_sq
   {
     .type = DISCORD_COMPONENT_BUTTON,
     .style = DISCORD_BUTTON_SECONDARY,
-    .custom_id = u_snprintf(params->designer_sq_custom_id, sizeof(params->designer_sq_custom_id), "%c%d.%ld",
+    .custom_id = u_snprintf(params->designer_sq_custom_id, sizeof(params->designer_sq_custom_id), "%c4%d.%ld",
         TYPE_SQUIRREL_HELP, season_idx, event->member->user->id),
     .label = u_snprintf(params->designer_sq_label, sizeof(params->designer_sq_label), "Designer Squirrels"),
     .emoji = &params->designer_sq_emoji

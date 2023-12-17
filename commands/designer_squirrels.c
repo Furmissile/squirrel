@@ -126,7 +126,7 @@ void init_designer_squirrels_page_buttons(const struct discord_interaction *even
     .type = DISCORD_COMPONENT_BUTTON,
     .label = "⏪",
     .custom_id = u_snprintf(params->page_custom_ids[1], sizeof(params->page_custom_ids[1]), 
-        "%c%d1.%ld", TYPE_SQUIRREL_HELP, (page_idx > 0) ? page_idx -1 : 0, event->member->user->id),
+        "%c1%d.%ld", TYPE_SQUIRREL_HELP, (page_idx > 0) ? page_idx -1 : 0, event->member->user->id),
     .style = (page_idx > 0) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
     .disabled = (page_idx == 0) ? true : false
   };
@@ -141,7 +141,7 @@ void init_designer_squirrels_page_buttons(const struct discord_interaction *even
     .emoji = &params->reset_emoji,
     .label = "Reset Squirrel",
     .custom_id = u_snprintf(params->page_custom_ids[2], sizeof(params->page_custom_ids[2]), 
-        "%c%d2.%ld", TYPE_SQUIRREL_HELP, page_idx, event->member->user->id),
+        "%c2%d.%ld", TYPE_SQUIRREL_HELP, page_idx, event->member->user->id),
   };
 
   if (player->designer_squirrel > 0)
@@ -157,7 +157,7 @@ void init_designer_squirrels_page_buttons(const struct discord_interaction *even
     .type = DISCORD_COMPONENT_BUTTON,
     .label = "⏩",
     .custom_id = u_snprintf(params->page_custom_ids[3], sizeof(params->page_custom_ids[3]), 
-        "%c%d3.%ld", TYPE_SQUIRREL_HELP, (page_idx < SQ_TOPIC_SIZE) ? page_idx +1 : SQ_TOPIC_SIZE -1, event->member->user->id),
+        "%c3%d.%ld", TYPE_SQUIRREL_HELP, (page_idx < SQ_TOPIC_SIZE) ? page_idx +1 : SQ_TOPIC_SIZE -1, event->member->user->id),
     .style = (page_idx < SQ_TOPIC_SIZE -1) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
     .disabled = (page_idx == SQ_TOPIC_SIZE -1) ? true : false
   };
@@ -166,7 +166,7 @@ void init_designer_squirrels_page_buttons(const struct discord_interaction *even
     .type = DISCORD_COMPONENT_BUTTON,
     .label = "⏭️",
     .custom_id = u_snprintf(params->page_custom_ids[4], sizeof(params->page_custom_ids[4]),
-        "%c%d4.%ld", TYPE_SQUIRREL_HELP, SQ_TOPIC_SIZE -1, event->member->user->id),
+        "%c4%d.%ld", TYPE_SQUIRREL_HELP, SQ_TOPIC_SIZE -1, event->member->user->id),
     .style = (page_idx < SQ_TOPIC_SIZE -1) ? DISCORD_BUTTON_PRIMARY : DISCORD_BUTTON_SECONDARY,
     .disabled = (page_idx == SQ_TOPIC_SIZE -1) ? true : false
   };
@@ -175,7 +175,7 @@ void init_designer_squirrels_page_buttons(const struct discord_interaction *even
 void designer_squirrels_cmd_state(const struct discord_interaction *event, struct sd_designer_squirrels *params, struct sd_player *player, int page_idx)
 {
   // [2] because [1] is page number!
-  if (event->data->custom_id[0] == TYPE_SQUIRREL_HELP && event->data->custom_id[2] == 2)
+  if (event->data->custom_id[0] == TYPE_SQUIRREL_HELP && player->button_idx == 2)
   {
     struct sd_file_data squirrel_data = squirrels[player->squirrel].squirrel;
     player->designer_squirrel = ERROR_STATUS;
@@ -236,10 +236,7 @@ int designer_squirrels_interaction(const struct discord_interaction *event)
   load_player_struct(&player, event->member->user->id, event->data->custom_id);
 
   char* seasons[4] = {"Spring", "Summer", "Fall", "Winter"};
-  struct tm *info = get_UTC();
-  int season_idx = (info->tm_mday/7 < 4) ? info->tm_mday/7 : 3;
-
-  int page_num = (player.button_idx != ERROR_STATUS) ? player.button_idx +1 : season_idx +1;
+  int page_num = event->data->custom_id[2] -48 +1;
   
   struct sd_designer_squirrels params = { 0 };
 
