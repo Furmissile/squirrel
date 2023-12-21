@@ -245,7 +245,7 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
 
   struct discord_interaction_response interaction = 
   {
-    .type = DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
+    .type = (event->data->custom_id) ? DISCORD_INTERACTION_UPDATE_MESSAGE : DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
 
     .data = &(struct discord_interaction_callback_data) 
     {

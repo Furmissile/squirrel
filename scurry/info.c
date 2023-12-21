@@ -61,7 +61,7 @@ void build_info_buttons(const struct discord_interaction *event, struct sd_scurr
             "%c3*%ld*.%ld", TYPE_SCURRY_INFO, scurry->scurry_owner_id, event->member->user->id),
         // if war acorns isnt full or the button was pressed disable button
         .disabled = (scurry->war_acorns < scurry->war_acorn_cap
-          || PQntuples(params->scurry_members) < SCURRY_MEMBER_REQ
+          // || PQntuples(params->scurry_members) < SCURRY_MEMBER_REQ
           )
           ? true : false
       } :
@@ -120,7 +120,8 @@ void build_info_buttons(const struct discord_interaction *event, struct sd_scurr
 
   // player must be part of scurry but NOT be the scurry owner
   if (event_player->scurry_id == scurry->scurry_owner_id
-      && event_player->user_id != scurry->scurry_owner_id)
+      && event_player->user_id != scurry->scurry_owner_id
+      && scurry->war_flag != 1)
   {
     params->buttons[params->button_size] = (struct discord_component)
     {

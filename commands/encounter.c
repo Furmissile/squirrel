@@ -454,30 +454,51 @@ int encounter_interaction(const struct discord_interaction *event)
     }
   };
 
-  struct discord_interaction_response interaction = 
+  if (player.daily.claim_primary 
+    || player.daily.claim_secondary 
+    || player.daily.claim_tertiary)
   {
-    .type = DISCORD_INTERACTION_UPDATE_MESSAGE,
-
-    .data = &(struct discord_interaction_callback_data) 
-    {
-      .embeds = &(struct discord_embeds) 
+    discord_edit_message(client, event->channel_id, event->message->id,
+      &(struct discord_edit_message)
       {
-        .array = &header.embed,
-        .size = 1
+        .embeds = &(struct discord_embeds) 
+        {
+          .array = &header.embed,
+          .size = 1
+        },
+        .components = &(struct discord_components) {
+          .array = action_rows,
+          .size = 2
+        }
       },
-      .components = &(struct discord_components) {
-        .array = action_rows,
-        .size = 2
+      NULL);
+  }
+  else {
+    struct discord_interaction_response interaction = 
+    {
+      .type = DISCORD_INTERACTION_UPDATE_MESSAGE,
+
+      .data = &(struct discord_interaction_callback_data) 
+      {
+        .embeds = &(struct discord_embeds) 
+        {
+          .array = &header.embed,
+          .size = 1
+        },
+        .components = &(struct discord_components) {
+          .array = action_rows,
+          .size = 2
+        }
       }
-    }
 
-  };
+    };
 
-  char values[16384];
-  discord_interaction_response_to_json(values, sizeof(values), &interaction);
-  fprintf(stderr, "%s \n", values);
+    char values[16384];
+    discord_interaction_response_to_json(values, sizeof(values), &interaction);
+    fprintf(stderr, "%s \n", values);
 
-  discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+    discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+  }
 
   update_player_row(&player);
 

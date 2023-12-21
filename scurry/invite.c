@@ -178,7 +178,19 @@ int invite_interaction(const struct discord_interaction *event)
   clean_invites = SQL_query(clean_invites, "delete from public.invites where t_stamp < %ld", time(NULL) - INVITE_CD);
   PQclear(clean_invites);
 
+  PGresult* pending_invite = (PGresult*) { 0 };
+  pending_invite = SQL_query(pending_invite, 
+      "select * from public.invites where request_id = %ld", event->message->id);
+
   struct sd_invite_info *params = calloc(1, sizeof(struct sd_invite_info));
+
+  if (PQntuples(pending_invite) == 0)
+  {
+    invite_expired(event, params);
+    PQclear(pending_invite);
+    return ERROR_STATUS;
+  }
+
   params->scurry = calloc(1, sizeof(struct sd_scurry));
 
   load_scurry_struct(params->scurry, player.scurry_id);
@@ -187,17 +199,6 @@ int invite_interaction(const struct discord_interaction *event)
     error_message(event, "You cannot accept invites while at war! Please retreat or finish the war first.");
     free(params->scurry);
     free(params);
-    return ERROR_STATUS;
-  }
-
-  PGresult* pending_invite = (PGresult*) { 0 };
-  pending_invite = SQL_query(pending_invite, 
-      "select * from public.invites where request_id = %ld", event->message->id);
-
-  if (PQntuples(pending_invite) == 0)
-  {
-    invite_expired(event, params);
-    PQclear(pending_invite);
     return ERROR_STATUS;
   }
 

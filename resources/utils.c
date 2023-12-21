@@ -864,7 +864,7 @@ void generate_secondary_buttons(const struct discord_interaction *event, struct 
 
   struct tm *info = get_UTC();
   
-  if (info->tm_mday > 21)
+  if (info->tm_mday >= 21)
   {
     params->button_size++;
     int button_idx = params->button_size -1;
