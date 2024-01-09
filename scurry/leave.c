@@ -1,4 +1,5 @@
 struct sd_leave_info {
+  struct sd_player *player;
   struct sd_scurry *scurry;
 
   unsigned long owner_id;
@@ -7,6 +8,7 @@ struct sd_leave_info {
 void leave_info_cleanup(struct sd_leave_info *params)
 {
   free(params->scurry);
+  free(params->player);
   free(params);
 }
 
@@ -15,7 +17,7 @@ void create_leave_interaction(const struct discord_interaction *event, struct sd
   PGresult* scurry_member_leave = (PGresult*) { 0 };
   scurry_member_leave = SQL_query(scurry_member_leave, 
       "update public.player set scurry_id = 0, stolen_acorns = 0 where user_id = %ld", 
-      event->member->user->id);
+      params->player->user_id);
   PQclear(scurry_member_leave);
 
   char msg_content[256] = { 0 };
@@ -28,14 +30,10 @@ void create_leave_interaction(const struct discord_interaction *event, struct sd
     {
       .content = u_snprintf(msg_content, sizeof(msg_content), 
           "<@%ld>, you have left **%s**!", 
-          event->member->user->id, params->scurry->scurry_name),
+          params->player->user_id, params->scurry->scurry_name),
     }
 
   };
-
-  char values[16384];
-  discord_interaction_response_to_json(values, sizeof(values), &interaction);
-  fprintf(stderr, "%s \n", values);
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
@@ -66,38 +64,57 @@ void send_leave_dm(struct discord *client, struct discord_response *resp, const 
 
 int leave_interaction(const struct discord_interaction *event)
 {
-  struct sd_player player = { 0 };
-  load_player_struct(&player, event->member->user->id, event->data->custom_id);
-
   struct sd_leave_info *params = calloc(1, sizeof(struct sd_leave_info));
 
-  params->scurry = calloc(1, sizeof(struct sd_scurry));
-  load_scurry_struct(params->scurry, player.scurry_id);
+  params->player = calloc(1, sizeof(struct sd_player));
+  load_player_struct(params->player, event->member->user->id, event->data->custom_id);
+  struct sd_player *player = params->player;
 
+  params->scurry = calloc(1, sizeof(struct sd_scurry));
+  load_scurry_struct(params->scurry, player->scurry_id);
   struct sd_scurry *scurry = params->scurry;
 
-  params->owner_id = player.scurry_id;
+  params->owner_id = player->scurry_id;
 
-  if (player.scurry_id == 0)
+  if (event->message->timestamp /1000 < player->timestamp)
+  {
+    error_message(event, "This appears to be an old session! Please renew your session by sending `/start`.");
+    leave_info_cleanup(params);
+    return ERROR_STATUS;
+  }
+  else if (player->scurry_id == 0)
   {
     error_message(event, "You are not in a scurry!");
     leave_info_cleanup(params);
+    return ERROR_STATUS;
   }
   else if (scurry->war_flag == 1)
   {
     error_message(event, "You cannot leave your scurry while at war! Please wait until the war is finished or the leader has retreated.");
     leave_info_cleanup(params);
+    return ERROR_STATUS;
   }
-  else if (player.scurry_id == player.user_id)
+  else if (player->scurry_id == player->user_id)
   {
     error_message(event, "You can't leave your own scurry, silly!");
     leave_info_cleanup(params);
+    return ERROR_STATUS;
   }
   else {
     PGresult* leave_cmd = (PGresult*) { 0 };
     leave_cmd = SQL_query(leave_cmd, "update public.player set scurry_id = 0 where user_id = %ld",
-        event->member->user->id);
+        player->user_id);
     PQclear(leave_cmd);
+
+    PGresult *check_leave = (PGresult*) { 0 };
+    check_leave = SQL_query(check_leave, "select * from player where user_id = %ld and scurry_id = %ld",
+        player->user_id, player->scurry_id);
+
+    PGresult* check_scurry = (PGresult*) { 0 };
+    DATABASE_ERROR((PQntuples(check_scurry) > 0),
+        "An error has occurred while leaving this scurry. \n"
+        "Please report this error to the support server! (link on last page of player help)", check_scurry);
+    PQclear(check_scurry);
 
     // send DM to the owner
     struct discord_create_dm dm_params = { .recipient_id = params->owner_id };
@@ -106,6 +123,8 @@ int leave_interaction(const struct discord_interaction *event)
       .data = params,
       .keep = event
     };
+
+    player->timestamp = event->message->timestamp /1000;
 
     // Return channel context for DM channel id
     discord_create_dm(client, &dm_params, &dm_ret);

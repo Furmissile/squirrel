@@ -187,13 +187,24 @@ void lowercase(char dest[], size_t dest_size, char* input)
 }
 
 /* Checks for matching ids to make sure the player that sent the embed is the one pressing a button */
-void error_message(const struct discord_interaction *event, char* message) {
+void error_message(const struct discord_interaction *event, char* format, ...) 
+{
+  char buffer[1024] = { };
+
+  va_list args;
+
+  va_start(args, format);
+
+  vsnprintf(buffer, sizeof(buffer), format, args);
+
+  va_end(args);
+
   struct discord_interaction_response error_message = {
     .type = DISCORD_INTERACTION_CHANNEL_MESSAGE_WITH_SOURCE,
 
     .data = &(struct discord_interaction_callback_data) { 
       .flags = DISCORD_MESSAGE_EPHEMERAL,
-      .content = message
+      .content = buffer
     }
   };
 
@@ -217,4 +228,11 @@ struct tm* get_UTC()
   info = gmtime(&rawtime);
 
   return info;
+}
+
+void print_embed_content(struct discord_interaction_response *resp)
+{
+  char values[16384] = { };
+  discord_interaction_response_to_json(values, sizeof(values), resp);
+  fprintf(stderr, "%s \n", values);
 }

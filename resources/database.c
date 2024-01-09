@@ -14,7 +14,71 @@ PGconn* establish_connection(char* conninfo)
   return db_conn;
 }
 
-void load_player_struct(struct sd_player *player_res, unsigned long user_id, char* custom_id)
+// LOADING FUNCTIONS
+
+void load_game_struct(struct sd_pie_game *game, struct sd_player *player, unsigned long user_id)
+{
+  PGresult* search_game = (PGresult*) { 0 };
+  search_game = SQL_query(search_game, 
+      "select * from public.pies where user_id = %ld",
+      user_id);
+
+  // if starting a new game
+  if (PQntuples(search_game) == 0)
+  {
+    PQclear(search_game);
+
+    struct sd_pie_game new_game = { 0 };
+
+    // generate a fresh new next piece
+    int next_piece = rand() % PIECES_SIZE;
+    generate_new_piece(&new_game.next_piece, &pieces[next_piece]);
+
+    snprintf(new_game.history, sizeof(new_game.history), EMPTY_HISTORY, next_piece);
+    
+    shift_pieces(&new_game);
+
+    search_game = SQL_query(search_game,
+        "insert into public.pies values(%ld, 0, 1, '%s', '"EMPTY_PIE"', '"EMPTY_PIE"', '"EMPTY_PIE"', '%s', '%s') \n", 
+        user_id, new_game.history, new_game.current_piece.encoded_buf, new_game.next_piece.encoded_buf);
+  }
+  PQclear(search_game);
+
+  search_game = SQL_query(search_game, 
+      "select * from public.pies where user_id = %ld",
+      user_id);
+  
+  *game = (struct sd_pie_game)
+  {
+    .user_id = strtobigint( PQgetvalue(search_game, 0, GAME_USER_ID) ),
+    .score = strtoint( PQgetvalue(search_game, 0, GAME_SCORE) ),
+    .piece_count = strtoint( PQgetvalue(search_game, 0, GAME_PIECE_COUNT) )
+  };
+
+  player->biome = game->score/BIOME_INTERVAL % BIOME_SIZE;
+  player->biome_num = game->score/BIOME_INTERVAL;
+
+  // load history buf
+  snprintf(game->history, sizeof(game->history), PQgetvalue(search_game, 0, GAME_HISTORY) );
+
+  // load each encoded pie buf and then decode
+  snprintf(game->pie_1.encoded_buf, sizeof(game->pie_1.encoded_buf), PQgetvalue(search_game, 0, GAME_PIE_ONE) );
+  decode_pie(&game->pie_1);
+
+  snprintf(game->pie_2.encoded_buf, sizeof(game->pie_2.encoded_buf), PQgetvalue(search_game, 0, GAME_PIE_TWO) );
+  decode_pie(&game->pie_2);
+
+  snprintf(game->pie_3.encoded_buf, sizeof(game->pie_3.encoded_buf), PQgetvalue(search_game, 0, GAME_PIE_THREE) );
+  decode_pie(&game->pie_3);
+
+  snprintf(game->current_piece.encoded_buf, sizeof(game->current_piece.encoded_buf), PQgetvalue(search_game, 0, GAME_CURRENT_PIECE) );
+  decode_pie(&game->current_piece);
+
+  snprintf(game->next_piece.encoded_buf, sizeof(game->next_piece.encoded_buf), PQgetvalue(search_game, 0, GAME_NEXT_PIECE) );
+  decode_pie(&game->next_piece);
+}
+
+void load_player_struct(struct sd_player *player, unsigned long user_id, char* custom_id)
 {  
   PGresult* search_player = (PGresult*) { 0 };
   search_player = SQL_query(search_player, 
@@ -24,68 +88,39 @@ void load_player_struct(struct sd_player *player_res, unsigned long user_id, cha
   if (PQntuples(search_player) == 0)
   {
     PQclear(search_player);
-    struct tm *info = get_UTC();
-    search_player = SQL_query(search_player,
-        "BEGIN; \n"
-        "insert into public.player values(%ld, 0, 0, 0, 100, 10, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1, 0, 0); \n"
-        "insert into public.stats values(%ld, 1, 1, 1); \n"
-        "insert into public.buffs values(%ld, 0, 0, 0); \n"
-        "insert into public.biome_story values(%ld, 0, 0, 0, 0, 0); \n"
-        "insert into public.session_data values(%ld, %ld, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); \n"
-        "insert into public.daily values (%ld, %d, 0, 0, 0, 0, 0, 0, 0);"
-        "COMMIT;", 
-        user_id, user_id, user_id, user_id, user_id, time(NULL), user_id, info->tm_mday);
-  }
 
+    search_player = SQL_query(search_player,
+        "insert into public.player values(%ld, 0, 0, 0, 0, 0, -1, 0, 0, 0, -1, 0, 4, 0, 0); \n"
+        "insert into public.biome_story values(%ld, 0, 0, 0, 0, 0); \n", 
+        user_id, user_id);
+  }
   PQclear(search_player);
 
   search_player = SQL_query(search_player,
       "select * from public.player \n"
-      "join public.stats on player.user_id = stats.user_id \n"
-      "join public.buffs on player.user_id = buffs.user_id \n"
       "join public.biome_story on player.user_id = biome_story.user_id \n"
-      "join public.session_data on player.user_id = session_data.user_id \n"
-      "join public.daily on player.user_id = daily.user_id \n"
       "where player.user_id = %ld",
       user_id);
 
-  *player_res = (struct sd_player)
+  *player = (struct sd_player)
   {
     .user_id = strtobigint( PQgetvalue(search_player, 0, DB_USER_ID) ),
     .scurry_id = strtobigint( PQgetvalue(search_player, 0, DB_SCURRY_ID) ),
     .color = strtoint( PQgetvalue(search_player, 0, DB_COLOR) ),
     .squirrel = strtoint( PQgetvalue(search_player, 0, DB_SQUIRREL) ),
 
-    .energy = strtoint( PQgetvalue(search_player, 0, DB_ENERGY) ),
-    .health = strtoint( PQgetvalue(search_player, 0, DB_HEALTH) ),
-
-    .acorns = strtoint( PQgetvalue(search_player, 0, DB_ACORNS) ),
-    .acorn_count = strtoint( PQgetvalue(search_player, 0, DB_ACORN_COUNT) ),
     .high_acorn_count = strtoint( PQgetvalue(search_player, 0, DB_HIGH_ACORN_COUNT) ),
-    .golden_acorns = strtoint( PQgetvalue(search_player, 0, DB_GOLDEN_ACORNS) ),
-    .stored_golden_acorns = strtoint( PQgetvalue(search_player, 0, DB_STORED_GOLDEN_ACORNS) ),
     .conjured_acorns = strtoint( PQgetvalue(search_player, 0, DB_CONJURED_ACORNS) ),
     .stolen_acorns = strtoint( PQgetvalue(search_player, 0, DB_STOLEN_ACORNS) ),
-    .catnip = strtoint( PQgetvalue(search_player, 0, DB_CATNIP) ),
   
     .section = strtoint( PQgetvalue(search_player, 0 , DB_SECTION) ),
     .encounter = strtoint( PQgetvalue(search_player, 0, DB_ENCOUNTER) ),
+    .timestamp = strtobigint( PQgetvalue(search_player, 0, DB_TIMESTAMP) ),
     .main_cd = strtobigint( PQgetvalue(search_player, 0, DB_MAIN_CD) ),
     .purchased = strtobigint( PQgetvalue(search_player, 0, DB_PURCHASED) ),
-    .designer_squirrel = strtobigint( PQgetvalue(search_player, 0, DB_DESIGNER_SQUIRREL) ),
-    .regen_rate = strtoint( PQgetvalue(search_player, 0, DB_REGEN_RATE) ),
-
-    .stats = {
-      .proficiency_lv = strtoint( PQgetvalue(search_player, 0, DB_PROFICIENCY_LV) ),
-      .strength_lv = strtoint( PQgetvalue(search_player, 0, DB_STRENGTH_LV) ),
-      .luck_lv = strtoint( PQgetvalue(search_player, 0, DB_LUCK_LV) )
-    },
-
-    .buffs = {
-      .proficiency_acorn = strtoint( PQgetvalue(search_player, 0, DB_PROFICIENCY_ACORN) ),
-      .luck_acorn = strtoint( PQgetvalue(search_player, 0, DB_LUCK_ACORN) ),
-      .boosted_acorn = strtoint( PQgetvalue(search_player, 0, DB_BOOSTED_ACORN) )
-    },
+    .treasury_filled = strtoint( PQgetvalue(search_player, 0, DB_TREASURY) ),
+    .pies_complete = strtoint( PQgetvalue(search_player, 0, DB_DAILY_PIES) ),
+    .tm_mday = strtoint( PQgetvalue(search_player, 0, DB_DAILY_DAY) ),
 
     .story = {
       .grasslands = strtoint( PQgetvalue(search_player, 0, DB_GL_STORY) ),
@@ -93,47 +128,22 @@ void load_player_struct(struct sd_player *player_res, unsigned long user_id, cha
       .nature_end = strtoint( PQgetvalue(search_player, 0, DB_NE_STORY) ),
       .death_grip = strtoint( PQgetvalue(search_player, 0, DB_DG_STORY) ),
       .last_acorn = strtoint( PQgetvalue(search_player, 0, DB_LA_STORY) )
-    },
-
-    .session_data = {
-      .start_time = strtobigint( PQgetvalue(search_player, 0, DB_SESSION_START_TIME) ),
-      .acorn_count = strtoint( PQgetvalue(search_player, 0, DB_SESSION_ACORN_COUNT) ),
-      .acorns = strtoint( PQgetvalue(search_player, 0, DB_SESSION_ACORNS) ),
-      .golden_acorns = strtoint( PQgetvalue(search_player, 0, DB_SESSION_GOLDEN_ACORNS) ),
-      .health_loss = strtoint( PQgetvalue(search_player, 0, DB_SESSION_HEALTH_LOSS) ),
-
-      .no_acorns = strtoint( PQgetvalue(search_player, 0, DB_SESSION_NO_ACORNS) ),
-      .acorn_handful = strtoint( PQgetvalue(search_player, 0, DB_SESSION_ACORN_HANDFUL) ),
-      .acorn_mouthful = strtoint( PQgetvalue(search_player, 0, DB_SESSION_ACORN_MOUTHFUL) ),
-      .lost_stash = strtoint( PQgetvalue(search_player, 0, DB_SESSION_LOST_STASH) ),
-      .acorn_sack = strtoint( PQgetvalue(search_player, 0, DB_SESSION_ACORN_SACK) ),
-      .ribboned_acorns = strtoint( PQgetvalue(search_player, 0, DB_SESSION_RIBBONED_ACORNS) )
-    },
-
-    .daily = {
-      .active_tasks = strtoint( PQgetvalue(search_player, 0, DB_DAILY_ACTIVE_TASKS) ),
-      .tm_mday = strtoint( PQgetvalue(search_player, 0, DB_DAILY_DAY) ),
-      .primary = strtoint( PQgetvalue(search_player, 0, DB_DAILY_PRIMARY) ),
-      .secondary = strtoint( PQgetvalue(search_player, 0, DB_DAILY_SECONDARY) ),
-      .tertiary = strtoint( PQgetvalue(search_player, 0, DB_DAILY_TERTIARY) ),
-      .primary_complete = strtoint( PQgetvalue(search_player, 0, DB_DAILY_PRIMARY_COMPLETE) ),
-      .secondary_complete = strtoint( PQgetvalue(search_player, 0, DB_DAILY_SECONDARY_COMPLETE) ),
-      .tertiary_complete = strtoint( PQgetvalue(search_player, 0, DB_DAILY_TERTIARY_COMPLETE) )
     }
   };
 
-  player_res->button_idx = (custom_id) ? custom_id[1] -48 : ERROR_STATUS;
-  player_res->biome = player_res->acorn_count/BIOME_INTERVAL % BIOME_SIZE;
-  player_res->biome_num = player_res->acorn_count/BIOME_INTERVAL;
-  player_res->max_health = generate_factor(STAT_STRENGTH, player_res->stats.strength_lv) + MAX_HEALTH;
+  player->button_idx = (custom_id) ? custom_id[1] -48 : ERROR_STATUS;
 
-  struct sd_session_data *data = &player_res->session_data;
-  player_res->session_data.total_forages = data->no_acorns + data->acorn_handful + data->acorn_mouthful + data->lost_stash + data->acorn_sack;
+  struct tm *info = get_UTC();
+  if (info->tm_mday != player->tm_mday)
+  {
+    player->tm_mday = info->tm_mday;
+    player->pies_complete = 0;
+  }
 
   PQclear(search_player);
 }
 
-void load_scurry_struct(struct sd_scurry *scurry_res, unsigned long scurry_id)
+void load_scurry_struct(struct sd_scurry *scurry, unsigned long scurry_id)
 {
   if (scurry_id > 0)
   {
@@ -141,39 +151,62 @@ void load_scurry_struct(struct sd_scurry *scurry_res, unsigned long scurry_id)
     scurry_db = SQL_query(scurry_db,
         "select * from public.scurry where owner_id = %ld", scurry_id);
 
-    *scurry_res = (struct sd_scurry) 
+    PGresult* members = (PGresult*) { 0 };
+    members = SQL_query(members, "select sum(stolen_acorns) from public.player where scurry_id = %ld", scurry_id);
+
+    *scurry = (struct sd_scurry) 
     {
       .scurry_owner_id = strtobigint( PQgetvalue(scurry_db, 0, DB_SCURRY_OWNER_ID) ),
-      .total_stolen_acorns = strtoint( PQgetvalue(scurry_db, 0, DB_TOTAL_STOLEN_ACORNS) ),
       .war_acorns = strtoint( PQgetvalue(scurry_db, 0, DB_WAR_STASH) ),
       .war_flag = strtoint( PQgetvalue(scurry_db, 0, DB_WAR_FLAG) ),
+      .total_stolen_acorns = strtoint( PQgetvalue(members, 0, 0) ),
       .prev_stolen_acorns = strtoint( PQgetvalue(scurry_db, 0, DB_PREV_STOLEN_ACORNS) )
     };
 
-    u_snprintf(scurry_res->scurry_name, sizeof(scurry_res->scurry_name), PQgetvalue(scurry_db, 0, DB_SCURRY_NAME));
+    u_snprintf(scurry->scurry_name, sizeof(scurry->scurry_name), PQgetvalue(scurry_db, 0, DB_SCURRY_NAME));
     PQclear(scurry_db);
 
-    PGresult* members = (PGresult*) { 0 };
-    members = SQL_query(members, "select * from public.player where scurry_id = %ld", scurry_id);
+    scurry->rank = (scurry->total_stolen_acorns < SEED_NOT_MAX) ? SEED_NOT
+        : (scurry->total_stolen_acorns < OAKFFICIAL_MAX) ? OAKFFICIAL : ROYAL_NUT;
 
-    int best_acorn = (scurry_res->total_stolen_acorns > scurry_res->prev_stolen_acorns) 
-        ? scurry_res->total_stolen_acorns : scurry_res->prev_stolen_acorns;
+    scurry->pie_count = scurry->rank +1;
 
-    scurry_res->rank = (best_acorn < SEED_NOT_MAX) ? SEED_NOT
-        : (best_acorn < ACORN_SNATCHER_MAX) ? ACORN_SNATCHER
-        : (best_acorn < SEED_SNIFFER_MAX) ? SEED_SNIFFER
-        : (best_acorn < OAKFFICIAL_MAX) ? OAKFFICIAL : ROYAL_NUT;
+    scurry->war_acorn_cap = scurry->pie_count * SLICES_SIZE;
 
-    // default to 1000
-    scurry_res->war_acorn_cap = (PQntuples(members) < SCURRY_MEMBER_REQ) 
-        ? DEFAULT_WAR_STASH : PQntuples(members) * (WAR_STASH_FACTOR * (scurry_res->rank +1));
-    
     PQclear(members);
   }
 
 }
 
-void update_player_row(struct sd_player *player_res)
+// UPDATE FUNCTIONS
+
+void update_game_row(struct sd_pie_game *game)
+{
+  char sql_str[1024] = { };
+
+  // update encoded bufs for each player pie
+  u_snprintf(sql_str, sizeof(sql_str),
+      "update public.pies set "
+        "piece_count = %d, "
+        "score = %d, "
+        "history = '%s', "
+        "pie_one = '%s', "
+        "pie_two = '%s', "
+        "pie_three = '%s', "
+        "current_piece = '%s', "
+        "next_piece = '%s' "
+      "where user_id = %ld; \n",
+      game->piece_count, game->score, game->history,
+      game->pie_1.encoded_buf, game->pie_2.encoded_buf, game->pie_3.encoded_buf,
+      game->current_piece.encoded_buf, game->next_piece.encoded_buf,
+      game->user_id);
+
+  PGresult* player_update = (PGresult*) { 0 };
+  player_update = SQL_query(player_update, sql_str);
+  PQclear(player_update);
+}
+
+void update_player_row(struct sd_player *player)
 {
   char sql_str[4096] = { };
 
@@ -183,49 +216,25 @@ void update_player_row(struct sd_player *player_res)
         "scurry_id = %ld, "
         "color = %d, "
         "squirrel = %d, "
-        "energy = %d, "
-        "health = %d, "
-        "regen_rate = %d, "
-        "acorns = %d, "
-        "acorn_count = %d, "
         "high_acorn_count = %d, "
-        "golden_acorns = %d, "
         "conjured_acorns = %d, "
         "stolen_acorns = %d, "
-        "catnip = %d, "
         "encounter = %d, "
         "section = %d, "
         "purchased = %d, "
-        "designer_squirrel = %d, "
-        "stored_golden_acorns = %d, "
+        "treasury_filled = %d, "
+        "pies_complete = %d, "
+        "tm_mday = %d, "
+        "t_stamp = %ld, "
         "main_cd = %ld \n"
       "where user_id = %ld; \n",
-      player_res->scurry_id, player_res->color, player_res->squirrel, player_res->energy, 
-      player_res->health, player_res->regen_rate, player_res->acorns, player_res->acorn_count, 
-      player_res->high_acorn_count, player_res->golden_acorns, player_res->conjured_acorns, 
-      player_res->stolen_acorns, player_res->catnip, player_res->encounter, player_res->section, 
-      player_res->purchased, player_res->designer_squirrel, player_res->stored_golden_acorns, 
-      player_res->main_cd,
-      player_res->user_id);
-    
-  u_snprintf(sql_str, sizeof(sql_str),
-      "update public.stats set "
-        "proficiency_lv = %d, "
-        "strength_lv = %d, "
-        "luck_lv = %d \n"
-      "where user_id = %ld; \n",
-      player_res->stats.proficiency_lv, player_res->stats.strength_lv, player_res->stats.luck_lv,
-      player_res->user_id);
-  
-  u_snprintf(sql_str, sizeof(sql_str),
-      "update public.buffs set "
-        "luck_acorn = %d, "
-        "proficiency_acorn = %d, "
-        "boosted = %d \n"
-      "where user_id = %ld; \n",
-      player_res->buffs.luck_acorn, player_res->buffs.proficiency_acorn, player_res->buffs.boosted_acorn, 
-      player_res->user_id);
-  
+      player->scurry_id, player->color, player->squirrel, 
+      player->high_acorn_count, player->conjured_acorns, 
+      player->stolen_acorns, player->encounter, player->section, 
+      player->purchased, player->treasury_filled, player->pies_complete,
+      player->tm_mday, player->timestamp, player->main_cd,
+      player->user_id);
+
   u_snprintf(sql_str, sizeof(sql_str),
       "update public.biome_story set "
         "grasslands = %d, "
@@ -233,67 +242,29 @@ void update_player_row(struct sd_player *player_res)
         "nature_end = %d, "
         "death_grip = %d, "
         "last_acorn = %d "
-      "where user_id = %ld; \n",
-      player_res->story.grasslands, player_res->story.seeping_sands, player_res->story.nature_end,
-      player_res->story.death_grip, player_res->story.last_acorn, 
-      player_res->user_id);
-
-  u_snprintf(sql_str, sizeof(sql_str),
-      "update public.session_data set "
-        "start_time = %ld, "
-        "acorn_count = %d, "
-        "acorns = %d, "
-        "golden_acorns = %d, "
-        "health_loss = %d, "
-        "no_acorns = %d, "
-        "acorn_handful = %d, "
-        "acorn_mouthful = %d, "
-        "lost_stash = %d, "
-        "acorn_sack = %d, "
-        "ribboned_acorns = %d "
-      "where user_id = %ld; \n",
-      (unsigned long)time(NULL), player_res->session_data.acorn_count, player_res->session_data.acorns,
-      player_res->session_data.golden_acorns, player_res->session_data.health_loss, player_res->session_data.no_acorns, 
-      player_res->session_data.acorn_handful, player_res->session_data.acorn_mouthful, player_res->session_data.lost_stash, 
-      player_res->session_data.acorn_sack, player_res->session_data.ribboned_acorns,
-      player_res->user_id);
-
-  u_snprintf(sql_str, sizeof(sql_str),
-      "update public.daily set "
-        "active_tasks = %d, "
-        "tm_mday = %d, "
-        "t_primary = %d, "
-        "t_secondary = %d, "
-        "t_tertiary = %d, "
-        "primary_complete = %d, "
-        "secondary_complete = %d, "
-        "tertiary_complete = %d "
       "where user_id = %ld; \n"
-      "COMMIT; \n",
-      player_res->daily.active_tasks, player_res->daily.tm_mday, player_res->daily.primary,
-      player_res->daily.secondary, player_res->daily.tertiary, player_res->daily.primary_complete,
-      player_res->daily.secondary_complete, player_res->daily.tertiary_complete,
-      player_res->user_id);
+      "COMMIT;",
+      player->story.grasslands, player->story.seeping_sands, player->story.nature_end,
+      player->story.death_grip, player->story.last_acorn, 
+      player->user_id);
 
   PGresult* player_update = (PGresult*) { 0 };
   player_update = SQL_query(player_update, sql_str);
   PQclear(player_update);
 }
 
-void update_scurry_row(struct sd_scurry *scurry_res)
+void update_scurry_row(struct sd_scurry *scurry)
 {
   char sql_str[1028] = { };
 
   u_snprintf(sql_str, sizeof(sql_str),
       "update public.scurry set "
-        "total_stolen_acorns = %d, "
         "prev_stolen_acorns = %d, "
         "war_acorns = %d, "
         "war_flag = %d \n"
       "where owner_id = %ld \n",
-      scurry_res->total_stolen_acorns, scurry_res->prev_stolen_acorns, scurry_res->war_acorns, 
-      scurry_res->war_flag,
-      scurry_res->scurry_owner_id);
+      scurry->prev_stolen_acorns, scurry->war_acorns, scurry->war_flag,
+      scurry->scurry_owner_id);
     
   PGresult* scurry_update = (PGresult*) { 0 };
   scurry_update = SQL_query(scurry_update, sql_str);

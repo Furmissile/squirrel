@@ -2,7 +2,7 @@
 void set_reaction(struct discord *client, struct discord_response *resp, const struct discord_message *message)
 {
   (void)resp;
-  discord_create_reaction(client, VERIFY_CHANNEL_ID, message->id, items[ITEM_ACORNS].emoji_id, items[ITEM_ACORNS].emoji_name, NULL);
+  discord_create_reaction(client, VERIFY_CHANNEL_ID, message->id, slice_types[TYPE_ACORNS].item.emoji_id, slice_types[TYPE_ACORNS].item.emoji_name, NULL);
 }
 
 void create_verify(struct discord *client, struct discord_response *resp, const struct discord_user *user)

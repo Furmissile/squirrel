@@ -83,7 +83,7 @@ void create_rules(struct discord *client, struct discord_response *resp, const s
     },
     .footer = &(struct discord_embed_footer) {
       .text = u_snprintf(params.footer_txt, sizeof(params.footer_txt), "These rules are subject to change!"),
-      .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, item_types[TYPE_ENCOUNTER].file_path)
+      .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, misc[MISC_ALERT].file_path)
     }
   };
 
@@ -99,8 +99,8 @@ void create_rules(struct discord *client, struct discord_response *resp, const s
 
 void rules_interaction(struct discord *client, const struct discord_message *event) 
 {
-  if (event->author->bot || event->channel_id != RULES_CHANNEL_ID)
-    return;
+  // if (event->author->bot || event->channel_id != RULES_CHANNEL_ID)
+  //   return;
 
   struct discord_ret_user ret_bot = { 
     .done = &create_rules,
@@ -109,5 +109,5 @@ void rules_interaction(struct discord *client, const struct discord_message *eve
   };
 
   // always use the production bot's ID
-  discord_get_user(client, 905163158149287936, &ret_bot);
+  discord_get_user(client, MAIN_BOT_ID, &ret_bot);
 }

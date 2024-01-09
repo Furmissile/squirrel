@@ -1,675 +1,391 @@
-enum DB_TUPLE
+enum SLICE_TYPES 
 {
-  DB_USER_ID,
-  DB_SCURRY_ID,
-  DB_COLOR,
-  DB_SQUIRREL,
-  DB_ENERGY,
-  DB_HEALTH,
-  DB_ACORNS,
-  DB_ACORN_COUNT,
-  DB_HIGH_ACORN_COUNT,
-  DB_GOLDEN_ACORNS,
-  DB_STOLEN_ACORNS,
-  DB_ENCOUNTER,
-  DB_MAIN_CD,
-  DB_CONJURED_ACORNS,
-  DB_CATNIP,
-  DB_SECTION,
-  DB_PURCHASED,
-  DB_DESIGNER_SQUIRREL,
-  DB_STORED_GOLDEN_ACORNS,
-  DB_REGEN_RATE,
-
-  DB_STATS_ID,
-  DB_PROFICIENCY_LV,
-  DB_STRENGTH_LV,
-  DB_LUCK_LV,
-
-  DB_BUFFS_ID,
-  DB_PROFICIENCY_ACORN,
-  DB_LUCK_ACORN,
-  DB_BOOSTED_ACORN,
-
-  DB_STORY_ID,
-  DB_GL_STORY,
-  DB_SP_STORY,
-  DB_NE_STORY,
-  DB_DG_STORY,
-  DB_LA_STORY,
-
-  DB_SESSION_ID,
-  DB_SESSION_START_TIME,
-  DB_SESSION_ACORN_COUNT,
-  DB_SESSION_ACORNS,
-  DB_SESSION_GOLDEN_ACORNS,
-  DB_SESSION_HEALTH_LOSS,
-  DB_SESSION_NO_ACORNS,
-  DB_SESSION_ACORN_HANDFUL,
-  DB_SESSION_ACORN_MOUTHFUL,
-  DB_SESSION_LOST_STASH,
-  DB_SESSION_ACORN_SACK,
-  DB_SESSION_RIBBONED_ACORNS,
-
-  DB_TASKS_ID,
-  DB_DAILY_ACTIVE_TASKS,
-  DB_DAILY_DAY,
-  DB_DAILY_PRIMARY,
-  DB_DAILY_SECONDARY,
-  DB_DAILY_TERTIARY,
-  DB_DAILY_PRIMARY_COMPLETE,
-  DB_DAILY_SECONDARY_COMPLETE,
-  DB_DAILY_TERTIARY_COMPLETE,
-  DB_SIZE
-};
-
-enum SCURRY_RES 
-{
-  DB_SCURRY_OWNER_ID,
-  DB_SCURRY_NAME,
-  DB_TOTAL_STOLEN_ACORNS,
-  DB_WAR_STASH,
-  DB_WAR_FLAG,
-  DB_PREV_STOLEN_ACORNS
-};
-
-enum SEASONS
-{
-  SEASON_SPRING,
-  SEASON_SUMMER,
-  SEASON_FALL,
-  SEASON_WINTER,
-  SEASON_SIZE
-};
-
-enum INVITE_RES {
-  DB_INVITE_OWNER, // scurry owner
-  DB_INVITE_USER, // inquiring user
-  DB_INVITE_MSG, // message id of invite
-  DB_INVITE_CHANNEL, // channel slash command was sent in
-  DB_INVITE_TIME // time slash command was sent
-};
-
-enum SCURRY_RANKS 
-{
-  SEED_NOT,
-  ACORN_SNATCHER,
-  SEED_SNIFFER,
-  OAKFFICIAL,
-  ROYAL_NUT
-};
-
-/* Embed Field Indexes */
-enum P_TOPIC {
-  P_TOPIC_INTRO,
-  P_TOPIC_PROGRESSION,
-  P_TOPIC_STORY,
-  P_TOPIC_SQUIRREL,
-  P_TOPIC_CHANGE_COLOR,
-  P_TOPIC_STEAL,
-  P_TOPIC_SCURRY,
-  P_TOPIC_CONJURED_ACORNS,
-  P_TOPIC_HELP,
-  P_TOPIC_SIZE
-};
-
-enum E_TOPIC {
-  E_TOPIC_SEASONS,
-  E_TOPIC_ACORN_COUNT,
-  E_TOPIC_SPRING,
-  E_TOPIC_SUMMER,
-  E_TOPIC_FALL,
-  E_TOPIC_WINTER,
-  E_TOPIC_CHRISTMAS,
-  E_TOPIC_SIZE
-};
-
-enum S_TOPIC {
-  S_TOPIC_UTILS,
-  S_TOPIC_WARS,
-  S_TOPIC_AFTERMATH,
-  S_TOPIC_RANKS,
-  S_TOPIC_SIZE
-};
-
-enum SQ_TOPIC {
-  SQ_TOPIC_SPRING,
-  SQ_TOPIC_SUMMER,
-  SQ_TOPIC_FALL,
-  SQ_TOPIC_WINTER,
-  SQ_TOPIC_SIZE
-};
-
-enum STORY_TOPIC {
-  STORY_GRASSLANDS,
-  STORY_SEEPING_SANDS,
-  STORY_NATURE_END,
-  STORY_DEATH_GRIP,
-  STORY_LAST_ACORN,
-  STORY_TOPIC_SIZE
-};
-
-enum RULE_TOPICS {
-  RULE_RESPECT,
-  RULE_CONTENT,
-  RULE_BOT,
-  RULE_ADVERTISING,
-  RULE_WARNING,
-  RULE_SIZE
-};
-
-enum ITEMS 
-{
-  ITEM_ACORNS,
-  ITEM_ACORN_COUNT,
-  ITEM_GOLDEN_ACORN,
-  ITEM_WAR_ACORNS,
-  ITEM_ENERGY,
-  ITEM_HEALTH,
-  ITEM_CONJURED_ACORNS,
-  ITEM_CATNIP,
-  ITEM_RIBBONED_ACORN,
+  TYPE_EMPTY,
+  TYPE_ACORN_COUNT,
+  TYPE_ACORNS,
+  TYPE_GOLDEN_ACORNS,
+  TYPE_CONJURED_ACORNS,
+  TYPE_SPRING_SEEDS,
+  TYPE_SUMMER_CHERRIES,
+  TYPE_FALL_BLUEBERRIES,
+  TYPE_WINTER_CATNIP,
+  TYPE_WAR_ACORNS,
+  TYPE_RIBBONED_ACORN,
   ITEM_SIZE
 };
 
-struct sd_file_data items[ITEM_SIZE] = {
+struct sd_slice_types slice_types[ITEM_SIZE] = {
   {
-    .formal_name = "Acorns",
-    .file_path = "items/acorn.png",
+    .item = {
+      .emoji_name = "empty_acorn",
+      .emoji_id = 1191889906696474665
+    },
 
-    .emoji_name = "acorn",
-    .emoji_id = 1164894600926863360
+    .emoji_literal = EMPTY_ACORN
   },
   {
-    .formal_name = "Acorn Count",
-    .file_path = "items/acorn_count.png",
+    .item = {
+      .formal_name = "Acorn Count",
+      .file_path = "items/acorn_count.png",
 
-    .emoji_name = "acorn_count",
-    .emoji_id = 1164894602491351113
+      .emoji_name = "acorn_count",
+      .emoji_id = 1164894602491351113
+    },
+
+    .emoji_literal = ACORN_COUNT
   },
   {
-    .formal_name = "Golden Acorns",
-    .file_path = "items/golden_acorn.png",
+    .item = {
+      .formal_name = "Acorns",
+      .file_path = "items/acorn.png",
 
-    .emoji_name = "golden_acorn",
-    .emoji_id = 1164894605788074066
+      .emoji_name = "acorn",
+      .emoji_id = 1164894600926863360
+    },
+
+    .emoji_literal = ACORNS,
+    .base_value = 10
   },
   {
-    .formal_name = "War Acorns",
-    .file_path = "items/war_acorns.png",
+    .item = {
+      .formal_name = "Golden Acorns",
+      .file_path = "items/golden_acorn.png",
 
-    .emoji_name = "war_acorns",
-    .emoji_id = 1164897241698418688
+      .emoji_name = "golden_acorn",
+      .emoji_id = 1164894605788074066
+    },
+
+    .emoji_literal = GOLDEN_ACORNS,
+    .base_value = 25
   },
   {
-    .formal_name = "Energy",
-    .file_path = "items/energy.png",
+    .item = {
+      .formal_name = "Conjured Acorn",
+      .file_path = "items/conjured_acorn.png",
 
-    .emoji_name = "energy",
-    .emoji_id = 1164894603648958504
+      .emoji_name = "conjured_acorn",
+      .emoji_id = 1164897240771461151
+    },
+
+    .emoji_literal = CONJURED_ACORNS
+    // x2 pie value
   },
   {
-    .formal_name = "HP",
-    .file_path = "items/health.png",
+    .item = {
+      .formal_name = "Seeds",
+      .file_path = "victuals/seed_victuals.png",
 
-    .emoji_name = "health",
-    .emoji_id = 1164894607730028654
+      .emoji_name = "seed_victuals",
+      .emoji_id = 1164899715456975131
+    },
+
+    .emoji_literal = SEED_VICTUALS,
+    .base_value = 50
   },
   {
-    .formal_name = "Conjured Acorn",
-    .file_path = "items/conjured_acorn.png",
+    .item = {
+      .formal_name = "Cherries",
+      .file_path = "victuals/cherry_victuals.png",
 
-    .emoji_name = "conjured_acorn",
-    .emoji_id = 1164897240771461151
+      .emoji_name = "cherry_victuals",
+      .emoji_id = 1164899714467115089
+    },
+
+    .emoji_literal = CHERRY_VICTUALS,
+    .base_value = 75
   },
   {
-    .formal_name = "Catnip",
-    .file_path = "items/catnip.png",
+    .item = {
+      .formal_name = "Blueberries",
+      .file_path = "victuals/blueberry_victuals.png",
 
-    .emoji_name = "catnip",
-    .emoji_id = 1164897238749818961
+      .emoji_name = "blueberry_victuals",
+      .emoji_id = 1164899712751636531
+    },
+
+    .emoji_literal = BLUEBERRY_VICTUALS,
+    .base_value = 100
   },
   {
-    .formal_name = "Ribboned Acorn",
-    .file_path = "items/ribboned_acorn.png",
+    .item = {
+      .formal_name = "Catnip",
+      .file_path = "items/catnip.png",
 
-    .emoji_name = "ribboned_acorn",
-    .emoji_id = 1180504068750311515
+      .emoji_name = "catnip",
+      .emoji_id = 1164897238749818961
+    },
+
+    .emoji_literal = CATNIP,
+    .base_value = 150
+  },
+  {
+    .item = {
+      .formal_name = "War Acorns",
+      .file_path = "items/war_acorns.png",
+
+      .emoji_name = "war_acorns",
+      .emoji_id = 1164897241698418688
+    },
+
+    .emoji_literal = WAR_ACORNS
+  },
+  {
+    .item = {
+      .formal_name = "Ribboned Acorn",
+      .file_path = "items/ribboned_acorn.png",
+
+      .emoji_name = "ribboned_acorn",
+      .emoji_id = 1180504068750311515
+    },
+
+    .emoji_literal = RIBBONED_ACORN,
+    .base_value = 250
   }
 };
 
-enum ITEM_TYPE {
-  TYPE_UNIDENTIFIED,
-  TYPE_NO_ACORNS,
-  TYPE_ACORN_HANDFUL,
-  TYPE_ACORN_MOUTHFUL,
-  TYPE_LOST_STASH,
-  TYPE_ACORN_SACK,
-  TYPE_DIRT_PILE,
-  TYPE_ENCOUNTER,
-  TYPE_HEALTH_LOSS,
-  TYPE_RIBBONED_ACORN,
-  TYPE_SIZE
+enum PIECES 
+{
+  PIECE_CORNER_ONE,
+  PIECE_CENTER,
+  PIECE_FIRST_TWO,
+  PIECE_LAST_TWO,
+  PIECE_ROW,
+  PIECE_CORNER_THREE,
+  PIECE_L,
+  // PIECE_L_INV,
+
+  PIECES_SIZE
 };
 
-struct sd_file_data item_types[TYPE_SIZE] = {
+struct sd_pie pieces[PIECES_SIZE] = 
+{
+  /*
+    x . .
+    .   .
+    . . .
+  */
   {
-    .formal_name = "progenitor",
-    .file_path = "item_types/progenitor.png"
+    .decoded_buf = { 1, 0, 0, 0, 0, 0, 0, 0 }
   },
-  {
-    .formal_name = "an Empty Hole",
-    .file_path = "item_types/no_acorns.png",
 
-    .emoji_name = "no_acorns",
-    .emoji_id = 1164898153884029012
+  /*
+    . x .
+    .   .
+    . . .
+  */
+  {
+    .decoded_buf = { 0, 1, 0, 0, 0, 0, 0, 0 }
   },
-  {
-    .formal_name = "a Handful of Acorns",
-    .file_path = "item_types/acorn_handful.png",
 
-    .emoji_name = "acorn_handful",
-    .emoji_id = 1164898146057453638
+  /*
+    . . .
+    x   .
+    x . .
+  */
+  {
+    .decoded_buf = { 0, 0, 0, 0, 0, 0, 1, 1 }
   },
-  {
-    .formal_name = "a Mouthful of Acorns",
-    .file_path = "item_types/acorn_mouthful.png",
 
-    .emoji_name = "acorn_mouthful",
-    .emoji_id = 1164898147051507782
+  /*
+    x . .
+    x   .
+    . . .
+  */
+  {
+    .decoded_buf = { 1, 0, 0, 0, 0, 0, 0, 1 }
   },
-  {
-    .formal_name = "a Lost Stash",
-    .file_path = "item_types/lost_stash.png",
 
-    .emoji_name = "lost_stash",
-    .emoji_id = 1164898152906764349
+  /*
+    x . .
+    x   .
+    x . .
+  */
+  {
+    .decoded_buf = { 1, 0, 0, 0, 0, 0, 1, 1 }
   },
-  {
-    .formal_name = "a Sack of Acorns",
-    .file_path = "item_types/acorn_sack.png",
 
-    .emoji_name = "acorn_sack",
-    .emoji_id = 1164898148779577364
+  /*
+    x x .
+    x   .
+    . . .
+  */
+  {
+    .decoded_buf = { 1, 1, 0, 0, 0, 0, 0, 1 }
   },
-  {
-    .formal_name = "Dirt Pile",
-    .file_path = "item_types/dirt_pile.png",
 
-    .emoji_name = "dirt_pile",
-    .emoji_id = 1164898151967236246
-  },
+  /*
+    x . .
+    x   .
+    x x .
+  */
   {
-    .formal_name = "an Encounter",
-    .file_path = "item_types/quest_marker.png",
-
-    .emoji_name = "quest_marker",
-    .emoji_id = 1164898155150708736
-  },
-  {
-    .formal_name = "HP Lost",
-    .file_path = "item_types/broken_health.png",
-
-    .emoji_name = "broken_health",
-    .emoji_id = 1164898149979148360
-  },
-  {
-    .formal_name = "a Ribboned Acorn",
-    .file_path = "items/ribboned_acorn.png",
-
-    .emoji_name = "ribboned_acorn",
-    .emoji_id = 1180504068750311515
+    .decoded_buf = { 1, 0, 0, 0, 0, 1, 1, 1 }
   }
+
+  /*
+    x x .
+    x   .
+    x . .
+  */
+  // {
+  //   .decoded_buf = { 1, 1, 0, 0, 0, 0, 1, 1 }
+  // }
 };
 
 enum MISC 
 {
   MISC_ADD,
-  MISC_SUBTRACT,
   MISC_SCURRY_ICON,
   MISC_CROWN,
   MISC_WELCOME,
+  MISC_BOXES,
+  MISC_ALERT,
+  MISC_HELP,
+  MISC_TREASURE,
   MISC_SIZE
 };
 
 struct sd_file_data misc[MISC_SIZE] = {
   {
     .formal_name = "plus",
-    .file_path = "formats/plus.png",
+    .file_path = "misc/plus.png",
 
     .emoji_name = "plus",
     .emoji_id = 1177068547973849130
   },
   {
-    .formal_name = "minus",
-    .file_path = "formats/minus.png",
-
-    .emoji_name = "minus",
-    .emoji_id = 1177071484011819109
-  },
-  {
     .formal_name = "scurry",
-    .file_path = "scurry_utils/guild_icon.png",
+    .file_path = "misc/guild_icon.png",
 
     .emoji_name = "guild_icon",
     .emoji_id = 1020714354351542362
   },
   {
     .formal_name = "crown",
-    .file_path = "scurry_utils/leader.png",
+    .file_path = "misc/leader.png",
 
     .emoji_name = "leader",
     .emoji_id = 1035976066965196861
   },
   {
     .formal_name = "Welcome!",
-    .file_path = "sd_utils/git_welcome.gif"
+    .file_path = "misc/git_welcome.gif"
+  },
+  {
+    .emoji_name = "boxes",
+    .emoji_id = 1191447753662922802
+  },
+  {
+    .file_path = "misc/no_acorns.png",
+
+    .emoji_name = "quest_marker",
+    .emoji_id = 1164898155150708736
+  },
+  {
+    .file_path = "misc/no_acorns.png",
+
+    .emoji_name = "no_acorns",
+    .emoji_id = 1164898153884029012
+  },
+  {
+    .file_path = "misc/lost_stash.png",
+
+    .emoji_name = "lost_stash",
+    .emoji_id = 1164898152906764349
   }
 };
 
-enum SQUIRREL_STATS 
-{
-  STAT_PROFICIENCY,
-  STAT_STRENGTH,
-  STAT_LUCK,
-  STAT_SIZE
-};
-
-struct sd_obj_stats stats[STAT_SIZE] = {
-  {
-    .stat = {
-      .formal_name = "Proficiency",
-      .file_path = "stats/proficiency.png",
-      .description = "*Multiplies acorn "ACORNS" earnings*",
-
-      .emoji_name = "proficiency",
-      .emoji_id = 1164899171862593568
-    },
-
-    .price_mult = PROFICIENCY_UNIT,
-    .value_mult = PROFICIENCY_FACTOR
-  },
-  {
-    .stat = {
-      .formal_name = "Strength",
-      .file_path = "stats/strength.png",
-      .description = "*Adds 5 max "HEALTH" chances*",
-
-      .emoji_name = "strength",
-      .emoji_id = 1164899172789518356
-    },
-
-    .price_mult = STRENGTH_UNIT,
-    .value_mult = STRENGTH_FACTOR
-  },
-  {
-    .stat = {
-      .formal_name = "Luck",
-      .file_path = "stats/luck.png",
-      .description = "*Multiplies golden acorn "GOLDEN_ACORNS" earnings*",
-
-      .emoji_name = "luck",
-      .emoji_id = 1164899170029682781
-    },
-
-    .price_mult = LUCK_UNIT,
-    .value_mult = LUCK_FACTOR
-  }
-};
-
-enum BUFFS 
-{
-  BUFF_PROFICIENCY_ACORN,
-  BUFF_LUCK_ACORN,
-  BUFF_BOOSTED_ACORN,
-  BUFFS_SIZE
-};
-
-struct sd_file_data enchanted_acorns[BUFFS_SIZE] = {
-  {
-    .formal_name = "Acorn of Proficiency",
-    .file_path = "enchanted_acorns/proficiency_acorn.png",
-    .description = "*Doubles acorn earnings and acorn count*",
-
-    .emoji_name = "proficiency_acorn",
-    .emoji_id = 1164899493481811989
-  },
-  {
-    .formal_name = "Acorn of Luck",
-
-    .file_path = "enchanted_acorns/luck_acorn.png",
-    .description = "*Doubles golden acorn earnings*",
-
-    .emoji_name = "luck_acorn",
-    .emoji_id = 1164899492231925860
-  },
-  {
-    .formal_name = "Conjured Acorn Boost",
-
-    .file_path = "enchanted_acorns/boosted_acorn.png",
-    .description = "*1.5x squirrel effect*",
-
-    .emoji_name = "boosted_acorn",
-    .emoji_id = 1164899491363696690
-  }
-};
-
-enum BUNNY_STORE
-{
-  BUNNY_ACORNS,
-  BUNNY_GOLDEN_ACORNS,
-  BUNNY_HEALTH,
-  BUNNY_ENERGY,
-  BUNNY_STORE_SIZE
-};
-
-enum TYPE_VICTUALS {
-  VICTUALS_BLUEBERRY,
-  VICTUALS_CHERRY,
-  VICTUALS_SEED,
-  VICTUALS_SIZE
-};
-
-struct sd_file_data victuals[VICTUALS_SIZE] = {
-  {
-    .formal_name = "Blueberries",
-    .file_path = "victuals/blueberry_victuals.png",
-
-    .emoji_name = "blueberry_victuals",
-    .emoji_id = 1164899712751636531
-  },
-  {
-    .formal_name = "Cherries",
-    .file_path = "victuals/cherry_victuals.png",
-
-    .emoji_name = "cherry_victuals",
-    .emoji_id = 1164899714467115089
-  },
-  {
-    .formal_name = "Seeds",
-    .file_path = "victuals/seed_victuals.png",
-
-    .emoji_name = "seed_victuals",
-    .emoji_id = 1164899715456975131
-  }
-};
-
-enum TASKS
-{
-  TASK_FORAGER,
-  TASK_CONQUEROR,
-  TASK_ENCHANTER,
-  TASK_PORCH_PIRATE,
-  TASK_INVESTOR,
-  TASK_GREEDY,
-  TASK_SEEDY,
-
-  // event specific
-  TASK_SPRING_CHICKEN,
-  TASK_HARVESTOR,
-  TASK_SNIFFER,
-  TASK_GRINCH,
-  TASK_SIZE
-};
-
-struct sd_daily_task daily_tasks[TASK_SIZE] = {
-  {
-    .task_name = "The Forager",
-    .description = "Forage acorns **30** times.",
-
-    .count_req = 30
-  },
-  {
-    .task_name = "The Conqueror",
-    .description = "Complete **10** encounters.",
-
-    .count_req = 10
-  },
-  {
-    .task_name = "The Enchanter",
-    .description = "Collect **3** buffs.",
-
-    .count_req = 3
-  },
-  {
-    .task_name = "The Porch Pirate",
-    .description = "Collect **5** "LOST_STASH" *lost stashes*.",
-
-    .count_req = 5
-  },
-  {
-    .task_name = "The Investor",
-    .description = "Invest in **2** stat upgrades.",
-
-    .count_req = 2
-  },
-  {
-    .task_name = "The Greedy",
-    .description = "Steal "WAR_ACORNS" war acorns **5** times.",
-
-    .count_req = 5
-  },
-  {
-    .task_name = "The Seedy",
-    .description = "Successfully steal.",
-
-    .count_req = 1
-  },
-
-  // EVENT SPECIFIC
-  {
-    .task_name = "The Spring Chicken",
-    .description = "Collect "GOLDEN_ACORNS" *seasoned golden acorns* **5** times.",
-
-    .count_req = 5
-  },
-  {
-    .task_name = "The Harvester",
-    .description = "Collect **5** summer victuals.",
-
-    .count_req = 5
-  },
-  {
-    .task_name = "The Sniffer",
-    .description = "Collect "CATNIP" *catnip* **5** times.",
-
-    .count_req = 5
-  },
-  {
-    .task_name = "The Grinch",
-    .description = "Collect **5** "RIBBONED_ACORN" *ribboned acorns*.",
-
-    .count_req = 5
-  }
-};
-
-enum SQUIRREL 
+enum SQUIRRELS
 {
   GRAY_SQUIRREL,
   SKELETAL_SQUIRREL,
   SQUIRREL_BOOKIE,
   ANGELIC_SQUIRREL,
   KING_SQUIRREL,
+  FLORAL_SQUIRREL,
+  GOLDEN_SQUIRREL,
+  BLACK_SQUIRREL,
+  ACRON_SQUIRREL,
+  FLOATY_SQUIRREL,
+  BEACH_SQUIRREL,
+  PIRATE_SQUIRREL,
+  VEGGIE_SQUIRREL,
+  RED_SQUIRREL,
+  ALCHEMIST_SQUIRREL,
+  DEMONIC_SQUIRREL,
+  WIZARD_SQUIRREL,
+  FROST_SQUIRREL,
+  HOARDER_SQUIRREL,
+  SANTA_SQUIRREL,
+  INFURNO_SQUIRREL,
   SQUIRREL_SIZE
 };
 
 struct sd_squirrel squirrels[SQUIRREL_SIZE] = {
+  // BASE SQUIRREL
   {
-    .acorn_count_req = GRAY_SQUIRREL_COUNT,
-    .boosted_duration = GRAY_BOOST_DURATION,
-    
     .squirrel = {
       .formal_name = "Gray Squirrel",
       .file_path = "squirrels/gray_squirrel.png",
 
-      .description = "*Chance to not consume energy*",
+      .description = "*Your traditional squirrel. Vicious and ferocious.*",
 
       .emoji_name = "gray_squirrel",
       .emoji_id = 1014655900373504130
     }
   },
+  // TRADITIONAL SQUIRRELS
   {
-    .acorn_count_req = SKELETAL_SQUIRREL_COUNT,
-    .boosted_duration = SKELETAL_BOOST_DURATION,
-    
+    .cost = FIRST_SQUIRREL,
     .squirrel = {
       .formal_name = "Skeletal Squirrel",
       .file_path = "squirrels/skeletal_squirrel.png",
 
-      .description = "*Increased HP regen*",
+      .description = "*Seen one too many moons...*",
 
       .emoji_name = "skeletal_squirrel",
       .emoji_id = 1072150369599234058
     }
   },
   {
-    .acorn_count_req = BOOKIE_SQUIRREL_COUNT,
-    .boosted_duration = BOOKIE_BOOST_DURATION,
-    
+    .cost = SECOND_SQUIRREL,
     .squirrel = {
       .formal_name = "Squirrel Bookie",
       .file_path = "squirrels/squirrel_bookie.png",
 
-      .description = "*Increased acorn earnings*",
+      .description = "*He got the numbers if you got the coin.*",
 
       .emoji_name = "squirrel_bookie",
       .emoji_id = 1050175322286469250
     }
   },
   {
-    .acorn_count_req = ANGELIC_SQUIRREL_COUNT,
-    .boosted_duration = ANGELIC_BOOST_DURATION,
-    
+    .cost = THIRD_SQUIRREL,
     .squirrel = {
       .formal_name = "Angelic Squirrel",
       .file_path = "squirrels/angelic_squirrel.png",
 
-      .description = "*Increased lost stash chance*",
+      .description = "*100% pure holiness... and maybe a whisper of greed.*",
 
       .emoji_name = "angelic_squirrel",
       .emoji_id = 1140690614137139314
     }
   },
   {
-    .acorn_count_req = KING_SQUIRREL_COUNT,
-    .boosted_duration = KING_BOOST_DURATION,
-    
+    .cost = FOURTH_SQUIRREL,
     .squirrel = {
       .formal_name = "King Squirrel",
       .file_path = "squirrels/king_squirrel.png",
 
-      .description = "*Increased acorn count*",
+      .description = "*Your royal fuzziness. Stands proud amongst his peers.*",
 
       .emoji_name = "king_squirrel",
       .emoji_id = 1073298108508803113
     }
-  }
-};
-
-struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
+  },
   // SPRING
   {
-    .golden_acorn_req = FIRST_SQUIRREL,
+    .cost = FIRST_SQUIRREL,
     .squirrel = {
       .formal_name = "Floral Squirrel",
       .file_path = "squirrels/spring_squirrels/floral_squirrel.png",
@@ -681,7 +397,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
     }
   },
   {
-    .golden_acorn_req = SECOND_SQUIRREL,
+    .cost = SECOND_SQUIRREL,
     .squirrel = {
       .formal_name = "Golden Squirrel",
       .file_path = "squirrels/spring_squirrels/golden_squirrel.png",
@@ -693,7 +409,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
     }
   },
   {
-    .golden_acorn_req = THIRD_SQUIRREL,
+    .cost = THIRD_SQUIRREL,
     .squirrel = {
       .formal_name = "Black Squirrel",
       .file_path = "squirrels/spring_squirrels/black_squirrel.png",
@@ -705,7 +421,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
     }
   },
   {
-    .golden_acorn_req = FOURTH_SQUIRREL,
+    .cost = FOURTH_SQUIRREL,
     .squirrel = {
       .formal_name = "Acron",
       .file_path = "squirrels/spring_squirrels/acron.png",
@@ -719,7 +435,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
 
   // SUMMER
   {
-    .golden_acorn_req = FIRST_SQUIRREL,
+    .cost = FIRST_SQUIRREL,
     .squirrel = {
       .formal_name = "Floaty Squirrel",
       .file_path = "squirrels/summer_squirrels/floaty_squirrel.png",
@@ -731,7 +447,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
     }
   },
   {
-    .golden_acorn_req = SECOND_SQUIRREL,
+    .cost = SECOND_SQUIRREL,
     .squirrel = {
       .formal_name = "Beach Squirrel",
       .file_path = "squirrels/summer_squirrels/beach_squirrel.png",
@@ -743,7 +459,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
     }
   },
   {
-    .golden_acorn_req = THIRD_SQUIRREL,
+    .cost = THIRD_SQUIRREL,
     .squirrel = {
       .formal_name = "Squirrel Pirate",
       .file_path = "squirrels/summer_squirrels/squirrel_pirate.png",
@@ -755,7 +471,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
     }
   },
   {
-    .golden_acorn_req = FOURTH_SQUIRREL,
+    .cost = FOURTH_SQUIRREL,
     .squirrel = {
       .formal_name = "Veggie Snatcher",
       .file_path = "squirrels/summer_squirrels/veggie_snatcher.png",
@@ -769,7 +485,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
 
   // FALL
   {
-    .golden_acorn_req = FIRST_SQUIRREL,
+    .cost = FIRST_SQUIRREL,
     .squirrel = {
       .formal_name = "Red Squirrel",
       .file_path = "squirrels/fall_squirrels/red_squirrel.png",
@@ -781,7 +497,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
     }
   },
   {
-    .golden_acorn_req = SECOND_SQUIRREL,
+    .cost = SECOND_SQUIRREL,
     .squirrel = {
       .formal_name = "Squirrel Alchemist",
       .file_path = "squirrels/fall_squirrels/squirrel_alchemist.png",
@@ -793,7 +509,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
     }
   },
   {
-    .golden_acorn_req = THIRD_SQUIRREL,
+    .cost = THIRD_SQUIRREL,
     .squirrel = {
       .formal_name = "Demonic Squirrel",
       .file_path = "squirrels/fall_squirrels/demonic_squirrel.png",
@@ -805,7 +521,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
     }
   },
   {
-    .golden_acorn_req = FOURTH_SQUIRREL,
+    .cost = FOURTH_SQUIRREL,
     .squirrel = {
       .formal_name = "Archwizard Flooftail",
       .file_path = "squirrels/fall_squirrels/archwizard_flooftail.png",
@@ -819,7 +535,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
 
   // WINTER
   {
-    .golden_acorn_req = FIRST_SQUIRREL,
+    .cost = FIRST_SQUIRREL,
     .squirrel = {
       .formal_name = "Frost Squirrel",
       .file_path = "squirrels/winter_squirrels/frost_squirrel.png",
@@ -831,7 +547,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
     }
   },
   {
-    .golden_acorn_req = SECOND_SQUIRREL,
+    .cost = SECOND_SQUIRREL,
     .squirrel = {
       .formal_name = "Hoarder Squirrel",
       .file_path = "squirrels/winter_squirrels/hoarder_squirrel.png",
@@ -843,7 +559,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
     }
   },
   {
-    .golden_acorn_req = THIRD_SQUIRREL,
+    .cost = THIRD_SQUIRREL,
     .squirrel = {
       .formal_name = "Santa Squirrel",
       .file_path = "squirrels/winter_squirrels/santa_squirrel.png",
@@ -855,7 +571,7 @@ struct sd_designer_squirrel designer_squirrels[SQUIRREL_SIZE * 4] = {
     }
   },
   {
-    .golden_acorn_req = FOURTH_SQUIRREL,
+    .cost = FOURTH_SQUIRREL,
     .squirrel = {
       .formal_name = "Infurno",
       .file_path = "squirrels/winter_squirrels/infurno.png",
@@ -906,7 +622,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*The unicorn seems friendly... perhaps you could just sneak that acorn from under him?* \n",
             .file_path = "gl_content/encounters/unicorn.png",
 
-            .solutions = {"Aim for the throat!", "Cause a distraction", "Bolt out and hope you scare it"},
             .context = "Inhabited by all sorts of mythical creatures."
           },
           {
@@ -914,7 +629,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*A werewolf has spotted you and begins to chase you!* \n",
             .file_path = "gl_content/encounters/werewolf.png",
 
-            .solutions = {"Aim for the throat!", "Run into a nearby bush", "Run for your life!"},
             .context = "Trees spiral in all sorts of directions, radiating ancient magic."
           },
           {
@@ -922,7 +636,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This isn't your everyday goldfish. What's he doin' out of the water?* \n",
             .file_path = "gl_content/encounters/magical_goldfish.png",
 
-            .solutions = {"Eat him!", "Go around him", "Push him back into the water"},
             .context = "Ponds and rivers glow purple with faint reflections of ancient ruins."
           }
         },
@@ -938,7 +651,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*Rats! They surely don't like you. Who knows what they could be carrying...* \n",
             .file_path = "gl_content/encounters/city_rat.png",
 
-            .solutions = {"Give him a peace offering", "Back off", "Hug him"},
             .context = "The city is made entirely of white marble."
           },
           {
@@ -946,7 +658,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*These coyotes keep inching towards you. They're curious but do you want to take that chance?* \n",
             .file_path = "gl_content/encounters/coyote.png",
 
-            .solutions = {"Punch him in the snoot and run up a tree", "Shriek to scare him off", "Take your chances"},
             .context = "Its citizens are known for their curiosity, intellect, and profound fascination with the nearby Enchanted Woods."
           },
           {
@@ -954,7 +665,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*Still cute and fluffy- sort of. He doesn't like other squirrels though.* \n",
             .file_path = "gl_content/encounters/savage_squirrel.png",
 
-            .solutions = {"Offer an acorn", "Wait for him to look the other way", "Try to tame him"},
             .context = "Political corruption has led to pollution, high rodent populations, and agitated wildlife."
           }
         },
@@ -970,7 +680,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*A camoflauge snare has caught you! It didn't do much, the flimsy thing.* \n",
             .file_path = "gl_content/encounters/bandit_snare.png",
 
-            .solutions = {"Run as fast as you can to break the snare", "Chew through the string", "Wait for another squirrel to help you"},
             .context = "Once farmland that fed the city's residents."
           },
           {
@@ -978,7 +687,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*You spot a bandit hunter in the corner of your eye as he draws his bow!* \n",
             .file_path = "gl_content/encounters/hunter_detection.png",
 
-            .solutions = { "Throw an acorn", "Lose his sight", "Hide behind a tree"},
             .context = "Now swarms with rebels who are unhappy with the Imperium City's conditions."
           },
           {
@@ -986,7 +694,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*Unlike the other crops, this one is sticky...* \n",
             .file_path = "gl_content/encounters/poisoned_crop.png",
 
-            .solutions = {"Try a kernel", "Walk away", "Wipe off the poison in hopes there's no trace"},
             .context = "Rebels burn farmland, poison crops, and poach local wildlife."
           }
         },
@@ -1002,7 +709,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This acorn looks like an acorn and tastes like an acorn. Is it an acorn?* \n",
             .file_path = "gl_content/encounters/conjured_acorn.png",
 
-            .solutions = {"Investigate the acorn", "Ignore it", "Take the acorn"},
             .context = "Witches were once reputable alchemists in the city."
           },
           {
@@ -1010,7 +716,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*It's a friendly squirrel! Is it?* \n",
             .file_path = "gl_content/encounters/squirrel_doppleganger.png",
 
-            .solutions = {"Indicate you know it's a disguise", "Ignore him", "Shake his paw"},
             .context = "Twisted by the growing corruption, the witches started conducting dark rituals on animals."
           },
           {
@@ -1018,7 +723,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*A witch has spotted you and threw a flask!* \n",
             .file_path = "gl_content/encounters/thrown_flask.png",
 
-            .solutions = {"Run at the witch!", "Dodge the flask", "Try to catch the flask"},
             .context = "The witches' practice was outlawed by Imperium City and the witches fled to the swamp as social outcasts."
           }
         },
@@ -1056,7 +760,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*There's an acorn next to the feasting bobcat.* \n",
             .file_path = "sp_content/encounters/bobcat.png",
 
-            .solutions = {"Don't look!", "Shake a nearby bush", "Snatch it and hope you don't get eaten"},
             .context = "The desert is also devoid of prey causing predators to become desperate."
           },
           {
@@ -1064,7 +767,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*You've caught the attention of this cobra!* \n",
             .file_path = "sp_content/encounters/cobra.png",
 
-            .solutions = {"Aim for the neck!", "Flee the scene", "Dodge the lunge"},
             .context = "These areas see a dense population of snakes."
           },
           {
@@ -1072,7 +774,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*The rattling of the rattlesnake's tail catches your attention and you lock eyes...* \n",
             .file_path = "sp_content/encounters/rattlesnake.png",
 
-            .solutions = {"Aim for the throat!", "Ignore it and scurry away", "Approach it"},
             .context = "Deadly snakes camouflage with the sands."
           }
         },
@@ -1088,7 +789,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*A scorpion finds you and charges to attack you!* \n",
             .file_path = "sp_content/encounters/scorpion.png",
 
-            .solutions = {"Throw an acorn", "Scurry Away!", "Dodge the pincer"},
             .context = "The city is built entirely of sandstone and partially overridden with sand."
           },
           {
@@ -1096,7 +796,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This camel doesn't look too happy. Watch out for the spit!* \n",
             .file_path = "sp_content/encounters/angry_camel.png",
 
-            .solutions = {"Aim for the face!", "Cause a distraction", "Sneak around"},
             .context = "A once prosperous city for trade went to ruin due to growing internal economic problems."
           },
           {
@@ -1104,7 +803,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*You've accidentally approached a pack of coyotes!* \n",
             .file_path = "sp_content/encounters/coyote.png",
 
-            .solutions = {"Snatch the acorn and run", "Look somewhere else", "Run to the nearby group of people"},
             .context = "The locals have resorted to poaching, leaving little for other animals."
           }
         },
@@ -1120,7 +818,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*A pack of hyenas are giving you the death stare...* \n",
             .file_path = "sp_content/encounters/hyena.png",
 
-            .solutions = {"Aim for the throat!", "Run to a nearby carcass", "Try to touch one"},
             .context = "The vast golden dunes spanning the majority of the desert."
           },
           {
@@ -1128,7 +825,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This jackal doesn't seem threatened nor scared. He's, curious?* \n",
             .file_path = "sp_content/encounters/jackal.png",
 
-            .solutions = {"Hand him an acorn", "Give him head pats", "Ignore him and scurry away"},
             .context = "Animals who don't come in contact with people are often curious, but not all."
           },
           {
@@ -1136,7 +832,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*They look a bit hungry. Maybe not a friendly foe...* \n",
             .file_path = "sp_content/encounters/wild_dog.png",
 
-            .solutions = {"Offer an acorn", "Scurry away!", "Show them to some food"},
             .context = "The whole desert has felt the effects of the impoverished city."
           }
         },
@@ -1152,7 +847,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*A living skeleton? A horse? Better hope it's not that unicorn...* \n",
             .file_path = "sp_content/encounters/skeletal_horse.png",
 
-            .solutions = {"Aim for the throat!", "Cause a distraction", "Bolt out and hope you scare it"},
             .context = "These wastelands are where many ancient battles took place."
           },
           {
@@ -1160,7 +854,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*What looks to be a skeletal squirrel locks eyes with you... Well? You can't just ignore it!* \n",
             .file_path = "sp_content/encounters/skeletal_squirrel.png",
 
-            .solutions = {"Shake its paw", "Offer an acorn", "Tame it"},
             .context = "Locals believe that these remains were risen by witches."
           }
         },
@@ -1176,7 +869,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*A massive worm is shifting through the sands...* \n",
             .file_path = "sp_content/encounters/death_worm.png",
 
-            .solutions = {"Lure and fight it", "Move in the opposite direction", "Run past it"},
             .context = "Massive worms shift in the sands and feel the vibrations of footsteps."
           },
           {
@@ -1184,7 +876,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*Leeches! Leeches everywhere! Small, but best not to let too many latch on!* \n",
             .file_path = "sp_content/encounters/leech.png",
 
-            .solutions = {"Crush them", "Scurry away!", "Run to a nearby carcass"},
             .context = "Leeches accompany the worms in large numbers..."
           }
         },
@@ -1220,7 +911,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This bear doesn't seem one bit intimidated! Perhaps he's friendly?* \n",
             .file_path = "ne_content/encounters/bear.png",
 
-            .solutions = {"Give him head pats", "Don't take your chances", "Offer an acorn"},
             .context = "A local oracle resides here to heal the forest."
           },
           {
@@ -1228,7 +918,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*The fox looks at you and sits expectantly.* \n",
             .file_path = "ne_content/encounters/fox.png",
 
-            .solutions = {"Say \"roll over\" in squirrel", "Give him head pats", "Throw an acorn"},
             .context = "The animals that roam here are very friendly."
           },
           {
@@ -1236,7 +925,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*Looks like Santa may have lost one! He seems nice...* \n",
             .file_path = "ne_content/encounters/reindeer.png",
 
-            .solutions = {"Give him a random carrot", "Give him chin rubs", "Take him with you"},
             .context = "Although this section of pine forest is protected, the oracle is struggling to maintain the light."
           }
         },
@@ -1252,7 +940,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This elk doesn't appear to be aggressive. Perhaps he's just hungry?* \n",
             .file_path = "ne_content/encounters/elk.png",
 
-            .solutions = {"Offer an acorn", "Lead him to a food source", "Give him head pats"},
             .context = "The border between the protected and corrupt pine forests."
           },
           {
@@ -1260,7 +947,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*A defensive moose detects you and charges at you!* \n",
             .file_path = "ne_content/encounters/moose.png",
 
-            .solutions = {"Aim for the throat!", "Climb up a tree", "Run under him"},
             .context = "The presence of the corruption causes these animals to be on edge and untrusting."
           },
           {
@@ -1268,7 +954,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*A twig you stepped on startled a wolf! He's approaching...* \n",
             .file_path = "ne_content/encounters/wolf.png",
 
-            .solutions = {"Aim for throat!", "Run up a tree", "Hide in a bush"},
             .context = "Trees are a mix of pine and corrupt trees and the grass has a purple hue."
           }
         },
@@ -1284,7 +969,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This bear doesn't seem too happy his home was destroyed...* \n",
             .file_path = "ne_content/encounters/angry_bear.png",
 
-            .solutions = {"Boop his snoot", "Offer an acorn", "Give him a hug"},
             .context = "The effects of the corruption have compromised many of the natural structures."
           },
           {
@@ -1292,7 +976,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*Taken by the growing corruption, his mind isn't his own!* \n",
             .file_path = "ne_content/encounters/consumed_elk.png",
 
-            .solutions = {"Aim for the throat!", "Flee into a tree", "Squeal!"},
             .context = "Animals will be left with purple marks when they eat corrupt matter."
           },
           {
@@ -1300,7 +983,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This one doesn't want to shake your paw... You're his snack!* \n",
             .file_path = "ne_content/encounters/corrupt_squirrel.png",
 
-            .solutions = {"Force his paw out", "Outrun him", "Offer an acorn"},
             .context = "Once the animals have been consumed by the corruption, its mind is no longer its own."
           }
         },
@@ -1316,7 +998,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*[dry heaves] Those rats STINK! Where have they been, the sewers?* \n",
             .file_path = "ne_content/encounters/city_rat.png",
 
-            .solutions = {"Throw them in water", "Flee their stench", "Hold your breath"},
             .context = "Once a colony of Imperium City, it fell to the corruption roughly 63 years ago."
           },
           {
@@ -1324,7 +1005,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*Is it growling? Is it smiling? Does it want your acorns?* \n",
             .file_path = "ne_content/encounters/raccoon.png",
 
-            .solutions = {"Bonk his head with an acorn", "Throw an acorn and run", "Climb up a building"},
             .context = "While this area remains somewhat intact, many animals reside here to buy themselves time to escape the corruption."
           },
           {
@@ -1332,7 +1012,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This squirrel has seen a bit... Can he see?* \n",
             .file_path = "ne_content/encounters/skeletal_squirrel.png",
 
-            .solutions = {"Hope he can see your acorn offer", "Shake his paw if he can feel it", "Tame him if he knows who you are"},
             .context = "Not only can the corruption consume the living, but it can also raise the deceased."
           }
         },
@@ -1369,7 +1048,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*An arctic fox's head pops above the snow and locks eyes with you.* \n",
             .file_path = "dg_content/encounters/arctic_fox.png",
 
-            .solutions = {"Stare harder", "Keep running", "Wave"},
             .context = "The average height of snow for this area is roughly 3 feet."
           },
           {
@@ -1377,7 +1055,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*You hear snow patting and realize a wolf is stalking you!* \n",
             .file_path = "dg_content/encounters/arctic_wolf.png",
 
-            .solutions = {"Aim for the throat!", "Scurry faster", "Throw an acorn"},
             .context = "The animals are hostile from hunger, no protection from the elements, and the neighboring corruption."
           },
           {
@@ -1385,7 +1062,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This curious penguin approaches you with intrigument.* \n",
             .file_path = "dg_content/encounters/penguin.png",
 
-            .solutions = {"Offer an acorn", "Stop him before he pecks", "Scurry on"},
             .context = "The curious animals will expect something in return for their bravery."
           }
         },
@@ -1401,7 +1077,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*That- that's a squirrel? So dark. So smokey. So... deadly...* \n",
             .file_path = "dg_content/encounters/dark_skeletal_squirrel.png",
 
-            .solutions = {"Squeal!", "Ignore it", "Run up a tree"},
             .context = "These lakes are dense with black mist."
           },
           {
@@ -1409,7 +1084,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*Does he raise- tiny fluffballs of doom? Should you find out?* \n",
             .file_path = "dg_content/encounters/necro-squirrel.png",
 
-            .solutions = {"Bonk him on the cabeza with an acorn", "Don't want to know", "Approach"},
             .context = "As you draw closer to the corruption, these corrupt animals develop strategy and critical thinking."
           },
           {
@@ -1417,7 +1091,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This poor guy was in the unfortunate hands of a necro-squirrel.* \n",
             .file_path = "dg_content/encounters/undead_squirrel.png",
 
-            .solutions = {"Offer an acorn", "Put him out of his misery", "Hug him"},
             .context = "Some were unfortunate enough to be raised back into the hell they wanted to leave."
           }
         },
@@ -1433,7 +1106,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This squirrel has been wandering aimlessly for hours. But he finds a warm companion...* \n",
             .file_path = "dg_content/encounters/frost_squirrel.png",
 
-            .solutions = { "Cough", "Scurry away", "Don't make eye contact"},
             .context = "Built with packed snow and hardened ice supported by boreal beams."
           },
           {
@@ -1441,7 +1113,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This polar bear appears to be a bit lonely...* \n",
             .file_path = "dg_content/encounters/polar_bear.png",
 
-            .solutions = {"Offer an acorn", "Snuggle with him", "Let him be"},
             .context = "The animals that manage to survive here are far and few between."
           },
           {
@@ -1449,7 +1120,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*He's so cute, small and squishy you could just-* \n",
             .file_path = "dg_content/encounters/snowshoe_hare.png",
 
-            .solutions = {"Give him head pats", "Call him Squishy", "Bring him home"},
             .context = "There's an unusually large bunny population."
           }
         },
@@ -1465,7 +1135,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*Those claws look sharp and it doesn't look happy...* \n",
             .file_path = "dg_content/encounters/skeletal_bear.png",
 
-            .solutions = {"Aim for the throat!", "Scurry away", "Ride it to where you want to go next"},
             .context = "Closest to the corruption, this city was the first to fall."
           },
           {
@@ -1473,7 +1142,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*We bare uncanny resemblance, but it prefers to be alone.* \n",
             .file_path = "dg_content/encounters/skeletal_squirrel.png",
 
-            .solutions = {"Poke with an acorn until it does something", "Offer an acorn", "Tame it"},
             .context = "Some animals here must have been raised by necromancers and their behavior tells us they retain their memories."
           },
           {
@@ -1481,7 +1149,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*Can it see? Can it hear? What do you do?* \n",
             .file_path = "dg_content/encounters/skeletal_wolf.png",
 
-            .solutions = {"Throw an acorn to see if it can feel", "Boop his skeletal snoot", "Squeal to test its hearing"},
             .context = "Necromancers prefer ruins to prevent their rituals from being found."
           }
         },
@@ -1497,7 +1164,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This fox has been at the mercy of some necromancers... Not friendly.* \n",
             .file_path = "dg_content/encounters/consumed_fox.png",
 
-            .solutions = {"Offer an acorn for its troubles", "Scurry away", "Dance to lighten its mood"},
             .context = "Animals here are used by necromancers to do their bidding."
           },
           {
@@ -1505,7 +1171,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*So cute but scary at the same!* \n",
             .file_path = "dg_content/encounters/consumed_hare.png",
 
-            .solutions = {"Stare in confusion", "Don't look in its eyes!", "Attempt to pat its head"},
             .context = "Even the cutest of animals fall to the corruption."
           },
           {
@@ -1513,7 +1178,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This polar bear doesn't look too happy about his situation...* \n",
             .file_path = "dg_content/encounters/consumed_polar_bear.png",
 
-            .solutions = {"Appease with an acorn", "Scurry away", "Pretend like he isn't there"},
             .context = "What few animals manage to survive here are in a perpetual state of fear."
           }
         },
@@ -1550,7 +1214,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This pupper is different from the rest... he's riddled with dark energy!* \n",
             .file_path = "la_content/encounters/wolf_familiar.png",
 
-            .solutions = {"Throw a golden acorn", "Give him a bone", "Touch it"},
             .context = "These animals are born and raised by the corruption."
           },
           {
@@ -1558,7 +1221,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*The foxes notices you, locks eyes with you, pupils grow large...* \n",
             .file_path = "la_content/encounters/fox_familiar.png",
             
-            .solutions = {"Aim for the throat", "Make him fetch an acorn", "Give the death stare"},
             .context = "The corruption trains these familiars to be unsuspectingly deadly predators."
           },
           {
@@ -1566,7 +1228,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*Was once a happy squirrel, but was unfortunate enough to stumble upon this corruption...* \n",
             .file_path = "la_content/encounters/possessed_squirrel.png",
             
-            .solutions = {"Offer an acorn", "Let him be", "Try to comfort him"},
             .context = "This squirrel must have eaten a seemingly normal acorn..."
           }
         },
@@ -1582,7 +1243,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*What a lonely little hare! He starts to approach you...* \n",
             .file_path = "la_content/encounters/woodland_hare.png",
             
-            .solutions = {"Keep him", "Give him a carrot", "Give him head pats"},
             .context = "The only spot the corruption didn't take for unknown reasons."
           },
           {
@@ -1590,7 +1250,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This elk is happy. He's surrounded by food and other elk!* \n",
             .file_path = "la_content/encounters/elk.png",
             
-            .solutions = {"Offer an acorn", "Admire the scene", "Try to saddle him"},
             .context = "Animals here are happier than those in the oracle's protection."
           },
           {
@@ -1598,7 +1257,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This bear seems content in his slumber. But there's an acorn behind him!* \n",
             .file_path = "la_content/encounters/bear.png",
             
-            .solutions = {"Throw an acorn to provoke him", "Sneak around him", "Cause a scene"},
             .context = "The oracle has been seeking answers as to what protects this little area."
           }
         },
@@ -1614,7 +1272,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This acorn looks like an acorn and tastes like an acorn. Is it an acorn?* \n",
             .file_path = "la_content/encounters/conjured_acorn.png",
             
-            .solutions = {"Throw it at the nearby cultist", "Don't trust it", "Try to crack it open"},
             .context = "Illusions are created by the witches to trap unsuspecting animals."
           },
           {
@@ -1622,7 +1279,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This goldfish is flopping around on the ground far away from any body of water...* \n",
             .file_path = "la_content/encounters/conjured_goldfish.png",
             
-            .solutions = {"Bring it to a body of water", "Scurry away", "Test sniff"},
             .context = "Witches here and can recreate your memories as if they were reality."
           },
           {
@@ -1630,7 +1286,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*A suspicious-looking squirrel is feasting on some victuals.* \n",
             .file_path = "la_content/encounters/squirrel_doppleganger.png",
             
-            .solutions = {"Throw an acorn", "Scurry away", "Grab its attention"},
             .context = "The necromancers will use the powers of the corruption to revive the deceased and the witches disguise them."
           }
         },
@@ -1646,7 +1301,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*It looks peaceful despite its appearance.* \n",
             .file_path = "la_content/encounters/nightmare.png",
             
-            .solutions = {"Reach for head pats", "Don't trust it", "Try to saddle it"},
             .context = "These creatures are neither animal nor familiar, but hellspawn."
           },
           {
@@ -1654,7 +1308,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*But he's just A BUNNY!* \n",
             .file_path = "la_content/encounters/molten_bunny.png",
             
-            .solutions = {"Let him be", "Give him head pats", "Take him with you"},
             .context = "The grass is hot to the touch and releases sparks."
           },
           {
@@ -1662,7 +1315,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*It moves without a trace! But it's so tempting to touch it...* \n",
             .file_path = "la_content/encounters/living_dark_flame.png",
             
-            .solutions = {"Try to touch it", "Try to blow it out", "Follow it"},
             .context = "Hellspawn come from a portal that connects Earth to Hell."
           }
         },
@@ -1678,7 +1330,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*This squirrel has learned to wield the corruptive powers!* \n",
             .file_path = "la_content/encounters/dark_squirrel_mage.png",
             
-            .solutions = {"Throw an acorn", "Run", "Negotiate peace"},
             .context = "These squirrels draw off the corruption's power with the intent of dominating the world."
           },
           {
@@ -1686,7 +1337,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*Brainwashed by the corruptive forces, this squirrel isn't natural!* \n",
             .file_path = "la_content/encounters/squirrel_cultist.png",
             
-            .solutions = {"Throw an acorn at it", "Scurry away", "Does it like acorns?"},
             .context = "Any human or animal that enters the corruption never makes it out in one piece."
           },
           {
@@ -1694,7 +1344,6 @@ struct sd_biome biomes[BIOME_SIZE] = {
             .conflict = "*It speaks but its mouth doesn't move? What is it saying?* \n",
             .file_path = "la_content/encounters/familiar_skeletal_squirrel.png",
             
-            .solutions = {"Touch it", "Wave", "Find the voice"},
             .context = "Mind control can become so powerful that some animals can chant. But what are they saying?"
           }
         },

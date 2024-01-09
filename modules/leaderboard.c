@@ -26,6 +26,18 @@ struct sd_leaderboard
 };
 
 
+void leaderboard_info_cleanup(struct sd_leaderboard *params)
+{
+  free(params->player);
+  // not needed for the total war acorns leaderboard
+  if (params->lb_data)
+  {
+    free(params->lb_data->row_data);
+    free(params->lb_data);
+  }
+  free(params);
+}
+
 void create_leaderboard_interaction(const struct discord_interaction *event, struct sd_leaderboard *params)
 {
   struct sd_player *player = params->player;
@@ -49,7 +61,7 @@ void create_leaderboard_interaction(const struct discord_interaction *event, str
 
   header.embed.thumbnail = &(struct discord_embed_thumbnail) {
     .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
-        (button_idx == 0) ? items[ITEM_ACORN_COUNT].file_path : items[ITEM_WAR_ACORNS].file_path)
+        (button_idx == 0) ? slice_types[TYPE_ACORN_COUNT].item.file_path : slice_types[TYPE_WAR_ACORNS].item.file_path)
   };
 
   params->buttons[0] = (struct discord_component)
@@ -99,7 +111,7 @@ void create_leaderboard_interaction(const struct discord_interaction *event, str
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
         .array = util_data.buttons,
-        .size = sizeof(util_data.buttons)/sizeof(*util_data.buttons)
+        .size = util_data.buttons_displayed
       }
     }
   };
@@ -119,18 +131,13 @@ void create_leaderboard_interaction(const struct discord_interaction *event, str
 
   discord_edit_original_interaction_response(client, APPLICATION_ID, event->token, &interaction, NULL);
 
+  update_player_row(params->player);
+
   char values[16384];
   CCORDcode code = discord_edit_original_interaction_response_to_json(values, sizeof(values), &interaction);
   fprintf(stderr, "%s \nCCODE: %d \n", values, code);
 
-  free(params->player);
-  // not needed for the total war acorns leaderboard
-  if (params->lb_data)
-  {
-    free(params->lb_data->row_data);
-    free(params->lb_data);
-  }
-  free(params);
+  leaderboard_info_cleanup(params);
 }
 
 void is_user(struct discord *client, struct discord_response *resp, const struct discord_user *user)
@@ -253,6 +260,26 @@ int fetch_leaderboard(const struct discord_interaction *event)
 
   params->player = calloc(1, sizeof(struct sd_player));
   load_player_struct(params->player, event->member->user->id, event->data->custom_id);
+  struct sd_player *player = params->player;
+
+  if (event->message->timestamp /1000 < player->timestamp)
+  {
+    error_message(event, "This appears to be an old session! Please renew your session by sending `/start`.");
+    leaderboard_info_cleanup(params);
+    return ERROR_STATUS;
+  }
+
+  params->player->timestamp = event->message->timestamp /1000;
+
+  if (APPLICATION_ID == MAIN_BOT_ID
+    && (time(NULL) < params->player->main_cd))
+  {
+    error_message(event, "Cooldown not ready! Please wait %d second(s).", BASE_CD);
+    leaderboard_info_cleanup(params);
+    return ERROR_STATUS;
+  }
+
+  params->player->main_cd = time(NULL) + BASE_CD;
 
   // sd_leaderboard gets passed along regardless of leaderboard type
   struct discord_ret_interaction_response ret_response = { 
@@ -287,10 +314,9 @@ int fetch_leaderboard(const struct discord_interaction *event)
 
   if (PQntuples(params->player_pos) == 0)
   {
-    error_message(event, "There aren't enough entries yet!");
     PQclear(params->player_pos);
-    free(params->player);
-    free(params);
+    error_message(event, "There aren't enough entries yet!");
+    leaderboard_info_cleanup(params);
     return ERROR_STATUS;
   }
 

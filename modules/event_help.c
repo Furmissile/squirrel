@@ -3,72 +3,75 @@ int event_help_interaction(const struct discord_interaction *event)
   struct sd_player player = { 0 };
   load_player_struct(&player, event->member->user->id, event->data->custom_id);
 
+  ERROR_INTERACTION((event->message->timestamp /1000 < player.timestamp), 
+      "This appears to be an old session! Please renew your session by sending `/start`.");
+
+  player.timestamp = event->message->timestamp /1000;
+
+  if (APPLICATION_ID == MAIN_BOT_ID)
+    ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait %d second(s).", BASE_CD);
+
+  player.main_cd = time(NULL) + BASE_CD;
+
   struct sd_help_info params = { 0 };
 
   int page_num = (player.button_idx != ERROR_STATUS) ? player.button_idx +1 : 1;
 
   switch (page_num -1)
   {
-    case E_TOPIC_SEASONS:
+    case E_TOPIC_ACORN_COUNT:
       params.field = (struct discord_embed_field) {
         .name = u_snprintf(params.field_name, sizeof(params.field_name), 
             ""ACORNS" Acorn Count Event"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
             " "BULLET" This is an ongoing event where players compete based on "ACORN_COUNT" *acorn count*. \n"
-            " "BULLET" Acorn count is unaffected by your stats and buffs, so be sure to have your luck in your right pocket! \n"
-            " "BULLET" You can increase your score by foraging and finding the "PROFICIENCY_ACORN" *proficiency acorn*. \n")
+            " "BULLET" Check out the leaderboard at `Info > Statistics > Leaderboard`!")
       };
       break;
-    case E_TOPIC_ACORN_COUNT:
+    case E_TOPIC_SEASONS:
       params.field = (struct discord_embed_field) {
         .name = u_snprintf(params.field_name, sizeof(params.field_name),
             ""ACORNS" Seasons"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "BULLET" Seasons passively change every week. Each season gives a different boost to "ACORNS" *acorn* earnings. \n"
-            " "BULLET" Seasons include Spring (+**20**%%), Summer (+**10**%%), Fall (+**5**%%), and Winter (No boost). \n"
-            " "BULLET" Check your info to find out what season is active and when it ends! \n")
+            " "BULLET" Seasons passively change every week. Each season offers a different material to collect that have a chance to appear on each piece. \n"
+            " "BULLET" Each new season brings a higher quality material so get your foraging skills ready! \n"
+            " "BULLET" Go to `Info` to find out what season it is and when it ends! \n")
       };
       break;
     case E_TOPIC_SPRING:
       params.field = (struct discord_embed_field) {
         .name = u_snprintf(params.field_name, sizeof(params.field_name),
-            ""ACORNS" Spring Chicken Event (Spring)"),
+            ""ACORNS" Spring's Seeds"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "BULLET" Trees everywhere are dropping "GOLDEN_ACORNS" *golden acorns*! \n"
-            " "BULLET" Lasts throughout the in-game Spring season. \n"
-            " "BULLET" "GOLDEN_ACORNS" *Golden acorns* have a chance to be included in every forage instead of just "
-                "from stealing or "LOST_STASH" *lost stashes*! \n")
+            " "BULLET" Spring is the first week of every month and "SEED_VICTUALS" *Seeds* are in abunance! \n"
+            " "BULLET" Their abundance causes them to have the least value of all the seasonal rewards. \n")
       };
       break;
     case E_TOPIC_SUMMER:
       params.field = (struct discord_embed_field) {
         .name = u_snprintf(params.field_name, sizeof(params.field_name),
-            ""ACORNS" Garden Raid Event (Summer)"),
+            ""ACORNS" Summer's Cherries"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "BULLET" Everyone is growing all sorts of useful victuals! *RaId ThEiR gArDeNsSs!* \n"
-            " "BULLET" Lasts throughout the in-game Summer season. \n"
-            " "BULLET" You will find all sorts of victuals including "BLUEBERRY_VICTUALS" *blueberries*, "SEED_VICTUALS" *seeds*, and "CHERRY_VICTUALS" *cherries* for bonus rewards! \n"
-            " "BULLET" Victuals are __NOT__ resources. They are not added to your inventory! What they give follows in parentheses.")
+            " "BULLET" Summer is the second week of every month and everyone is getting their hands on "CHERRY_VICTUALS" *cherries*! \n"
+            " "BULLET" They are often located in humans' gardens which can be tricky at times! This makes cherries a higher value than "SEED_VICTUALS" *Seeds*. \n")
       };
       break;
     case E_TOPIC_FALL:
       params.field = (struct discord_embed_field) {
         .name = u_snprintf(params.field_name, sizeof(params.field_name),
-            ""ACORNS" Hibernation Event (Fall)"),
+            ""ACORNS" Fall's Blueberries"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "BULLET" Winter is coming! Take this time to snatch all the "ACORNS" *acorns* you can before hibernation! \n"
-            " "BULLET" Lasts throughout the in-game Fall season. \n"
-            " "BULLET" Energy regeneration is halved! \n")
+            " "BULLET" Fall is the third week of every month and every squirrel loves "BLUEBERRY_VICTUALS" *blueberries*! \n"
+            " "BULLET" They are an absolute delight due to their variance in taste! This makes blueberries a higher value than "CHERRY_VICTUALS" *cherries*. \n")
       };
       break;
     case E_TOPIC_WINTER:
       params.field = (struct discord_embed_field) {
         .name = u_snprintf(params.field_name, sizeof(params.field_name),
-            ""ACORNS" Bunny's Endeavor (Winter)"),
+            ""ACORNS" Winter's Catnip"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
-            " "BULLET" Resources are depleting! Bunny is looking for able-bodies who can fetch him "CATNIP" *catnip*. He'll pay handsomely for it too. \n"
-            " "BULLET" Lasts throughout the in-game Winter season! Check it out at `Info > Bunny's Wares` (only appears while the event is active)! \n"
-            " "BULLET" Catnip has a chance to be included with every forage! \n")
+            " "BULLET" Winter lasts the remainder of the month and Bunny the cat is looking for able-bodies to fetch him "CATNIP" *catnip*! \n"
+            " "BULLET" Bunny has friends in high places so he pays with an added bonus to "ACORN_COUNT" *acorn count*. This makes catnip a higher value than "BLUEBERRY_VICTUALS" *blueberries*. \n")
       };
       break;
     case E_TOPIC_CHRISTMAS:
@@ -103,7 +106,7 @@ int event_help_interaction(const struct discord_interaction *event)
     },
     .footer = &(struct discord_embed_footer) {
       .text = u_snprintf(params.footer_text, sizeof(params.footer_text), "Happy Foraging!"),
-      .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, items[ITEM_ACORNS].file_path)
+      .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, slice_types[TYPE_ACORNS].item.file_path)
     }
   };
 
@@ -138,7 +141,7 @@ int event_help_interaction(const struct discord_interaction *event)
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
         .array = util_data.buttons,
-        .size = sizeof(util_data.buttons)/sizeof(*util_data.buttons)
+        .size = util_data.buttons_displayed
       }
     }
   };
@@ -162,11 +165,9 @@ int event_help_interaction(const struct discord_interaction *event)
 
   };
 
-  char values[16384];
-  CCORDcode code = discord_interaction_response_to_json(values, sizeof(values), &interaction);
-  fprintf(stderr, "%s \nCCODE: %d \n", values, code);
-
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+
+  update_player_row(&player);
 
   return 0;
 }

@@ -11,6 +11,12 @@ struct sd_invite_info
   unsigned long message_id;
 };
 
+void invite_info_cleanup(struct sd_invite_info *params)
+{
+  free(params->scurry);
+  free(params);
+}
+
 void invite_expired(const struct discord_interaction *event, struct sd_invite_info *params)
 {
   char* invite_user = event->message->embeds->array[0].author->name;
@@ -47,8 +53,7 @@ void invite_expired(const struct discord_interaction *event, struct sd_invite_in
     },
     NULL);
   
-  free(params->scurry);
-  free(params);
+  invite_info_cleanup(params);
 }
 
 void invite_response(struct discord *client, struct discord_response *resp, const struct discord_user *user)
@@ -162,8 +167,7 @@ void invite_response(struct discord *client, struct discord_response *resp, cons
       params->message_id);
   PQclear(delete_invite);
 
-  free(params->scurry);
-  free(params);
+  invite_info_cleanup(params);
 }
 
 // the owner will trigger this interaction and takes place entirely in DM
@@ -183,6 +187,7 @@ int invite_interaction(const struct discord_interaction *event)
       "select * from public.invites where request_id = %ld", event->message->id);
 
   struct sd_invite_info *params = calloc(1, sizeof(struct sd_invite_info));
+  params->scurry = calloc(1, sizeof(struct sd_scurry));
 
   if (PQntuples(pending_invite) == 0)
   {
@@ -191,14 +196,11 @@ int invite_interaction(const struct discord_interaction *event)
     return ERROR_STATUS;
   }
 
-  params->scurry = calloc(1, sizeof(struct sd_scurry));
-
   load_scurry_struct(params->scurry, player.scurry_id);
   if (params->scurry->war_flag == 1)
   {
     error_message(event, "You cannot accept invites while at war! Please retreat or finish the war first.");
-    free(params->scurry);
-    free(params);
+    invite_info_cleanup(params);
     return ERROR_STATUS;
   }
 

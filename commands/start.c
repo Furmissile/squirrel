@@ -21,9 +21,10 @@ int init_welcome_interaction(const struct discord_interaction *event)
   struct sd_header_params header = { 0 };
   struct sd_start params = { 0 };
 
-  struct sd_file_data squirrel_dir = (player.designer_squirrel == ERROR_STATUS) 
-      ? squirrels[player.squirrel].squirrel
-      : designer_squirrels[player.designer_squirrel].squirrel;
+  if (APPLICATION_ID == MAIN_BOT_ID)
+    ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait %d second(s).", BASE_CD);
+  
+  player.main_cd = time(NULL) + BASE_CD;
 
   header.embed = (struct discord_embed) 
   {
@@ -34,32 +35,29 @@ int init_welcome_interaction(const struct discord_interaction *event)
           "https://cdn.discordapp.com/avatars/%lu/%s.png",
           event->member->user->id, event->member->user->avatar)
     },
-    .title = u_snprintf(header.title, sizeof(header.title), "Welcome to Squirrel Dash!"),
+    .title = u_snprintf(header.title, sizeof(header.title), "Welcome, %s!", event->member->user->username),
+    .thumbnail = &(struct discord_embed_thumbnail) {
+      .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
+          squirrels[player.squirrel].squirrel.file_path)
+    },
     .image = &(struct discord_embed_image) {
       .url = u_snprintf(params.image_url, sizeof(params.image_url), GIT_PATH, 
           misc[MISC_WELCOME].file_path)
-    },
-    .thumbnail = &(struct discord_embed_thumbnail) {
-      .url = u_snprintf(header.thumbnail_url, sizeof(header.thumbnail_url), GIT_PATH,
-          squirrel_dir.file_path)
-    },
-    .footer = &(struct discord_embed_footer) {
-      .text = u_snprintf(params.footer_text, sizeof(params.footer_text), "Happy Foraging!"),
-      .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, items[ITEM_ACORNS].file_path)
     }
   };
 
   params.emoji = (struct discord_emoji)
   {
     .name = u_snprintf(params.emoji_name, sizeof(params.emoji_name), 
-        items[ITEM_ACORNS].emoji_name),
-    .id = items[ITEM_ACORNS].emoji_id
+        slice_types[TYPE_ACORNS].item.emoji_name),
+    .id = slice_types[TYPE_ACORNS].item.emoji_id,
+    .animated = true
   };
   params.button = (struct discord_component)
   {
     .type = DISCORD_COMPONENT_BUTTON,
     .style = DISCORD_BUTTON_SUCCESS,
-    .custom_id = u_snprintf(params.custom_id, sizeof(params.custom_id), "%c0.%ld",
+    .custom_id = u_snprintf(params.custom_id, sizeof(params.custom_id), "%c.%ld",
         TYPE_INFO_FROM_BUTTONS, event->member->user->id),
     .label = u_snprintf(params.label, sizeof(params.label), "Start!"),
     .emoji = &params.emoji
@@ -92,13 +90,7 @@ int init_welcome_interaction(const struct discord_interaction *event)
 
   };
 
-  char values[16384];
-  discord_interaction_response_to_json(values, sizeof(values), &interaction);
-  fprintf(stderr, "%s \n", values);
-
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
-
-  update_player_row(&player);
 
   return 0;
 }

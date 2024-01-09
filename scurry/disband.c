@@ -8,25 +8,34 @@ int disband_interaction(const struct discord_interaction *event)
   // check if the name is unique
   PGresult* check_scurry = (PGresult*) { 0 };
 
-  check_scurry = SQL_query(check_scurry, "select * from public.scurry where s_name like '%s'", input);
+  check_scurry = SQL_query(check_scurry, "select * from public.scurry where name like '%s'", input);
 
   char error_msg[64] = { };
   u_snprintf(error_msg, sizeof(error_msg), "Sorry, the name \"%s\" doesn't exist!", input);
-  ERROR_DATABASE_RET((PQntuples(check_scurry) == 0), error_msg, check_scurry);
+
+  DATABASE_ERROR((PQntuples(check_scurry) == 0), error_msg, check_scurry);
 
   unsigned long scurry_id = strtobigint(PQgetvalue(check_scurry, 0, DB_SCURRY_OWNER_ID));
   PQclear(check_scurry);
   
   // covers both 0 and different id
-  ERROR_INTERACTION((player.scurry_id != scurry_id), "You do not own this scurry!");
+  ERROR_INTERACTION((player.user_id != scurry_id), "You do not own this scurry!");
 
   PGresult* rename_scurry = (PGresult*) { 0 };
 
   rename_scurry = SQL_query(rename_scurry, 
       "delete from public.scurry where owner_id = %ld; "
       "update public.player set scurry_id = 0 where scurry_id = %ld;",
-       player.scurry_id, player.scurry_id);
+       scurry_id, scurry_id);
   PQclear(rename_scurry);
+
+  // Check if the scurry still exists
+  check_scurry = SQL_query(check_scurry, "select * from public.scurry where owner_id = %ld", scurry_id);
+
+  DATABASE_ERROR((PQntuples(check_scurry) > 0),
+      "An error has occurred while disbanding this scurry. \n"
+      "Please report this error to the support server! (link on last page of player help)", check_scurry);
+  PQclear(check_scurry);
 
   struct sd_header_params header = { 0 };
 
@@ -43,7 +52,7 @@ int disband_interaction(const struct discord_interaction *event)
     },
     .title = u_snprintf(header.title, sizeof(header.title), "Scurry successfully disbanded!"),
     .description = u_snprintf(description, sizeof(description),
-        "Your scurry **%s** has been permanently disbanded! \n", input)
+        "Your scurry **%s** has been disbanded! \n", input)
   };
 
   struct discord_interaction_response interaction = 
@@ -60,10 +69,6 @@ int disband_interaction(const struct discord_interaction *event)
     }
 
   };
-
-  char values[16384];
-  discord_interaction_response_to_json(values, sizeof(values), &interaction);
-  fprintf(stderr, "%s \n", values);
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 

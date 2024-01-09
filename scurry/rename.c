@@ -15,8 +15,12 @@ int rename_interaction(const struct discord_interaction *event)
   // covers both 0 and different id
   ERROR_INTERACTION((player.scurry_id != player.user_id), "You do not own a scurry!");
 
-  ERROR_INTERACTION((player.acorns < SCURRY_CREATION_COST), 
-      "You need more acorns to rename your scurry!");
+  // scurry id cannot be 0 at this point
+  struct sd_scurry scurry = { 0 };
+  load_scurry_struct(&scurry, player.scurry_id);
+
+  ERROR_INTERACTION((player.conjured_acorns < SCURRY_CREATION_COST), 
+      "You need more conjured acorns to rename your scurry!");
 
   size_t input_len = strlen(input);
   ERROR_INTERACTION((input_len > 16 || input_len < 4), 
@@ -25,18 +29,28 @@ int rename_interaction(const struct discord_interaction *event)
   // check if the name is unique
   PGresult* check_scurry = (PGresult*) { 0 };
 
-  check_scurry = SQL_query(check_scurry, "select * from public.scurry where s_name like '%s'", input);
+  check_scurry = SQL_query(check_scurry, "select * from public.scurry where name like '%s'", input);
 
   char error_msg[64] = { };
   u_snprintf(error_msg, sizeof(error_msg), "Sorry, the name \"%s\" is already taken!", input);
-  ERROR_DATABASE_RET((PQntuples(check_scurry) == 1), error_msg, check_scurry);
+  DATABASE_ERROR((PQntuples(check_scurry) > 0), error_msg, check_scurry);
 
   PQclear(check_scurry);
 
   PGresult* rename_scurry = (PGresult*) { 0 };
 
-  rename_scurry = SQL_query(rename_scurry, "update public.scurry set s_name = '%s' where owner_id = %ld", input, player.scurry_id);
+  rename_scurry = SQL_query(rename_scurry, "update public.scurry set name = '%s' where owner_id = %ld", input, player.scurry_id);
   PQclear(rename_scurry);
+
+  // name is still old name at this point; only changed in db!
+  check_scurry = SQL_query(check_scurry, "select * from public.scurry where name like '%s'", scurry.scurry_name);
+
+  DATABASE_ERROR((PQntuples(check_scurry) > 0),
+      "An error has occurred while renaming this scurry. \n"
+      "Please report this error to the support server! (link on last page of player help)", check_scurry);
+  PQclear(check_scurry);
+
+  player.conjured_acorns -= SCURRY_CREATION_COST;
 
   struct sd_header_params header = { 0 };
   struct sd_rename_scurry params = { 0 };
@@ -53,12 +67,12 @@ int rename_interaction(const struct discord_interaction *event)
     },
     .title = u_snprintf(header.title, sizeof(header.title), "Scurry successfully renamed!"),
     .description = u_snprintf(params.description, sizeof(params.description),
-        "Your scurry has been renamed to **%s**. Check it out with the command `/scurry_info`!", input),
+        "Your scurry has been renamed to **%s**. Check it at `Info > Scurry Info`!", input),
     .footer = &(struct discord_embed_footer) {
       .text = u_snprintf(params.footer_text, sizeof(params.footer_text), 
-          "/scurry_help | For info about scurries!"),
+          "Info > Scurry Help | For info about scurries!"),
       .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url),
-          GIT_PATH, item_types[TYPE_NO_ACORNS].file_path)
+          GIT_PATH, misc[MISC_HELP].file_path)
     }
   };
 
@@ -77,11 +91,9 @@ int rename_interaction(const struct discord_interaction *event)
 
   };
 
-  char values[16384];
-  discord_interaction_response_to_json(values, sizeof(values), &interaction);
-  fprintf(stderr, "%s \n", values);
-
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+
+  update_player_row(&player);
 
   return 0;
 }

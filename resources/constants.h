@@ -52,172 +52,93 @@
 
 
 // COOLDOWNS
-  #define COOLDOWN 2
-  #define BASE_ENERGY_CD 180 // 3 minutes/ energy
+  #define ADD_PIECE_CD 2
+  #define BASE_CD 1
   #define INVITE_CD 120
-  #define SESSION_CD 120
 
 
 // CHANCE
-  #define JUNK_CHANCE      10  // 10 % -- No acorns
-  #define COMMON_CHANCE    60  // 50 % -- Handful of acorns
-  #define UNCOMMON_CHANCE  80  // 20 % -- Mouthful of acorns 
-  #define CONTAINER_CHANCE 95  // 15 % -- Lost Stash
-  #define MAX_CHANCE       100 // 5  % -- Sack of acorns
+  #define COMMON_CHANCE 65 // 65% -- acorn
+  #define EVENT_CHANCE 85 // 20% -- event resources
+  #define RARE_CHANCE 95 // 10% -- golden acorn
+  #define MAX_CHANCE 100 // 5% -- conjured acorn
 
-  #define ENCOUNTER_CHANCE 20 // 20 % -- checked separately
-  #define STORY_CHANCE 80     // 20 %
+  #define MAX_PIES 3
 
-  #define STEAL_CHANCE 35
+  #define ENCOUNTER_CHANCE 15 // 15%
+  #define STORY_CHANCE 60     // 40%
 
-  #define VICTUALS_CHANCE 80
+  #define STEAL_CHANCE 50
+  #define DOUBLE_STEAL 80
+  #define STEAL_COST 15
 
-  #define BLUEBERRY_CHANCE 75 // Gives acorn count
-  #define CHERRY_CHANCE 90    // Gives health
-  #define SEED_CHANCE 100     // Gives energy
+  #define WAR_ACORN_CHANCE 80
 
-  #define WAR_STEAL_CHANCE 50
+  #define FIRST_DAILY 5
+  #define SECOND_DAILY 15
+  #define THIRD_DAILY 25
 
-  #define LUCK_BUFF_CHANCE 90
-  #define PROFICIENCY_BUFF_CHANCE 75
-
+  #define DAILY_REWARD 10
 
 // GENERAL PROGRESSION
-  #define BIOME_INTERVAL 5000
-  #define BIOME_ENCOUNTER_COST 100
-  #define BIOME_ACORN_INC 0.2f
-  #define STEAL_MINIMUM 1000
+  #define BIOME_INTERVAL 2000
 
+// PIES
+  #define EMPTY_PIE "00000000"
+  #define EMPTY_HISTORY "%d..." // remembers the last 4 pieces
+  #define PIE_FORMAT "%d%d%d%d%d%d%d%d"
 
 // INTERACTION TYPES
-  #define TYPE_FORAGE_INIT 'n'
-  #define TYPE_FORAGE_RESP 'r'
-  #define TYPE_ENCOUNTER_RESP 'e'
+  #define TYPE_ADD_PIECE 'a'
+  #define TYPE_INFO 'b'
+  #define TYPE_INFO_FROM_BUTTONS 'c'
+  #define TYPE_SQUIRREL 'd'
+  #define TYPE_SQUIRREL_HELP 'e'
+  #define TYPE_INIT_STEAL 'f'
+  #define TYPE_STEAL 'g'
 
-  #define TYPE_FORAGE 'f'
-  #define TYPE_INFO 'd'
-  #define TYPE_INFO_FROM_BUTTONS 'h'
-  #define TYPE_UPGRADE 'u'
-  #define TYPE_SQUIRREL 's'
-  #define TYPE_BUNNY 'g'
-  #define TYPE_E_ACORN 'a'
-  #define TYPE_INVITE 'i'
-  #define TYPE_SCURRY_INFO 'x'
-  #define TYPE_LEADERBOARD 'l'
-  #define TYPE_SESSION_INFO 'j'
-  #define TYPE_DESIGNER_SQIRRELS 'k'
-  #define TYPE_DAILY 'o'
-  #define TYPE_BANK 'q'
-  #define TYPE_INIT_STEAL 'w'
-  #define TYPE_STEAL 't'
-  #define TYPE_SCURRY_LEAVE 'z'
+  #define TYPE_PLAYER_HELP 'h'
+  #define TYPE_SCURRY_HELP 'i'
+  #define TYPE_EVENT_HELP 'j'
+  #define TYPE_BIOME_STORY 'k'
 
-  #define TYPE_PLAYER_HELP 'p'
-  #define TYPE_SCURRY_HELP 'c'
-  #define TYPE_EVENT_HELP 'v'
-  #define TYPE_BIOME_STORY 'b'
-  #define TYPE_SQUIRREL_HELP 'm'
-  #define TYPE_INIT_INVITE 'y'
-
-
-// FIXED COSTS
-  #define MAIN_ENERGY_COST 2
-  #define STEAL_ENERGY_COST 20
-
-
-// MAX VALUES
-  #define MAX_HEALTH 10
-  #define MAX_ENERGY 100
-
-
-// BUFFS
-  #define REGEN_RATE 5
-  #define HEALING_FACTOR 0.5f
-  #define SQUIRREL_BOOST_COST 10
-
-  #define GRAY_BOOST_DURATION 10 // based on energy loss
-  #define SKELETAL_BOOST_DURATION 5 // based on health regen
-  #define BOOKIE_BOOST_DURATION 15 // based on acorns
-  #define ANGELIC_BOOST_DURATION 10 // based on health loss
-  #define KING_BOOST_DURATION 15 // based on acorn count
-
-  // explicitly defined to avoid confusion
-  #define BUFF_CONSTANT 2
-  #define SQUIRREL_CONSTANT 1.5f
-  #define BOOSTED_ACORN_CONSTANT 1.5f
-
-// SEASONS
-  #define SPRING_MULT 1.2f
-  #define SUMMER_MULT 1.1f
-  #define FALL_MULT 1.05f
-  #define WINTER_MULT 1 // Explicit for definition
-
-
-// STATS
-  #define STAT_EVOLUTION 5
-  #define BASE_HEALTH_REGEN 2
-
-  // Stat multiplier factors - See generate_factor() for details
-  #define PROFICIENCY_FACTOR 0.1f
-  #define LUCK_FACTOR 0.1f
-  #define STRENGTH_FACTOR 5
-
-  // Price multiplier factors - See generate_price() for details
-  #define PROFICIENCY_UNIT 1500
-  #define STRENGTH_UNIT 5000
-  #define LUCK_UNIT 15000
+  #define TYPE_INVITE 'l'
+  #define TYPE_INIT_INVITE 'm'
+  #define TYPE_SCURRY_INFO 'n'
+  #define TYPE_LEADERBOARD 'o'
+  #define TYPE_SCURRY_LEAVE 'p'
 
 
 // SCURRY
   #define SCURRY_MEMBER_MAX 5
   #define SCURRY_MEMBER_REQ 3 // requirement to participate in wars
-  #define SCURRY_CREATION_COST 50000
-  #define WAR_STASH_FACTOR 250
-  #define DEFAULT_WAR_STASH 1000
+  #define SCURRY_CREATION_COST 250 // in CONJURED ACORNS
+  #define SCURRY_RANK_BONUS 1.25f
 
-  // Rank Requirements
-  #define SEED_NOT_MAX 10000
-  #define ACORN_SNATCHER_MAX 20000
-  #define SEED_SNIFFER_MAX 35000
-  #define OAKFFICIAL_MAX 50000
+  // Rank Requirements (in war acorn)
+  #define SEED_NOT_MAX 50
+  #define OAKFFICIAL_MAX 100
+  #define ROYAL_NUT_MAX 200
   // Royal Nut max -> infinity
 
-  // WAR ACORN CAPS PER RANK
-  #define SEED_NOT_CAP 500
-  #define ACORN_SNATCHER_CAP 1000
-  #define SEED_SNIFFER_CAP 2500
-  #define OAKFFICIAL_CAP 5000
-  #define ROYAL_NUT_CAP 10000
-
-  // Multiply into rank
-  #define BASE_ACORN_MULT 0.05f
-  #define RECOVER_WAR_ACORNS 100
-
-  #define GRAY_SQUIRREL_COUNT 0
-  #define SKELETAL_SQUIRREL_COUNT 25000
-  #define BOOKIE_SQUIRREL_COUNT 50000
-  #define ANGELIC_SQUIRREL_COUNT 100000
-  #define KING_SQUIRREL_COUNT 150000
-
-
-  #define FIRST_SQUIRREL 10000 // 10,000
-  #define SECOND_SQUIRREL 100000 // 100,000
-  #define THIRD_SQUIRREL 500000 // 500,000
-  #define FOURTH_SQUIRREL 1000000 // 1,000,000
+  #define FIRST_SQUIRREL 25
+  #define SECOND_SQUIRREL 50
+  #define THIRD_SQUIRREL 100
+  #define FOURTH_SQUIRREL 250
 
   #define CHRISTMAS_MONTH 11
 
 // GAME ERRORS
   #define ERROR_STATUS -1
 
-  #define ERROR_INTERACTION(error, message) \
+  #define ERROR_INTERACTION(error, message, ...) \
       if (error) { \
-        error_message(event, message); \
+        error_message(event, message, ##__VA_ARGS__); \
         return ERROR_STATUS; \
       }
 
   // Errors involving clearing a query
-  #define ERROR_DATABASE_RET(error, message, PQ_result) \
+  #define DATABASE_ERROR(error, message, PQ_result) \
       if (error) { \
         error_message(event, message); \
         PQclear(PQ_result); \
@@ -229,38 +150,33 @@
     char buffer[64] = { }; \
     num_str(buffer, sizeof(buffer), value);
 
+  enum DETECT_ACTION
+  {
+    DETECT_ROTATE = MAX_PIES,
+    DETECT_RESTART,
+    DETECT_START,
+    DETECT_SIZE
+  };
+
 // EMOJI CONSTANTS
   // Resources
-  #define ENERGY "<:energy:1164894603648958504>"
-  #define ACORNS "<:acorn:1164894600926863360>"
   #define ACORN_COUNT "<:acorn_count:1164894602491351113>"
+  #define EMPTY_ACORN "<:empty_acorn:1191889906696474665>"
+  #define ACORNS "<:acorn:1164894600926863360>"
   #define GOLDEN_ACORNS "<:golden_acorn:1164894605788074066>"
   #define CONJURED_ACORNS "<:conjured_acorn:1164897240771461151>"
   #define CATNIP "<:catnip:1164897238749818961>"
 
+  #define EMPTY_BOX "<:empty:1191574115887349823>"
+  #define COMMON_BOX "<:common_box:1191075902822547527>"
+  #define RARE_BOX "<:rare_box:1191444823710908477>"
+  #define UNIQUE_BOX "<:unique_box:1191444163837825118>"
+  #define BONUS_BOX "<:bonus_box:1191444727195783278>"
+
   // Rewards
-  #define NO_ACORNS "<:no_acorns:1164898153884029012>"
-  #define ACORN_HANDFUL "<:acorn_handful:1164898146057453638>"
-  #define ACORN_MOUTHFUL "<:acorn_mouthful:1164898147051507782>"
-  #define LOST_STASH "<:lost_stash:1164898152906764349>"
-  #define ACORN_SACK "<:acorn_sack:1164898148779577364>"
   #define RIBBONED_ACORN "<:ribboned_acorn:1180504068750311515>"
   #define COAL "<:coal:1180327193524580362>"
 
-  // Health
-  #define HEALTH "<:health:1164894607730028654>"
-  #define BROKEN_HEALTH "<:broken_health:1164898149979148360>"
-
-  // Stats
-  #define PROFICIENCY_ICON "<:proficiency:1164899171862593568>"
-  #define LUCK_ICON "<:luck:1164899170029682781>"
-  #define STRENGTH_ICON "<:strength:1164899172789518356>"
-
-  // Active Buffs
-  #define PROFICIENCY_ACORN "<:proficiency_acorn:1164899493481811989>"
-  #define LUCK_ACORN "<:luck_acorn:1164899492231925860>"
-  #define BOOSTED_ACORN "<:boosted_acorn:1164899491363696690>"
-  
   // Interface
   #define QUEST_MARKER "<:quest_marker:1164898155150708736>"
   #define HELP_MARKER "<:no_acorns:1164898153884029012>"
@@ -271,6 +187,7 @@
   #define ADD "<:plus:1177068547973849130>"
   #define MINUS "<:minus:1177071484011819109>"
   #define WEATHER "<:weather:1178018949267476550>"
+  #define TREASURE "<:lost_stash:1164898152906764349>"
 
   // Scurry
   #define GUILD_ICON "<:guild_icon:1164918417300668466>"

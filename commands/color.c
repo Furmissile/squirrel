@@ -17,6 +17,7 @@ int is_color(char* input, struct sd_player *player)
   }
 
   player->color = (int)strtol(input, NULL, 16);
+  player->main_cd = time(NULL) + BASE_CD;
 
   return 0;
 }
@@ -27,10 +28,13 @@ int color_interaction(const struct discord_interaction *event)
   load_player_struct(&player, event->member->user->id, event->data->custom_id);
   
   char* input = event->data->options->array[0].value;
-  char fmtted_input[64] = { }; 
-  lowercase(fmtted_input, sizeof(fmtted_input), input);
+  char formatted_input[64] = { }; 
+  lowercase(formatted_input, sizeof(formatted_input), input);
 
-  ERROR_INTERACTION( ( is_color(fmtted_input, &player) == ERROR_STATUS ), "Invalid input. Please try again!");
+  if (APPLICATION_ID == MAIN_BOT_ID)
+    ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait %d second(s).", BASE_CD);
+
+  ERROR_INTERACTION( ( is_color(formatted_input, &player) == ERROR_STATUS ), "Invalid input. Please try again!");
 
   struct sd_header_params header = { 0 };
 
@@ -61,10 +65,6 @@ int color_interaction(const struct discord_interaction *event)
     }
 
   };
-
-  char values[16384];
-  discord_interaction_response_to_json(values, sizeof(values), &interaction);
-  fprintf(stderr, "%s \n", values);
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 

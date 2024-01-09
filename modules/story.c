@@ -3,6 +3,16 @@ int biome_story_interaction(const struct discord_interaction *event)
   struct sd_player player = { 0 };
   load_player_struct(&player, event->member->user->id, event->data->custom_id);
 
+  ERROR_INTERACTION((event->message->timestamp /1000 < player.timestamp), 
+      "This appears to be an old session! Please renew your session by sending `/start`.");
+
+  player.timestamp = event->message->timestamp /1000;
+
+  if (APPLICATION_ID == MAIN_BOT_ID)
+    ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait %d second(s).", BASE_CD);
+
+  player.main_cd = time(NULL) + BASE_CD;
+
   struct sd_biome_info params = { 0 };
 
   int page_num = (player.button_idx != ERROR_STATUS) ? player.button_idx +1 : 1;
@@ -83,7 +93,7 @@ int biome_story_interaction(const struct discord_interaction *event)
     },
     .footer = &(struct discord_embed_footer) {
       .text = u_snprintf(params.footer_text, sizeof(params.footer_text), "Happy Foraging!"),
-      .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, items[ITEM_ACORNS].file_path)
+      .icon_url = u_snprintf(params.footer_url, sizeof(params.footer_url), GIT_PATH, slice_types[TYPE_ACORNS].item.file_path)
     }
   };
 
@@ -110,15 +120,15 @@ int biome_story_interaction(const struct discord_interaction *event)
     {
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
-        .array = stats.buttons,
-        .size = sizeof(stats.buttons)/sizeof(*stats.buttons)
+        .array = util_data.buttons,
+        .size = util_data.buttons_displayed
       }
     },
     {
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
-        .array = util_data.buttons,
-        .size = sizeof(util_data.buttons)/sizeof(*util_data.buttons)
+        .array = stats.buttons,
+        .size = sizeof(stats.buttons)/sizeof(*stats.buttons)
       }
     }
   };
@@ -142,11 +152,9 @@ int biome_story_interaction(const struct discord_interaction *event)
 
   };
 
-  char values[16384];
-  CCORDcode code = discord_interaction_response_to_json(values, sizeof(values), &interaction);
-  fprintf(stderr, "%s \nCCODE: %d \n", values, code);
-
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+
+  update_player_row(&player);
 
   free(params.fields);
   free(params.field_names);

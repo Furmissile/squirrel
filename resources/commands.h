@@ -49,30 +49,22 @@ enum BUTTON_TYPE
 {
   BUTTON_PLAYER_HELP,
   BUTTON_BIOME_STORY,
-  BUTTON_INIT_FORAGE,
   BUTTON_MAIN_FORAGE,
-  BUTTON_ENCOUNTER_FORAGE,
-  BUTTON_UPGRADE,
-  BUTTON_SESSION_INFO,
   BUTTON_INFO,
   BUTTON_INFO_FROM_BUTTONS,
   BUTTON_INIT_STEAL,
   BUTTON_STEAL,
   BUTTON_SQUIRREL,
-  BUTTON_DESIGNER_SQUIRRELS,
-  BUTTON_HELP_DESIGNER_SQUIRRELS,
-  BUTTON_DAILY_TASKS,
-  BUTTON_BANK,
+  BUTTON_HELP_SQUIRRELS,
 
   BUTTON_LEADERBOARD,
 
   BUTTON_EVENT_HELP,
-  BUTTON_BUNNY_ENDEAVOR,
 
   BUTTON_SCURRY_INFO,
   BUTTON_SCURRY_INIT_INVITE,
   BUTTON_SCURRY_INVITE_RESP,
-  BUTTON_SCURRY_HELP,
+  // BUTTON_SCURRY_HELP,
   BUTTON_SCURRY_LEAVE,
 
   BUTTON_SIZE
@@ -88,25 +80,9 @@ struct sd_command *button_types = (struct sd_command[])
     .command_id = TYPE_BIOME_STORY,
     .func_cb = &biome_story_interaction
   },
-  { // BUTTON_INIT_FORAGE -- in case "forage again" is pressed
-    .command_id = TYPE_FORAGE_INIT,
-    .func_cb = &init_forage_interaction
-  },
-  { // BUTTON_MAIN_FORAGE
-    .command_id = TYPE_FORAGE_RESP,
-    .func_cb = &forage_interaction
-  },
-  { // BUTTON_ENCOUNTER_FORAGE
-    .command_id = TYPE_ENCOUNTER_RESP,
-    .func_cb = &encounter_interaction
-  },
-  { // BUTTON_UPGRADE
-    .command_id = TYPE_UPGRADE,
-    .func_cb = &upgrade_interaction
-  },
-  { // BUTTON_SESSION_INFO
-    .command_id = TYPE_SESSION_INFO,
-    .func_cb = &session_info_interaction
+  { // BUTTON_INIT_FORAGE -- when "Start" is pressed
+    .command_id = TYPE_ADD_PIECE,
+    .func_cb = &add_piece_interaction
   },
   { // BUTTON_INFO
     .command_id = TYPE_INFO,    
@@ -118,7 +94,7 @@ struct sd_command *button_types = (struct sd_command[])
   },
   { // BUTTON_INIT_STEAL
     .command_id = TYPE_INIT_STEAL,    
-    .func_cb = &init_steal_interaction
+    .func_cb = &steal_interaction
   },
   { // BUTTON_STEAL
     .command_id = TYPE_STEAL,    
@@ -128,21 +104,9 @@ struct sd_command *button_types = (struct sd_command[])
     .command_id = TYPE_SQUIRREL,
     .func_cb = &squirrels_interaction
   },
-  { // BUTTON_DESIGNER_SQUIRRELS
-    .command_id = TYPE_DESIGNER_SQIRRELS,
-    .func_cb = &designer_squirrels_interaction
-  },
-  { // BUTTON_HELP_DESIGNER_SQUIRRELS
+  { // BUTTON_HELP_SQUIRRELS
     .command_id = TYPE_SQUIRREL_HELP,
-    .func_cb = &designer_squirrels_interaction
-  },
-  { // BUTTON_DAILY_TASKS
-    .command_id = TYPE_DAILY,
-    .func_cb = &daily_interaction
-  },
-  { // BUTTON_BANK
-    .command_id = TYPE_BANK,
-    .func_cb = &bank_interaction
+    .func_cb = &squirrels_interaction
   },
   { // BUTTON_LEADERBOARD
     .command_id = TYPE_LEADERBOARD,
@@ -152,10 +116,6 @@ struct sd_command *button_types = (struct sd_command[])
   { // BUTTON_EVENT_HELP
     .command_id = TYPE_EVENT_HELP,
     .func_cb = &event_help_interaction
-  },
-  { // BUTTON_BUNNY_ENDEAVOR
-    .command_id = TYPE_BUNNY,
-    .func_cb = &bunny_interaction
   },
   // SCURRY COMMANDS
   { // BUTTON_SCURRY_INFO

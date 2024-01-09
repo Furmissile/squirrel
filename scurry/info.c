@@ -32,15 +32,23 @@ struct sd_scurry_info
   char custom_ids[4][64];
   int button_size; // how many buttons are displayed
 
-  struct discord_embed_field fields[2];
-  char field_names[2][64];
-  char field_values[2][1024];
+  struct sd_pie treasury_stashes[MAX_PIES];
+  struct discord_embed_field fields[2 +MAX_PIES];
+  char field_names[2 +MAX_PIES][64];
+  char field_values[2 +MAX_PIES][1024];
 
   char footer_text[64];
   char footer_url[128];
 
   int is_participation_list; // used to check if participation list should be generated
 };
+
+void scurry_info_cleanup(struct sd_scurry_info *params)
+{
+  free(params->player);
+  free(params->scurry);
+  free(params->scurry_data);
+}
 
 void build_info_buttons(const struct discord_interaction *event, struct sd_scurry_info *params, struct sd_player *event_player)
 {
@@ -60,10 +68,7 @@ void build_info_buttons(const struct discord_interaction *event, struct sd_scurr
         .custom_id = u_snprintf(params->custom_ids[0], sizeof(params->custom_ids[0]),
             "%c3*%ld*.%ld", TYPE_SCURRY_INFO, scurry->scurry_owner_id, event->member->user->id),
         // if war acorns isnt full or the button was pressed disable button
-        .disabled = (scurry->war_acorns < scurry->war_acorn_cap
-          // || PQntuples(params->scurry_members) < SCURRY_MEMBER_REQ
-          )
-          ? true : false
+        // .disabled = (PQntuples(params->scurry_members) < SCURRY_MEMBER_REQ) ? true : false
       } :
       (struct discord_component)
       {
@@ -161,9 +166,7 @@ void build_info_buttons(const struct discord_interaction *event, struct sd_scurr
   PQclear(params->scurry_members);
 }
 
-void complete_scurry_interaction(
-  const struct discord_interaction *event,
-  struct sd_scurry_info *params)
+void complete_scurry_interaction(const struct discord_interaction *event, struct sd_scurry_info *params)
 {
   struct sd_scurry *scurry = params->scurry;
   struct sd_player *player = params->player;
@@ -182,17 +185,16 @@ void complete_scurry_interaction(
     .title = u_snprintf(header.title, sizeof(header.title), scurry->scurry_name),
     .fields = &(struct discord_embed_fields) {
       .array = params->fields,
-      .size = 2
+      .size = 2 + scurry->pie_count
     },
     .footer = &(struct discord_embed_footer) {
       .text = u_snprintf(params->footer_text, sizeof(params->footer_text), "Welcome to %s!", scurry->scurry_name),
-      .icon_url = u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, item_types[TYPE_ENCOUNTER].file_path)
+      .icon_url = u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, misc[MISC_ALERT].file_path)
     }
   };
 
   struct sd_player event_player = { 0 };
   load_player_struct(&event_player, event->member->user->id, event->data->custom_id);
-  energy_regen(&event_player);
 
   build_info_buttons(event, params, &event_player);
 
@@ -212,7 +214,7 @@ void complete_scurry_interaction(
       .type = DISCORD_COMPONENT_ACTION_ROW,
       .components = &(struct discord_components) {
         .array = util_data.buttons,
-        .size = sizeof(util_data.buttons)/sizeof(*util_data.buttons)
+        .size = util_data.buttons_displayed
       }
     }
   };
@@ -237,10 +239,6 @@ void complete_scurry_interaction(
     }
 
   };
-
-  char values[16384];
-  discord_interaction_response_to_json(values, sizeof(values), &interaction);
-  fprintf(stderr, "%s \n", values);
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 }
@@ -310,16 +308,12 @@ void list_scurry_user(struct discord *client, struct discord_response *resp, con
 
     complete_scurry_interaction(event, params);
 
-    free(params->player);
-    free(params->scurry);
-    free(params->scurry_data);
+    scurry_info_cleanup(params);
     free(resp->data);
   }
 }
 
-void create_member_listing( 
-  const struct discord_interaction *event, 
-  struct sd_scurry_info *params)
+void create_member_listing(const struct discord_interaction *event, struct sd_scurry_info *params)
 {
   params->scurry_data = calloc(1, sizeof(struct sd_scurry_data));
   struct sd_scurry_data *scurry_data = params->scurry_data;
@@ -345,6 +339,29 @@ void create_member_listing(
   }
 }
 
+void create_pies(struct sd_scurry_info *params, struct sd_scurry *scurry)
+{
+  char* labels[MAX_PIES] = { "I", "II", "III" };
+  for (int pie_idx = 0; pie_idx < scurry->pie_count; pie_idx++)
+  {
+    int field_idx = pie_idx +2;
+
+    int piece_idx = 0;
+    for (;piece_idx < scurry->war_acorns - (pie_idx * PIECES_SIZE); piece_idx++)
+      params->treasury_stashes[pie_idx].decoded_buf[piece_idx] = TYPE_WAR_ACORNS;
+
+    for (; piece_idx < PIECES_SIZE; piece_idx++)
+      params->treasury_stashes[pie_idx].decoded_buf[piece_idx] = TYPE_EMPTY;
+
+    params->fields[field_idx] = (struct discord_embed_field)
+    {
+      .name = u_snprintf(params->field_names[field_idx], sizeof(params->field_names[field_idx]), " "TREASURE" %s", labels[pie_idx]),
+      .value = u_snprintf(params->field_values[field_idx], sizeof(params->field_values[field_idx]), format_pie(&params->treasury_stashes[pie_idx]) ),
+      .Inline = true
+    };
+  }
+
+}
 /*
 To generate the member list, one of the following conditions must be true:
   > initializing the embed and scurry war IS NOT active
@@ -365,24 +382,18 @@ void fill_general_info(struct discord *client, struct discord_response *resp, co
   params->fields[0].name = u_snprintf(params->field_names[0], sizeof(params->field_names[0]), "Scurry Details");
 
   APPLY_NUM_STR(total_stolen_acorns, scurry->total_stolen_acorns);
-  APPLY_NUM_STR(war_acorns, scurry->war_acorns);
-  APPLY_NUM_STR(war_acorn_cap, scurry->war_acorn_cap);
 
   params->fields[0].value = u_snprintf(params->field_values[0], sizeof(params->field_values[0]),
       " "INDENT" "LEADER" Guild Owner: **%s** \n"
       " "INDENT" "GUILD_ICON" Scurry War: %s \n"
       " "INDENT" "WAR_ACORNS" Stolen Acorns: **%s** \n"
-      " "INDENT" "GOLDEN_ACORNS" Current Rank: **%s** (x**%0.1f** "ACORNS" Acorns) \n"
-      " "INDENT" "LOST_STASH" War Stash: **%s**/%s \n",
+      " "INDENT" "GOLDEN_ACORNS" Current Rank: **%s** (**%d** %s) \n",
       user->username, 
       (scurry->war_flag == 1) ? " "QUEST_MARKER" *Active*" : " "HELP_MARKER" *Inactive*",
       total_stolen_acorns,
-      (scurry->rank == SEED_NOT) ? "Seed Nots"
-      : (scurry->rank == ACORN_SNATCHER) ? "Acorn Snatchers"
-      : (scurry->rank == SEED_SNIFFER) ? "Seed Sniffers"
-      : (scurry->rank == OAKFFICIAL) ? "Oakfficials" : "Royal Nuts",
-      BASE_ACORN_MULT * (scurry->rank +1) +1,
-      war_acorns, war_acorn_cap );
+      (scurry->rank == SEED_NOT) ? "Seed Nots" : (scurry->rank == OAKFFICIAL) ? "Oakfficials" : "Royal Nuts",
+      scurry->pie_count,
+      (scurry->pie_count > 1) ? "Stashes" : "Stash");
   
   // members button varies on whether the join war/retreat button exists!
 
@@ -390,7 +401,7 @@ void fill_general_info(struct discord *client, struct discord_response *resp, co
 
   if ((button_idx == ERROR_STATUS && scurry->war_flag == 1) // this is from Scurry info user app
     || button_idx == 2 // this is scurry related button
-    || (button_idx == 5 && scurry->war_flag == 1)  // coming from info!
+    || (button_idx == 4 && scurry->war_flag == 1)  // coming from info!
     || button_idx == 3)
     // this condition is taken by the form of params->is_participation_list
   {
@@ -401,6 +412,9 @@ void fill_general_info(struct discord *client, struct discord_response *resp, co
     params->scurry_members = SQL_query(params->scurry_members, 
         "select user_id, stolen_acorns from public.player where scurry_id = %ld and stolen_acorns > 0 order by stolen_acorns desc", 
         scurry->scurry_owner_id);
+
+    if (scurry->war_flag == 1)
+      create_pies(params, scurry);
     
     // if none, state such
     if (PQntuples(params->scurry_members) == 0)
@@ -423,6 +437,7 @@ void fill_general_info(struct discord *client, struct discord_response *resp, co
     // list them
     create_member_listing(event, params);
   }
+
 }
 
 void scurry_info(const struct discord_interaction *event, struct sd_scurry_info *params)
@@ -433,8 +448,12 @@ void scurry_info(const struct discord_interaction *event, struct sd_scurry_info 
   // if war button was pressed
   if (event->data->custom_id[1] -48 == 3)
   {
+    // reset scurry
     if (scurry->war_flag)
+    {
+      scurry->war_acorns = scurry->war_acorn_cap/2;
       scurry->war_flag = 0;
+    }
     else {
       scurry->war_flag = 1;
 
@@ -461,8 +480,21 @@ void scurry_info(const struct discord_interaction *event, struct sd_scurry_info 
 
 int s_info_interaction(const struct discord_interaction *event)
 {
-  struct sd_player *player = calloc(1, sizeof(struct sd_player));
-  struct sd_scurry *scurry = calloc(1, sizeof(struct sd_scurry));
+  struct sd_scurry_info *params = calloc(1, sizeof(struct sd_scurry_info));
+
+  params->player = calloc(1, sizeof(struct sd_player));
+  load_player_struct(params->player, event->member->user->id, event->data->custom_id);
+  struct sd_player *player = params->player;
+
+  params->scurry = calloc(1, sizeof(struct sd_scurry));
+  struct sd_scurry *scurry = params->scurry;
+
+  if (event->message->timestamp /1000 < player->timestamp)
+  {
+    error_message(event, "This appears to be an old session! Please renew your session by sending `/start`.");
+    scurry_info_cleanup(params);
+    return ERROR_STATUS;
+  }
 
   char scurry_id_buffer[64] = { };
   trim_buffer(scurry_id_buffer, sizeof(scurry_id_buffer), event->data->custom_id, '*');
@@ -474,18 +506,12 @@ int s_info_interaction(const struct discord_interaction *event)
   if (PQntuples(search_scurry) == 0)
   {
     error_message(event, "This scurry no longer exists!");
-    free(player);
-    free(scurry);
+    scurry_info_cleanup(params);
     return ERROR_STATUS;
   }
   PQclear(search_scurry);
 
   load_scurry_struct(scurry, scurry_id);
-  load_player_struct(player, event->member->user->id, event->data->custom_id);
-
-  struct sd_scurry_info *params = calloc(1, sizeof(struct sd_scurry_info));
-  params->player = player;
-  params->scurry = scurry;
 
   scurry_info(event, params);
 

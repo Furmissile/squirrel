@@ -61,10 +61,6 @@ void update_invite_user(struct discord *client, struct discord_response *resp, c
 
   };
 
-  char values[16384];
-  discord_interaction_response_to_json(values, sizeof(values), &interaction);
-  fprintf(stderr, "%s \n", values);
-
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
   free(resp->data);
@@ -186,9 +182,10 @@ int init_invite_interaction(const struct discord_interaction *event)
   PGresult* scurry_info = (PGresult*) { 0 };
   scurry_info = SQL_query(scurry_info, "select * from public.scurry where owner_id = %ld", scurry_id);
   
-  ERROR_DATABASE_RET((PQntuples(scurry_info) == 0), "Sorry, this scurry doesn't exist!", scurry_info);
+  DATABASE_ERROR((PQntuples(scurry_info) == 0), "Sorry, this scurry doesn't exist!", scurry_info);
   
-  ERROR_DATABASE_RET((strtoint(PQgetvalue(scurry_info, 0, DB_WAR_FLAG)) == 1), 
+  // check if scurry is at war
+  DATABASE_ERROR((strtoint(PQgetvalue(scurry_info, 0, DB_WAR_FLAG)) == 1), 
       "This scurry is currently at war! Please wait until they are ready.", scurry_info);
   
   unsigned long owner_id = strtobigint(PQgetvalue(scurry_info, 0, DB_SCURRY_OWNER_ID));
@@ -199,12 +196,12 @@ int init_invite_interaction(const struct discord_interaction *event)
 
   // check scurry capacity
   scurry_info = SQL_query(scurry_info, "select * from public.player where scurry_id = %ld", owner_id);
-  ERROR_DATABASE_RET((PQntuples(scurry_info) == SCURRY_MEMBER_MAX), "This scurry is full!", scurry_info);
+  DATABASE_ERROR((PQntuples(scurry_info) == SCURRY_MEMBER_MAX), "This scurry is full!", scurry_info);
   PQclear(scurry_info);
 
   // check if user has a pending invite
   scurry_info = SQL_query(scurry_info, "select * from public.invites where player_id = %ld", event->member->user->id);
-  ERROR_DATABASE_RET((PQntuples(scurry_info) > 0), "You already have a pending request!", scurry_info);
+  DATABASE_ERROR((PQntuples(scurry_info) > 0), "You already have a pending request!", scurry_info);
   PQclear(scurry_info);
 
   struct sd_init_invite_info *params = calloc(1, sizeof(struct sd_init_invite_info));
