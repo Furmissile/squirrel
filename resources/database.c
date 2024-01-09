@@ -59,22 +59,22 @@ void load_game_struct(struct sd_pie_game *game, struct sd_player *player, unsign
   player->biome_num = game->score/BIOME_INTERVAL;
 
   // load history buf
-  snprintf(game->history, sizeof(game->history), PQgetvalue(search_game, 0, GAME_HISTORY) );
+  snprintf(game->history, sizeof(game->history), "%s", PQgetvalue(search_game, 0, GAME_HISTORY) );
 
   // load each encoded pie buf and then decode
-  snprintf(game->pie_1.encoded_buf, sizeof(game->pie_1.encoded_buf), PQgetvalue(search_game, 0, GAME_PIE_ONE) );
+  snprintf(game->pie_1.encoded_buf, sizeof(game->pie_1.encoded_buf), "%s", PQgetvalue(search_game, 0, GAME_PIE_ONE) );
   decode_pie(&game->pie_1);
 
-  snprintf(game->pie_2.encoded_buf, sizeof(game->pie_2.encoded_buf), PQgetvalue(search_game, 0, GAME_PIE_TWO) );
+  snprintf(game->pie_2.encoded_buf, sizeof(game->pie_2.encoded_buf), "%s", PQgetvalue(search_game, 0, GAME_PIE_TWO) );
   decode_pie(&game->pie_2);
 
-  snprintf(game->pie_3.encoded_buf, sizeof(game->pie_3.encoded_buf), PQgetvalue(search_game, 0, GAME_PIE_THREE) );
+  snprintf(game->pie_3.encoded_buf, sizeof(game->pie_3.encoded_buf), "%s", PQgetvalue(search_game, 0, GAME_PIE_THREE) );
   decode_pie(&game->pie_3);
 
-  snprintf(game->current_piece.encoded_buf, sizeof(game->current_piece.encoded_buf), PQgetvalue(search_game, 0, GAME_CURRENT_PIECE) );
+  snprintf(game->current_piece.encoded_buf, sizeof(game->current_piece.encoded_buf), "%s", PQgetvalue(search_game, 0, GAME_CURRENT_PIECE) );
   decode_pie(&game->current_piece);
 
-  snprintf(game->next_piece.encoded_buf, sizeof(game->next_piece.encoded_buf), PQgetvalue(search_game, 0, GAME_NEXT_PIECE) );
+  snprintf(game->next_piece.encoded_buf, sizeof(game->next_piece.encoded_buf), "%s", PQgetvalue(search_game, 0, GAME_NEXT_PIECE) );
   decode_pie(&game->next_piece);
 }
 

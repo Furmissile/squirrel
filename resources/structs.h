@@ -207,3 +207,12 @@ struct sd_statistics
   struct discord_emoji emojis[3];
   char emoji_names[3][64];
 };
+
+struct sd_welcome_info 
+{
+  char description[512];
+  char image_url[128];
+
+  char footer_text[256];
+  char footer_url[128];
+};
