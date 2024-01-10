@@ -30,19 +30,8 @@
 
 // PATH CONSTANTS
   #define GIT_PATH "https://github.com/Furmissile/squirrel/blob/main/src_assets/%s?raw=true"
-  #define SQ_CHEM_PATH "sd_utils/sq_alchemist.png"
-  #define SQ_BOOKIE_PATH "sd_utils/squirrel_bookie.png"
-  #define RULES_BK_PATH "sd_utils/rules_book.png"
-  #define BUNNY_ED_PATH "sd_utils/bunny.png"
-  #define VERIFY_PLUS_PATH "symbols/plus.png"
-
-
-// SUPPORT SERVER SPECIFIC IDS
-  #define RULES_CHANNEL_ID 1046640388456321126
-  #define WELCOME_CHANNEL_ID 1046634205729275955
-  #define VERIFY_CHANNEL_ID 1046813534790635550
-  #define BETA_MEMBER_ROLE 1017203719600885810
-  #define MEMBER_ROLE_ID 1046627142345170984
+  #define RULES_BK_PATH "misc/rules_book.png"
+  #define VERIFY_PLUS_PATH "misc/plus.png"
 
 
 // STATUS COLORS
@@ -52,8 +41,9 @@
 
 
 // COOLDOWNS
-  #define ADD_PIECE_CD 2
-  #define BASE_CD 1
+  #define ADD_PIECE_CD 3
+  #define BASE_CD 1.5
+  #define NO_CD 0
   #define INVITE_CD 120
 
 

@@ -50,7 +50,7 @@ void scurry_info_cleanup(struct sd_scurry_info *params)
   free(params->scurry_data);
 }
 
-void build_info_buttons(const struct discord_interaction *event, struct sd_scurry_info *params, struct sd_player *event_player)
+void build_info_buttons(const struct discord_interaction *event, struct sd_scurry_info *params, struct sd_player *player)
 {
   struct sd_scurry *scurry = params->scurry;
 
@@ -68,7 +68,7 @@ void build_info_buttons(const struct discord_interaction *event, struct sd_scurr
         .custom_id = u_snprintf(params->custom_ids[0], sizeof(params->custom_ids[0]),
             "%c3*%ld*.%ld", TYPE_SCURRY_INFO, scurry->scurry_owner_id, event->member->user->id),
         // if war acorns isnt full or the button was pressed disable button
-        // .disabled = (PQntuples(params->scurry_members) < SCURRY_MEMBER_REQ) ? true : false
+        .disabled = (PQntuples(params->scurry_members) < SCURRY_MEMBER_REQ) ? true : false
       } :
       (struct discord_component)
       {
@@ -124,8 +124,8 @@ void build_info_buttons(const struct discord_interaction *event, struct sd_scurr
   params->button_size++;
 
   // player must be part of scurry but NOT be the scurry owner
-  if (event_player->scurry_id == scurry->scurry_owner_id
-      && event_player->user_id != scurry->scurry_owner_id
+  if (player->scurry_id == scurry->scurry_owner_id
+      && player->user_id != scurry->scurry_owner_id
       && scurry->war_flag != 1)
   {
     params->buttons[params->button_size] = (struct discord_component)
@@ -140,7 +140,7 @@ void build_info_buttons(const struct discord_interaction *event, struct sd_scurr
     params->button_size++;
   }
   // suggest invite!
-  else if (event_player->scurry_id == 0)
+  else if (player->scurry_id == 0)
   {
     params->buttons[params->button_size] = (struct discord_component)
     {
@@ -193,10 +193,7 @@ void complete_scurry_interaction(const struct discord_interaction *event, struct
     }
   };
 
-  struct sd_player event_player = { 0 };
-  load_player_struct(&event_player, event->member->user->id, event->data->custom_id);
-
-  build_info_buttons(event, params, &event_player);
+  build_info_buttons(event, params, player);
 
   struct sd_util_info util_data = { 0 };
 
@@ -234,11 +231,13 @@ void complete_scurry_interaction(const struct discord_interaction *event, struct
       {
         .array = action_rows,
         // add utils if requested player is part of scurry
-        .size = (event_player.scurry_id == scurry->scurry_owner_id) ? 2 : 1
+        .size = (player->scurry_id == scurry->scurry_owner_id) ? 2 : 1
       }
     }
 
   };
+
+  update_player_row(player, BASE_CD);
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 }
@@ -492,6 +491,14 @@ int s_info_interaction(const struct discord_interaction *event)
   if (event->message->timestamp /1000 < player->timestamp)
   {
     error_message(event, "This appears to be an old session! Please renew your session by sending `/start`.");
+    scurry_info_cleanup(params);
+    return ERROR_STATUS;
+  }
+
+  if (APPLICATION_ID == MAIN_BOT_ID
+    && (time(NULL) < player->main_cd))
+  {
+    error_message(event, "Cooldown not ready! Please wait %d second(s).", BASE_CD);
     scurry_info_cleanup(params);
     return ERROR_STATUS;
   }

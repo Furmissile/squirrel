@@ -154,7 +154,7 @@ int biome_story_interaction(const struct discord_interaction *event)
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
-  update_player_row(&player);
+  update_player_row(&player, BASE_CD);
 
   free(params.fields);
   free(params.field_names);

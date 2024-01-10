@@ -64,7 +64,7 @@ void build_general_info(struct sd_squirrel_info *params, struct sd_player *playe
   if (player->scurry_id > 0)
   {
     u_snprintf(params->field_value, sizeof(params->field_value),
-        " "INDENT" "GUILD_ICON" Scurry: **%s** \n", scurry->scurry_name);
+        "\n "INDENT" "GUILD_ICON" Scurry: **%s** \n", scurry->scurry_name);
   }
 
   params->field.value = params->field_value;
@@ -172,7 +172,9 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
-  update_player_row(&player);
+  struct sd_player event_player = { 0 };
+  load_player_struct(&event_player, event->member->user->id, event->data->custom_id);
+  update_player_row(&event_player, BASE_CD);
 }
 
 // only sent when NOT requesting another user
@@ -287,7 +289,7 @@ int info_from_buttons(const struct discord_interaction *event)
     discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
   }
 
-  update_player_row(&player);
+  update_player_row(&player, BASE_CD);
 
   return 0;
 }

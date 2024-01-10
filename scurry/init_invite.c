@@ -204,6 +204,8 @@ int init_invite_interaction(const struct discord_interaction *event)
   DATABASE_ERROR((PQntuples(scurry_info) > 0), "You already have a pending request!", scurry_info);
   PQclear(scurry_info);
 
+  update_player_row(&player, BASE_CD);
+
   struct sd_init_invite_info *params = calloc(1, sizeof(struct sd_init_invite_info));
   params->owner_id = owner_id;
   

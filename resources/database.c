@@ -206,7 +206,7 @@ void update_game_row(struct sd_pie_game *game)
   PQclear(player_update);
 }
 
-void update_player_row(struct sd_player *player)
+void update_player_row(struct sd_player *player, int cooldown)
 {
   char sql_str[4096] = { };
 
@@ -232,7 +232,7 @@ void update_player_row(struct sd_player *player)
       player->high_acorn_count, player->conjured_acorns, 
       player->stolen_acorns, player->encounter, player->section, 
       player->purchased, player->treasury_filled, player->pies_complete,
-      player->tm_mday, player->timestamp, player->main_cd,
+      player->tm_mday, player->timestamp, time(NULL) + cooldown,
       player->user_id);
 
   u_snprintf(sql_str, sizeof(sql_str),

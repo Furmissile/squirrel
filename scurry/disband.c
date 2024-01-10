@@ -25,7 +25,7 @@ int disband_interaction(const struct discord_interaction *event)
 
   rename_scurry = SQL_query(rename_scurry, 
       "delete from public.scurry where owner_id = %ld; "
-      "update public.player set scurry_id = 0 where scurry_id = %ld;",
+      "update public.player set scurry_id = 0, stolen_acorns = 0 where scurry_id = %ld;",
        scurry_id, scurry_id);
   PQclear(rename_scurry);
 
@@ -71,6 +71,8 @@ int disband_interaction(const struct discord_interaction *event)
   };
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
+
+  update_player_row(&player, NO_CD);
 
   return 0;
 }

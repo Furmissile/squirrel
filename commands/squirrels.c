@@ -184,8 +184,6 @@ void squirrels_cmd_state(const struct discord_interaction *event, struct sd_squi
 
     u_snprintf(params->footer_text, sizeof(params->footer_text), "Your squirrel has been reset!");
     u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, squirrel_data.file_path);
-
-    update_player_row(player);
   }
   else if (event->data->custom_id[0] == TYPE_SQUIRREL
     && player->button_idx < 4) 
@@ -211,9 +209,7 @@ void squirrels_cmd_state(const struct discord_interaction *event, struct sd_squi
           u_snprintf(params->footer_text, sizeof(params->footer_text), "You have selected the %s!", squirrel_data.formal_name);
           u_snprintf(params->footer_url, sizeof(params->footer_url), GIT_PATH, squirrel_data.file_path);
         }
-        
-        // update player only on selection
-        update_player_row(player);
+
         break;
       }
     }
@@ -331,7 +327,7 @@ int squirrels_interaction(const struct discord_interaction *event)
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
-  update_player_row(&player);
+  update_player_row(&player, BASE_CD);
 
   return 0;
 }

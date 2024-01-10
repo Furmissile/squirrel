@@ -207,7 +207,7 @@ void complete_treasury(const struct discord_interaction *event, struct sd_steal_
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
-  update_player_row(player);
+  update_player_row(player, BASE_CD);
 
   steal_info_cleanup(params);
 }

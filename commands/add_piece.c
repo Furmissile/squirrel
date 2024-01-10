@@ -21,6 +21,7 @@ struct sd_add_piece
   int conjured_acorns;
   int war_acorns;
   int daily_reward;
+  int cooldown;
 };
 
 void complete_encounter(struct sd_add_piece *params, struct sd_player *player)
@@ -269,7 +270,7 @@ void generate_rewards(struct sd_pie *pie, struct sd_add_piece *params, struct sd
 
 void game_cmd_state(struct sd_add_piece *params, struct sd_player *player, struct sd_scurry *scurry, struct sd_pie_game *game)
 {
-  player->main_cd = time(NULL) + BASE_CD;
+  params->cooldown = BASE_CD;
   
   switch (player->button_idx)
   {
@@ -310,7 +311,7 @@ void game_cmd_state(struct sd_add_piece *params, struct sd_player *player, struc
 
       shift_pieces(game);
 
-      player->main_cd = time(NULL) + ADD_PIECE_CD;
+      params->cooldown = ADD_PIECE_CD;
 
       // try an encounter
       if (player->encounter == ERROR_STATUS
@@ -456,7 +457,7 @@ int add_piece_interaction(const struct discord_interaction *event)
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
   update_game_row(&game);
-  update_player_row(&player);
+  update_player_row(&player, params.cooldown);
   update_scurry_row(&scurry);
 
   return 0;

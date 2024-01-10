@@ -276,7 +276,7 @@ struct sd_file_data misc[MISC_SIZE] = {
     .emoji_id = 1191447753662922802
   },
   {
-    .file_path = "misc/no_acorns.png",
+    .file_path = "misc/quest_marker.png",
 
     .emoji_name = "quest_marker",
     .emoji_id = 1164898155150708736
