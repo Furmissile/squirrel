@@ -42,7 +42,7 @@
 
 // COOLDOWNS
   #define ADD_PIECE_CD 3
-  #define BASE_CD 1.5
+  #define BASE_CD 2
   #define NO_CD 0
   #define INVITE_CD 120
 

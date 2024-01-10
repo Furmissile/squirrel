@@ -341,6 +341,7 @@ void game_cmd_state(struct sd_add_piece *params, struct sd_player *player, struc
 
 }
 
+
 int add_piece_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
@@ -351,9 +352,12 @@ int add_piece_interaction(const struct discord_interaction *event)
 
   player.timestamp = event->message->timestamp /1000;
 
+  struct sd_add_piece params = { 0 };
+
+  params.cooldown = (player.button_idx < MAX_PIES) ? ADD_PIECE_CD : BASE_CD;
+
   if (APPLICATION_ID == MAIN_BOT_ID)
-    ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait %d second(s).",
-        (event->data->custom_id[0] == TYPE_ADD_PIECE) ? ADD_PIECE_CD : BASE_CD);
+    ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait %d seconds.", params.cooldown);
 
   struct sd_pie_game game = { 0 };
   load_game_struct(&game, &player, player.user_id);
@@ -362,7 +366,6 @@ int add_piece_interaction(const struct discord_interaction *event)
   load_scurry_struct(&scurry, player.scurry_id);
 
   struct sd_header_params header = { 0 };
-  struct sd_add_piece params = { 0 };
 
   game_cmd_state(&params, &player, &scurry, &game);
 
