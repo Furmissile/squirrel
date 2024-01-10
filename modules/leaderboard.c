@@ -25,6 +25,22 @@ struct sd_leaderboard
   char description[1024];
 };
 
+enum PLAYER_LB_LEADERBOARD
+{
+  PLAYER_LB_RANK_IDX,
+  PLAYER_LB_USER_ID,
+  PLAYER_LB_HIGH_ACORN_COUNT,
+  PLAYER_LB_SIZE
+};
+
+enum SCURRY_LB_LEADERBOARD
+{
+  SCURRY_LB_RANK_IDX,
+  SCURRY_LB_OWNER_ID,
+  SCURRY_LB_NAME,
+  SCURRY_LB_TOTAL_STOLEN_ACORNS,
+  SCURRY_LB_SIZE
+};
 
 void leaderboard_info_cleanup(struct sd_leaderboard *params)
 {
@@ -131,11 +147,7 @@ void create_leaderboard_interaction(const struct discord_interaction *event, str
 
   discord_edit_original_interaction_response(client, APPLICATION_ID, event->token, &interaction, NULL);
 
-  update_player_row(params->player);
-
-  char values[16384];
-  CCORDcode code = discord_edit_original_interaction_response_to_json(values, sizeof(values), &interaction);
-  fprintf(stderr, "%s \nCCODE: %d \n", values, code);
+  update_player_row(params->player, BASE_CD);
 
   leaderboard_info_cleanup(params);
 }
@@ -179,22 +191,22 @@ void is_user(struct discord *client, struct discord_response *resp, const struct
 
     PQclear(params->player_pos);
     params->player_pos = SQL_query(params->player_pos, 
-        "select rank_idx, user_id, best_acorn "
-        "from ( "
+        "select rank_idx, user_id, high_acorn_count "
+        "from ("
         "select user_id, "
-        "(CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) AS best_acorn, "
-        "dense_rank() over (order by (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) desc) as rank_idx "
-        "from public.player) as lb where lb.user_id = %ld and lb.best_acorn > 0",
+        "high_acorn_count, "
+        "dense_rank() over (order by high_acorn_count desc) as rank_idx "
+        "from public.player) as lb where user_id = %ld",
         player->user_id);
     
-    if (lb_data->is_top_ten == 0
-      && PQntuples(params->player_pos) == 1)
+    if (lb_data->is_top_ten == 0)
     {
-      APPLY_NUM_STR( value, strtoint(PQgetvalue(params->player_pos, 0, 2)) );
+      APPLY_NUM_STR( value, strtoint(PQgetvalue(params->player_pos, 0, PLAYER_LB_HIGH_ACORN_COUNT)) );
       u_snprintf(params->description, sizeof(params->description),
           "\n**%d**. <@%ld> **%s** \n",
-          strtoint(PQgetvalue(params->player_pos, 0, 0)),
-          strtobigint(PQgetvalue(params->player_pos, 0, 1)), value);
+          strtoint(PQgetvalue(params->player_pos, 0, PLAYER_LB_RANK_IDX)),
+          strtobigint(PQgetvalue(params->player_pos, 0, PLAYER_LB_USER_ID)), 
+          value);
     }
     create_leaderboard_interaction(event, params);
   }
@@ -217,9 +229,9 @@ void acorn_count_leaderboard(struct discord *client, struct discord_response *re
 
   for (int user_idx = 0; user_idx < lb_data->db_rows; user_idx++)
   {
-    lb_data->row_data[user_idx].db_idx = strtoint(PQgetvalue(params->player_pos, user_idx, 0));
-    lb_data->row_data[user_idx].user_id = strtobigint(PQgetvalue(params->player_pos, user_idx, 1));
-    lb_data->row_data[user_idx].value = strtoint(PQgetvalue(params->player_pos, user_idx, 2));
+    lb_data->row_data[user_idx].db_idx = strtoint(PQgetvalue(params->player_pos, user_idx, PLAYER_LB_RANK_IDX));
+    lb_data->row_data[user_idx].user_id = strtobigint(PQgetvalue(params->player_pos, user_idx, PLAYER_LB_USER_ID));
+    lb_data->row_data[user_idx].value = strtoint(PQgetvalue(params->player_pos, user_idx, PLAYER_LB_HIGH_ACORN_COUNT));
 
     struct discord_ret_user ret_user = {
       .done = &is_user,
@@ -243,14 +255,17 @@ void war_leaderboard(struct discord *client, struct discord_response *resp, cons
   int db_rows = PQntuples(params->player_pos);
   for (int user_idx = 0; user_idx < db_rows; user_idx++)
   {
-    APPLY_NUM_STR( value, strtoint(PQgetvalue(params->player_pos, user_idx, 3)) );
+    APPLY_NUM_STR( value, strtoint(PQgetvalue(params->player_pos, user_idx, SCURRY_LB_TOTAL_STOLEN_ACORNS)) );
+
     u_snprintf(params->description, sizeof(params->description),
       ( player->scurry_id == strtobigint(PQgetvalue(params->player_pos, user_idx, 1)) ) 
           ? "**%d**. "GUILD_ICON" %s **%s** \n"
           : "**%d**. `%s` **%s** \n",
-      strtoint(PQgetvalue(params->player_pos, user_idx, 0)), 
-      PQgetvalue(params->player_pos, user_idx, 2), value);
+      strtoint(PQgetvalue(params->player_pos, user_idx, SCURRY_LB_RANK_IDX)), 
+      PQgetvalue(params->player_pos, user_idx, SCURRY_LB_NAME), 
+      value);
   }
+
   create_leaderboard_interaction(event, params);
 }
 
@@ -291,23 +306,24 @@ int fetch_leaderboard(const struct discord_interaction *event)
   if (event->data->custom_id && params->player->button_idx == 1)
   {
     params->player_pos = SQL_query(params->player_pos,
-      "select rank_idx, owner_id, s_name, best_acorn "
-      "from ("
-      "select owner_id, s_name, "
-      "(CASE WHEN prev_stolen_acorns > total_stolen_acorns THEN prev_stolen_acorns ELSE total_stolen_acorns END) AS best_acorn, "
-      "dense_rank() over (order by (CASE WHEN prev_stolen_acorns > total_stolen_acorns THEN prev_stolen_acorns ELSE total_stolen_acorns END) desc) as rank_idx "
-      "from public.scurry) as lb where rank_idx <= 10 and best_acorn > 0");
+        "select rank_idx, owner_id, name, total_stolen_acorns "
+        "from ("
+        "select owner_id, name, "
+        "SUM(stolen_acorns) as total_stolen_acorns, "
+        "dense_rank() over (order by SUM(stolen_acorns) desc) as rank_idx "
+        "from public.player join public.scurry on player.scurry_id = scurry.owner_id group by owner_id, name) "
+        "as lb where total_stolen_acorns > 0 LIMIT 10");
 
     ret_response.done = &war_leaderboard;
   }
   else {
     params->player_pos = SQL_query(params->player_pos, 
-      "select rank_idx, user_id, best_acorn "
-      "from ("
-      "select user_id, "
-      "(CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) AS best_acorn, "
-      "dense_rank() over (order by (CASE WHEN high_acorn_count > acorn_count THEN high_acorn_count ELSE acorn_count END) desc) as rank_idx "
-      "from public.player) as lb where rank_idx <= 10 and best_acorn > 0");
+        "select rank_idx, user_id, high_acorn_count "
+        "from ("
+        "select user_id, "
+        "high_acorn_count, "
+        "dense_rank() over (order by high_acorn_count desc) as rank_idx "
+        "from public.player) as lb where high_acorn_count > 0 LIMIT 10");
 
     ret_response.done = &acorn_count_leaderboard;
   }
@@ -334,3 +350,47 @@ int fetch_leaderboard(const struct discord_interaction *event)
   
   return 0;
 }
+
+/*
+
+general player leaderboard (rank <= 10)
+---
+select rank_idx, user_id, high_acorn_count
+from (
+select user_id,
+high_acorn_count,
+dense_rank() over (order by high_acorn_count desc) as rank_idx
+from public.player) as lb where high_acorn_count > 0 LIMIT 10;
+
+specific player leaderboard (rank > 10)
+---
+select rank_idx, user_id, high_acorn_count
+from (
+select user_id,
+high_acorn_count,
+dense_rank() over (order by high_acorn_count desc) as rank_idx
+from public.player) as lb where user_id = %ld;
+
+
+
+scurry leaderboard (rank <= 10)
+---
+select rank_idx, owner_id, name, total_stolen_acorns
+from (
+select owner_id, name,
+SUM(stolen_acorns) as total_stolen_acorns,
+dense_rank() over (order by SUM(stolen_acorns) desc) as rank_idx
+from public.player join scurry on player.scurry_id = scurry.owner_id group by owner_id, name)
+as lb where total_stolen_acorns > 0 LIMIT 10;
+
+scurry leaderboard (rank > 10)
+---
+select rank_idx, owner_id, name, total_stolen_acorns
+from (
+select owner_id, name,
+SUM(stolen_acorns) as total_stolen_acorns,
+dense_rank() over (order by SUM(stolen_acorns) desc) as rank_idx
+from public.player join scurry on player.scurry_id = scurry.owner_id group by owner_id, name)
+as lb where owner_id = %ld;
+
+*/
