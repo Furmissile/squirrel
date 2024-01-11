@@ -3,7 +3,7 @@
 </div>
 
 # Welcome to Squirrel Dash!
-[![Discord](https://img.shields.io/static/v1?label=Discord&message=Support%20Server&color=5865F2)](https://discord.gg/Dd8Te3HmPW)
+[![Discord](https://img.shields.io/static/v1?label=Discord&message=Support%20Server&color=5865F2)](https://discord.gg/RhhapTYeBN)
 
 [![Invite Bot](https://img.shields.io/badge/Squirrel%20Dash%20Invite-Join%20here!-green)](https://discord.com/api/oauth2/authorize?client_id=905163158149287936&permissions=2416168000&scope=bot%20applications.commands)
 
