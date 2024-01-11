@@ -182,7 +182,7 @@ void create_commands(struct discord *client, const struct discord_ready *event)
     },
     {
       .name = "scurry_create",
-      .description = "Create a scurry for 50,000 acorns.",
+      .description = "Create a scurry for 250 conjured acorns.",
       .type = DISCORD_APPLICATION_CHAT_INPUT,
       .options = &(struct discord_application_command_options)
       {
@@ -236,7 +236,7 @@ void create_commands(struct discord *client, const struct discord_ready *event)
     },
     {
       .name = "scurry_rename",
-      .description = "Rename your scurry for 50,000 acorns. (Keep it SFW)",
+      .description = "Rename your scurry for 250 conjured acorns. (Keep it SFW)",
       .type = DISCORD_APPLICATION_CHAT_INPUT,
       .options = &(struct discord_application_command_options)
       {
