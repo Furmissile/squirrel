@@ -88,8 +88,6 @@ void init_steal_buttons(struct sd_steal_info *params, struct sd_player *player)
 
 void steal_cmd_state(const struct discord_interaction *event, struct sd_steal_info *params)
 {
-  params->player->main_cd = time(NULL) + BASE_CD;
-
   if (event->data->custom_id[0] == TYPE_INIT_STEAL)
   {
     u_snprintf(params->footer_text, sizeof(params->footer_text), "Welcome to your Treasury!");
@@ -207,7 +205,7 @@ void complete_treasury(const struct discord_interaction *event, struct sd_steal_
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
-  update_player_row(player, BASE_CD);
+  update_player_row(player);
 
   steal_info_cleanup(params);
 }
@@ -264,14 +262,6 @@ int steal_interaction(const struct discord_interaction *event)
   if (event->message->timestamp /1000 < player->timestamp)
   {
     error_message(event, "This appears to be an old session! Please renew your session by sending `/start`.");
-    steal_info_cleanup(params);
-    return ERROR_STATUS;
-  }
-
-  if (APPLICATION_ID == MAIN_BOT_ID
-    && time(NULL) < player->main_cd)
-  {
-    error_message(event, "Cooldown not ready! Please wait %d second(s).", BASE_CD);
     steal_info_cleanup(params);
     return ERROR_STATUS;
   }

@@ -101,7 +101,6 @@ struct sd_player
   int biome; // current biome the player is on
   int biome_num; // total number of biomes completed
 
-  time_t main_cd;
   unsigned long timestamp;
   int button_idx;
 

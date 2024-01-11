@@ -40,13 +40,6 @@
   #define ACTION_UNDEFINED 0x0
 
 
-// COOLDOWNS
-  #define ADD_PIECE_CD 3
-  #define BASE_CD 2
-  #define NO_CD 0
-  #define INVITE_CD 120
-
-
 // CHANCE
   #define COMMON_CHANCE 65 // 65% -- acorn
   #define EVENT_CHANCE 85 // 20% -- event resources
@@ -100,6 +93,7 @@
 
 
 // SCURRY
+  #define INVITE_CD 120
   #define SCURRY_MEMBER_MAX 5
   #define SCURRY_MEMBER_REQ 3 // requirement to participate in wars
   #define SCURRY_CREATION_COST 250 // in CONJURED ACORNS

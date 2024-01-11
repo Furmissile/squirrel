@@ -8,11 +8,6 @@ int biome_story_interaction(const struct discord_interaction *event)
 
   player.timestamp = event->message->timestamp /1000;
 
-  if (APPLICATION_ID == MAIN_BOT_ID)
-    ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait %d second(s).", BASE_CD);
-
-  player.main_cd = time(NULL) + BASE_CD;
-
   struct sd_biome_info params = { 0 };
 
   int page_num = (player.button_idx != ERROR_STATUS) ? player.button_idx +1 : 1;
@@ -154,7 +149,7 @@ int biome_story_interaction(const struct discord_interaction *event)
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
-  update_player_row(&player, BASE_CD);
+  update_player_row(&player);
 
   free(params.fields);
   free(params.field_names);

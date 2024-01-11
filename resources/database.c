@@ -90,7 +90,7 @@ void load_player_struct(struct sd_player *player, unsigned long user_id, char* c
     PQclear(search_player);
 
     search_player = SQL_query(search_player,
-        "insert into public.player values(%ld, 0, 0, 0, 0, 0, -1, 0, 0, 0, -1, 0, 4, 0, 0); \n"
+        "insert into public.player values(%ld, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 4, 0, 0); \n"
         "insert into public.biome_story values(%ld, 0, 0, 0, 0, 0); \n", 
         user_id, user_id);
   }
@@ -116,7 +116,6 @@ void load_player_struct(struct sd_player *player, unsigned long user_id, char* c
     .section = strtoint( PQgetvalue(search_player, 0 , DB_SECTION) ),
     .encounter = strtoint( PQgetvalue(search_player, 0, DB_ENCOUNTER) ),
     .timestamp = strtobigint( PQgetvalue(search_player, 0, DB_TIMESTAMP) ),
-    .main_cd = strtobigint( PQgetvalue(search_player, 0, DB_MAIN_CD) ),
     .purchased = strtobigint( PQgetvalue(search_player, 0, DB_PURCHASED) ),
     .treasury_filled = strtoint( PQgetvalue(search_player, 0, DB_TREASURY) ),
     .pies_complete = strtoint( PQgetvalue(search_player, 0, DB_DAILY_PIES) ),
@@ -206,7 +205,7 @@ void update_game_row(struct sd_pie_game *game)
   PQclear(player_update);
 }
 
-void update_player_row(struct sd_player *player, int cooldown)
+void update_player_row(struct sd_player *player)
 {
   char sql_str[4096] = { };
 
@@ -225,14 +224,13 @@ void update_player_row(struct sd_player *player, int cooldown)
         "treasury_filled = %d, "
         "pies_complete = %d, "
         "tm_mday = %d, "
-        "t_stamp = %ld, "
-        "main_cd = %ld \n"
+        "t_stamp = %ld "
       "where user_id = %ld; \n",
       player->scurry_id, player->color, player->squirrel, 
       player->high_acorn_count, player->conjured_acorns, 
       player->stolen_acorns, player->encounter, player->section, 
       player->purchased, player->treasury_filled, player->pies_complete,
-      player->tm_mday, player->timestamp, time(NULL) + cooldown,
+      player->tm_mday, player->timestamp,
       player->user_id);
 
   u_snprintf(sql_str, sizeof(sql_str),

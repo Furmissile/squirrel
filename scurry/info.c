@@ -237,7 +237,7 @@ void complete_scurry_interaction(const struct discord_interaction *event, struct
 
   };
 
-  update_player_row(player, BASE_CD);
+  update_player_row(player);
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 }
@@ -491,14 +491,6 @@ int s_info_interaction(const struct discord_interaction *event)
   if (event->message->timestamp /1000 < player->timestamp)
   {
     error_message(event, "This appears to be an old session! Please renew your session by sending `/start`.");
-    scurry_info_cleanup(params);
-    return ERROR_STATUS;
-  }
-
-  if (APPLICATION_ID == MAIN_BOT_ID
-    && (time(NULL) < player->main_cd))
-  {
-    error_message(event, "Cooldown not ready! Please wait %d second(s).", BASE_CD);
     scurry_info_cleanup(params);
     return ERROR_STATUS;
   }

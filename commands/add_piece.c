@@ -21,7 +21,6 @@ struct sd_add_piece
   int conjured_acorns;
   int war_acorns;
   int daily_reward;
-  int cooldown;
 };
 
 void complete_encounter(struct sd_add_piece *params, struct sd_player *player)
@@ -269,9 +268,7 @@ void generate_rewards(struct sd_pie *pie, struct sd_add_piece *params, struct sd
 }
 
 void game_cmd_state(struct sd_add_piece *params, struct sd_player *player, struct sd_scurry *scurry, struct sd_pie_game *game)
-{
-  params->cooldown = BASE_CD;
-  
+{  
   switch (player->button_idx)
   {
     case DETECT_START:
@@ -310,8 +307,6 @@ void game_cmd_state(struct sd_add_piece *params, struct sd_player *player, struc
         generate_rewards(pies[player->button_idx], params, player, scurry, game);
 
       shift_pieces(game);
-
-      params->cooldown = ADD_PIECE_CD;
 
       // try an encounter
       if (player->encounter == ERROR_STATUS
@@ -353,11 +348,6 @@ int add_piece_interaction(const struct discord_interaction *event)
   player.timestamp = event->message->timestamp /1000;
 
   struct sd_add_piece params = { 0 };
-
-  params.cooldown = (player.button_idx < MAX_PIES) ? ADD_PIECE_CD : BASE_CD;
-
-  if (APPLICATION_ID == MAIN_BOT_ID)
-    ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait %d seconds.", params.cooldown);
 
   struct sd_pie_game game = { 0 };
   load_game_struct(&game, &player, player.user_id);
@@ -460,7 +450,7 @@ int add_piece_interaction(const struct discord_interaction *event)
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
   update_game_row(&game);
-  update_player_row(&player, params.cooldown);
+  update_player_row(&player);
   update_scurry_row(&scurry);
 
   return 0;

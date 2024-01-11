@@ -21,11 +21,6 @@ int init_welcome_interaction(const struct discord_interaction *event)
   struct sd_header_params header = { 0 };
   struct sd_start params = { 0 };
 
-  if (APPLICATION_ID == MAIN_BOT_ID)
-    ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait %d second(s).", BASE_CD);
-  
-  player.main_cd = time(NULL) + BASE_CD;
-
   header.embed = (struct discord_embed) 
   {
     .color = player.color,

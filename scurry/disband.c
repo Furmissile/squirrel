@@ -72,7 +72,7 @@ int disband_interaction(const struct discord_interaction *event)
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
-  update_player_row(&player, NO_CD);
+  update_player_row(&player);
 
   return 0;
 }

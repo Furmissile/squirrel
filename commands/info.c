@@ -174,7 +174,7 @@ void p_info(struct discord *client, struct discord_response *resp, const struct 
 
   struct sd_player event_player = { 0 };
   load_player_struct(&event_player, event->member->user->id, event->data->custom_id);
-  update_player_row(&event_player, BASE_CD);
+  update_player_row(&event_player);
 }
 
 // only sent when NOT requesting another user
@@ -196,11 +196,6 @@ int info_from_buttons(const struct discord_interaction *event)
       "This appears to be an old session! Please renew your session by sending `/start`.");
 
   player.timestamp = event->message->timestamp /1000;
-
-  if (APPLICATION_ID == MAIN_BOT_ID)
-    ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait %d second(s).", BASE_CD);
-
-  player.main_cd = time(NULL) + BASE_CD;
 
   build_general_info(&params, &player, &scurry, &game);
 
@@ -289,7 +284,7 @@ int info_from_buttons(const struct discord_interaction *event)
     discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
   }
 
-  update_player_row(&player, BASE_CD);
+  update_player_row(&player);
 
   return 0;
 }

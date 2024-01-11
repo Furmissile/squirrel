@@ -231,11 +231,6 @@ int squirrels_interaction(const struct discord_interaction *event)
 
   player.timestamp = event->message->timestamp /1000;
 
-  if (APPLICATION_ID == MAIN_BOT_ID)
-    ERROR_INTERACTION((time(NULL) < player.main_cd), "Cooldown not ready! Please wait %d second(s).", BASE_CD);
-
-  player.main_cd = time(NULL) + BASE_CD;
-
   char* seasons[5] = {"Traditional", "Spring", "Summer", "Fall", "Winter"};
   int page_num = event->data->custom_id[2] -48 +1;
   
@@ -327,7 +322,7 @@ int squirrels_interaction(const struct discord_interaction *event)
 
   discord_create_interaction_response(client, event->id, event->token, &interaction, NULL);
 
-  update_player_row(&player, BASE_CD);
+  update_player_row(&player);
 
   return 0;
 }

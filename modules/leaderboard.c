@@ -147,7 +147,7 @@ void create_leaderboard_interaction(const struct discord_interaction *event, str
 
   discord_edit_original_interaction_response(client, APPLICATION_ID, event->token, &interaction, NULL);
 
-  update_player_row(params->player, BASE_CD);
+  update_player_row(params->player);
 
   leaderboard_info_cleanup(params);
 }
@@ -285,16 +285,6 @@ int fetch_leaderboard(const struct discord_interaction *event)
   }
 
   params->player->timestamp = event->message->timestamp /1000;
-
-  if (APPLICATION_ID == MAIN_BOT_ID
-    && (time(NULL) < params->player->main_cd))
-  {
-    error_message(event, "Cooldown not ready! Please wait %d second(s).", BASE_CD);
-    leaderboard_info_cleanup(params);
-    return ERROR_STATUS;
-  }
-
-  params->player->main_cd = time(NULL) + BASE_CD;
 
   // sd_leaderboard gets passed along regardless of leaderboard type
   struct discord_ret_interaction_response ret_response = { 
