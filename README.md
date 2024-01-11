@@ -1,5 +1,5 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/Furmissile/squirrel/main/src_assets/sd_utils/git_welcome.gif" width="916" alt="Squirrel Dash">
+<img src="https://raw.githubusercontent.com/Furmissile/squirrel/main/src_assets/misc/git_welcome.gif" width="916" alt="Squirrel Dash">
 </div>
 
 # Welcome to Squirrel Dash!
@@ -10,12 +10,12 @@
 ## About
 **Squirrel Dash** is a game inspired by squirrels' nutty behaviors! See life through the eyes of a squirrel in a fictitious world where you can:
 
-* Explore new biomes
-* Take on encounters and discover new storylines
-* Tap into powers by eating enchanted acorns that enhance your abilities
-* Steal other squirrel's resources and embrace your greedy side
+* Explore new biomes and unlock their stories
+* Fill and deligate your stashes with various acorn assortments
+* Steal from other squirrel's precious treasuries
+* Customize your squirrel with season themed squirrels
 * Join a guild (AKA scurry) to participate in group events and meet new people
-* Evolve your squirrel to master the art of acorn foraging!
+
 
 ## Support
 Squirrel Dash is currently undergoing a lot of revisioning and rebalancing.
