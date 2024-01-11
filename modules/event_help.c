@@ -1,3 +1,14 @@
+enum E_TOPIC {
+  E_TOPIC_ACORN_COUNT,
+  E_TOPIC_SEASONS,
+  E_TOPIC_SPRING,
+  E_TOPIC_SUMMER,
+  E_TOPIC_FALL,
+  E_TOPIC_WINTER,
+  E_TOPIC_CHRISTMAS,
+  E_TOPIC_SIZE
+};
+
 int event_help_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };

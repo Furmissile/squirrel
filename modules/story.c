@@ -1,3 +1,12 @@
+enum STORY_TOPIC {
+  STORY_GRASSLANDS,
+  STORY_SEEPING_SANDS,
+  STORY_NATURE_END,
+  STORY_DEATH_GRIP,
+  STORY_LAST_ACORN,
+  STORY_TOPIC_SIZE
+};
+
 int biome_story_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };

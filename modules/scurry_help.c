@@ -1,3 +1,10 @@
+enum S_TOPIC {
+  S_TOPIC_UTILS,
+  S_TOPIC_WARS,
+  S_TOPIC_AFTERMATH,
+  S_TOPIC_SIZE
+};
+
 int scurry_help_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };

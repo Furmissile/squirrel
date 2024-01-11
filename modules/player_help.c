@@ -1,3 +1,16 @@
+enum P_TOPIC {
+  P_TOPIC_INTRO,
+  P_TOPIC_PROGRESSION,
+  P_TOPIC_STORY,
+  P_TOPIC_SQUIRREL,
+  P_TOPIC_CHANGE_COLOR,
+  P_TOPIC_STEAL,
+  P_TOPIC_SCURRY,
+  P_TOPIC_DAILY,
+  P_TOPIC_HELP,
+  P_TOPIC_SIZE
+};
+
 int player_help_interaction(const struct discord_interaction *event)
 {
   struct sd_player player = { 0 };
@@ -83,7 +96,7 @@ int player_help_interaction(const struct discord_interaction *event)
             ""ACORNS" Scurries"),
         .value = u_snprintf(params.field_value, sizeof(params.field_value),
             " "BULLET" Players can join or create scurries for co-op fun! \n"
-            " "BULLET" Scurries cost **%s** "CONJURED_ACORNS" *conjured acorns* to create. A player can not own more than **1** scurry. \n"
+            " "BULLET" Scurries cost **%d** "CONJURED_ACORNS" *conjured acorns* to create. A player can not own more than **1** scurry. \n"
             " "BULLET" For more info on scurries, press on the \"Scurry\" button! \n"
             " "BULLET" Already in a scurry? Go to `Scurry Info`!",
             SCURRY_CREATION_COST)
@@ -110,6 +123,7 @@ int player_help_interaction(const struct discord_interaction *event)
             " "BULLET" Please refer to the [license](https://github.com/Furmissile/squirrel/blob/main/LICENSE) if you wish to use this project. "
                 "If unauthorized copies are encountered, please immediately report it to <#1047233819201261748> with the supporting link!")
       };
+      break;
   }
 
   struct sd_header_params header = { 0 };

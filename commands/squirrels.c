@@ -1,3 +1,12 @@
+enum SQ_TOPIC {
+  SQ_TOPIC_TRADITIONAL,
+  SQ_TOPIC_SPRING,
+  SQ_TOPIC_SUMMER,
+  SQ_TOPIC_FALL,
+  SQ_TOPIC_WINTER,
+  SQ_TOPIC_SIZE
+};
+
 struct sd_squirrrel_info
 {
   struct discord_component buttons[4];
