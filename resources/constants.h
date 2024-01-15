@@ -49,11 +49,11 @@
   #define MAX_PIES 3
 
   #define ENCOUNTER_CHANCE 15 // 15%
-  #define STORY_CHANCE 60     // 40%
+  #define STORY_CHANCE 40     // 40%
 
-  #define STEAL_CHANCE 50
+  #define STEAL_CHANCE 70
   #define DOUBLE_STEAL 80
-  #define STEAL_COST 15
+  #define STEAL_COST 25
 
   #define WAR_ACORN_CHANCE 80
 
@@ -68,7 +68,7 @@
 
 // PIES
   #define EMPTY_PIE "00000000"
-  #define EMPTY_HISTORY "%d..." // remembers the last 4 pieces
+  #define EMPTY_HISTORY "%d...." // remembers the last 4 pieces (+1 for encounter pieces)
   #define PIE_FORMAT "%d%d%d%d%d%d%d%d"
 
 // INTERACTION TYPES

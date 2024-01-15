@@ -268,7 +268,7 @@ void generate_rewards(struct sd_pie *pie, struct sd_add_piece *params, struct sd
 }
 
 void game_cmd_state(struct sd_add_piece *params, struct sd_player *player, struct sd_scurry *scurry, struct sd_pie_game *game)
-{  
+{
   switch (player->button_idx)
   {
     case DETECT_START:
@@ -321,10 +321,9 @@ void game_cmd_state(struct sd_add_piece *params, struct sd_player *player, struc
         while (search_history(game->history, new_piece) == 1)
           new_piece = rand() % PIECES_SIZE;
 
-        // add next piece to history
-        game->history[(game->piece_count +1) % 5] = (char)(new_piece +48);
-
         generate_new_piece(&game->current_piece, &pieces[new_piece]);
+
+        game->history[strlen(game->history) -1] = (char)(new_piece +48);
       }
       else if (player->encounter != ERROR_STATUS)
       {        
@@ -335,7 +334,6 @@ void game_cmd_state(struct sd_add_piece *params, struct sd_player *player, struc
   }
 
 }
-
 
 int add_piece_interaction(const struct discord_interaction *event)
 {

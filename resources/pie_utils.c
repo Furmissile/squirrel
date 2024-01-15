@@ -166,24 +166,26 @@ int search_history(char history[64], int slice_idx)
 */
 void shift_pieces(struct sd_pie_game *pie_game)
 {
+  // clear current pie
   pie_game->current_piece = (struct sd_pie) { 0 };
 
+  // merge next to current
   merge_pies(&pie_game->current_piece, &pie_game->next_piece);
 
-  int next_piece = rand() % PIECES_SIZE;
-
   // pick a new piece that hasnt been used yet  
+  int next_piece = rand() % PIECES_SIZE;
   while (search_history(pie_game->history, next_piece) == 1)
     next_piece = rand() % PIECES_SIZE;
 
-  // add next piece to history
+  // determine types of each slice
   generate_new_piece(&pie_game->next_piece, &pieces[next_piece]);
 
-  int history_size = strlen(pie_game->history);
+  pie_game->piece_count++;
+
+  // add next piece to history (-1 for encounter idx)
+  int history_size = strlen(pie_game->history) -1;
 
   pie_game->history[pie_game->piece_count % history_size] = (char)(next_piece +48);
-
-  pie_game->piece_count++;
 }
 
 int check_types(struct sd_pie *pie, int type)

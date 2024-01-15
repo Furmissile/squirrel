@@ -30,17 +30,20 @@ void load_game_struct(struct sd_pie_game *game, struct sd_player *player, unsign
 
     struct sd_pie_game new_game = { 0 };
 
-    // generate a fresh new next piece
+    // generate a  next piece
     int next_piece = rand() % PIECES_SIZE;
     generate_new_piece(&new_game.next_piece, &pieces[next_piece]);
 
+    // add it to history
     snprintf(new_game.history, sizeof(new_game.history), EMPTY_HISTORY, next_piece);
     
+    // move next to current and generate a new next piece
     shift_pieces(&new_game);
 
+    // insert new row
     search_game = SQL_query(search_game,
-        "insert into public.pies values(%ld, 0, 1, '%s', '"EMPTY_PIE"', '"EMPTY_PIE"', '"EMPTY_PIE"', '%s', '%s') \n", 
-        user_id, new_game.history, new_game.current_piece.encoded_buf, new_game.next_piece.encoded_buf);
+        "insert into public.pies values(%ld, 0, %d, '%s', '"EMPTY_PIE"', '"EMPTY_PIE"', '"EMPTY_PIE"', '%s', '%s') \n", 
+        user_id, new_game.piece_count, new_game.history, new_game.current_piece.encoded_buf, new_game.next_piece.encoded_buf);
   }
   PQclear(search_game);
 
